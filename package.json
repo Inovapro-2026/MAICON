@@ -1,0 +1,37 @@
+{
+  "name": "savyron",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SAVYRON - plataforma de prospecção comercial automatizada",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "bash scripts/build-all.sh",
+    "build:packages": "bash scripts/build-packages.sh",
+    "dev:api": "npm run dev -w @prospector/api",
+    "dev:worker": "npm run dev -w @prospector/worker",
+    "dev:dashboard": "npm run dev -w @prospector/dashboard",
+    "start:api": "npm run start -w @prospector/api",
+    "start:worker": "npm run start -w @prospector/worker",
+    "start:dashboard": "npm run start -w @prospector/dashboard",
+    "db:generate": "npm run db:generate -w @prospector/database",
+    "db:migrate": "npm run db:migrate -w @prospector/database",
+    "db:push": "npm run db:push -w @prospector/database",
+    "db:seed": "npm run db:seed -w @prospector/database",
+    "typecheck": "bash scripts/typecheck.sh",
+    "test": "bash scripts/test.sh",
+    "lint": "bash scripts/lint.sh"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.17.6",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment
+.env
+**/.env
+.env.local
+.env.*.local
+!.env.example
+
+# WhatsApp session - NEVER commit sessions or media
+session/
+**/session/
+*.store
+*.db
+*.sqlite*
+
+# PM2 logs
+logs/
+*.log
+pm2-*.log
+
+# Python (Scrapy service)
+services/scrapy/.venv/
+__pycache__/
+*.pyc
+services/scrapy/*.egg-info/
+
+# Backups / dumps — contêm sessão do WhatsApp e dumps do banco (PII)
+backups/
+**/backups/
+
+# Redis / runtime
+*.rdb
+*.aof
+
+# Misc
+.DS_Store
+coverage/
+*.pid

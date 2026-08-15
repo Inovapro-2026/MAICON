@@ -1,0 +1,1001 @@
+nome;telefone;email;empresa;cidade;estado;id_externo
+Barbearia do João;SEM_TELEFONE_VALIDO;;Barbearia do João;São Paulo;SP;EXT-0
+Salão da Maria;(21) 91000-0137;lead-1@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-1
+Studio Corte Fix;(31) 91000-0274;lead-2@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-2
+Barbearia Central;(19) 91000-0411;lead-3@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-3
+Cabelo & Arte;(41) 91000-0548;lead-4@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-4
+Salão Estilo;(51) 91000-0685;lead-5@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-5
+Barbearia Urbana;(71) 91000-0822;lead-6@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-6
+Studio Beleza Real;(81) 91000-0959;lead-7@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-7
+Barbearia Nobre;(85) 91000-1096;lead-8@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-8
+Salão da Praça;(62) 91000-1233;lead-9@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-9
+Barbearia do João;(11) 91000-1370;lead-10@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-10
+Salão da Maria;(21) 91000-1507;lead-11@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-11
+Studio Corte Fix;(31) 91000-1644;lead-12@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-12
+Barbearia Central;(19) 91000-1781;lead-13@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-13
+Cabelo & Arte;(41) 91000-1918;lead-14@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-14
+Salão Estilo;(51) 91000-2055;lead-15@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-15
+Barbearia Urbana;(71) 91000-2192;lead-16@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-16
+Studio Beleza Real;(81) 91000-2329;lead-17@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-17
+Barbearia Nobre;(85) 91000-2466;lead-18@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-18
+Salão da Praça;(62) 91000-2603;lead-19@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-19
+Barbearia do João;(11) 91000-2740;lead-20@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-20
+Salão da Maria;(21) 91000-2877;lead-21@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-21
+Studio Corte Fix;(31) 91000-3014;lead-22@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-22
+Barbearia Central;(19) 91000-3151;lead-23@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-23
+Cabelo & Arte;(41) 91000-3288;lead-24@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-24
+Salão Estilo;(51) 91000-3425;lead-25@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-25
+Barbearia Urbana;(71) 91000-3562;lead-26@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-26
+Studio Beleza Real;(81) 91000-3699;lead-27@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-27
+Barbearia Nobre;(85) 91000-3836;lead-28@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-28
+Salão da Praça;(62) 91000-3973;lead-29@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-29
+Barbearia do João;(11) 91000-4110;lead-30@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-30
+Salão da Maria;(21) 91000-4247;lead-31@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-31
+Studio Corte Fix;(31) 91000-4384;lead-32@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-32
+Barbearia Central;(19) 91000-4521;lead-33@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-33
+Cabelo & Arte;(41) 91000-4658;lead-34@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-34
+Salão Estilo;(51) 91000-4795;lead-35@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-35
+Barbearia Urbana;(71) 91000-4932;lead-36@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-36
+Studio Beleza Real;(81) 91000-5069;lead-37@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-37
+Barbearia Nobre;(85) 91000-5206;lead-38@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-38
+Salão da Praça;(62) 91000-5343;lead-39@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-39
+Barbearia do João;(11) 91000-5480;lead-40@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-40
+Salão da Maria;(21) 91000-5617;lead-41@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-41
+Studio Corte Fix;(31) 91000-5754;lead-42@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-42
+Barbearia Central;(19) 91000-5891;lead-43@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-43
+Cabelo & Arte;(41) 91000-6028;lead-44@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-44
+Salão Estilo;(51) 91000-6165;lead-45@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-45
+Barbearia Urbana;(71) 91000-6302;lead-46@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-46
+Studio Beleza Real;SEM_TELEFONE_VALIDO;;Studio Beleza Real;Recife;PE;EXT-47
+Barbearia Nobre;(85) 91000-6576;lead-48@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-48
+Salão da Praça;(62) 91000-6713;lead-49@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-49
+Barbearia do João;(11) 91000-6850;lead-50@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-50
+Salão da Maria;(21) 91000-6987;lead-51@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-51
+Studio Corte Fix;(31) 91000-7124;lead-52@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-52
+Barbearia Central;(19) 91000-7261;lead-53@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-53
+Cabelo & Arte;(41) 91000-7398;lead-54@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-54
+Salão Estilo;(51) 91000-7535;lead-55@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-55
+Barbearia Urbana;(71) 91000-7672;lead-56@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-56
+Studio Beleza Real;(81) 91000-7809;lead-57@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-57
+Barbearia Nobre;(85) 91000-7946;lead-58@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-58
+Salão da Praça;(62) 91000-8083;lead-59@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-59
+Barbearia do João;(11) 91000-8220;lead-60@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-60
+Salão da Maria;(21) 91000-8357;lead-61@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-61
+Studio Corte Fix;(31) 91000-8494;lead-62@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-62
+Barbearia Central;(19) 91000-8631;lead-63@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-63
+Cabelo & Arte;(41) 91000-8768;lead-64@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-64
+Salão Estilo;(51) 91000-8905;lead-65@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-65
+Barbearia Urbana;(71) 91000-9042;lead-66@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-66
+Studio Beleza Real;(81) 91000-9179;;Studio Beleza Real;Recife;PE;EXT-67
+Barbearia Nobre;(85) 91000-9316;lead-68@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-68
+Salão da Praça;(62) 91000-9453;lead-69@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-69
+Barbearia do João;(11) 91000-9590;lead-70@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-70
+Salão da Maria;(11) 91000-9590;lead-71@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-71
+Studio Corte Fix;(31) 91000-9864;lead-72@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-72
+Barbearia Central;(19) 91001-0001;lead-73@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-73
+Cabelo & Arte;(41) 91001-0138;lead-74@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-74
+Salão Estilo;(51) 91001-0275;lead-75@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-75
+Barbearia Urbana;(71) 91001-0412;lead-76@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-76
+Studio Beleza Real;(81) 91001-0549;lead-77@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-77
+Barbearia Nobre;(85) 91001-0686;lead-78@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-78
+Salão da Praça;(62) 91001-0823;lead-79@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-79
+Barbearia do João;(11) 91001-0960;lead-80@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-80
+Salão da Maria;(21) 91001-1097;lead-81@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-81
+Studio Corte Fix;(31) 91001-1234;lead-82@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-82
+Barbearia Central;(19) 91001-1371;lead-83@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-83
+Cabelo & Arte;(41) 91001-1508;lead-84@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-84
+Salão Estilo;(51) 91001-1645;lead-85@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-85
+Barbearia Urbana;(71) 91001-1782;lead-86@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-86
+Studio Beleza Real;(81) 91001-1919;lead-87@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-87
+Barbearia Nobre;(85) 91001-2056;lead-88@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-88
+Salão da Praça;(62) 91001-2193;lead-89@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-89
+Barbearia do João;(11) 91001-2330;lead-90@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-90
+Salão da Maria;(21) 91001-2467;lead-91@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-91
+Studio Corte Fix;(31) 91001-2604;lead-92@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-92
+Barbearia Central;(19) 91001-2741;lead-93@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-93
+Cabelo & Arte;SEM_TELEFONE_VALIDO;;Cabelo & Arte;Curitiba;PR;EXT-94
+Salão Estilo;(51) 91001-3015;lead-95@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-95
+Barbearia Urbana;(71) 91001-3152;lead-96@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-96
+Studio Beleza Real;(81) 91001-3289;lead-97@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-97
+Barbearia Nobre;(85) 91001-3426;lead-98@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-98
+Salão da Praça;(62) 91001-3563;lead-99@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-99
+Barbearia do João;(11) 91001-3700;lead-100@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-100
+Salão da Maria;(21) 91001-3837;lead-101@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-101
+Studio Corte Fix;(31) 91001-3974;lead-102@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-102
+Barbearia Central;(19) 91001-4111;lead-103@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-103
+Cabelo & Arte;(41) 91001-4248;lead-104@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-104
+Salão Estilo;(51) 91001-4385;lead-105@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-105
+Barbearia Urbana;(71) 91001-4522;lead-106@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-106
+Studio Beleza Real;(81) 91001-4659;lead-107@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-107
+Barbearia Nobre;(85) 91001-4796;lead-108@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-108
+Salão da Praça;(62) 91001-4933;lead-109@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-109
+Barbearia do João;(11) 91001-5070;lead-110@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-110
+Salão da Maria;(21) 91001-5207;lead-111@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-111
+Studio Corte Fix;(31) 91001-5344;lead-112@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-112
+Barbearia Central;(19) 91001-5481;lead-113@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-113
+Cabelo & Arte;(41) 91001-5618;lead-114@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-114
+Salão Estilo;(51) 91001-5755;lead-115@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-115
+Barbearia Urbana;(71) 91001-5892;lead-116@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-116
+Studio Beleza Real;(81) 91001-6029;lead-117@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-117
+Barbearia Nobre;(85) 91001-6166;lead-118@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-118
+Salão da Praça;(62) 91001-6303;lead-119@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-119
+Barbearia do João;(11) 91001-6440;lead-120@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-120
+Salão da Maria;(21) 91001-6577;lead-121@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-121
+Studio Corte Fix;(31) 91001-6714;lead-122@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-122
+Barbearia Central;(19) 91001-6851;lead-123@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-123
+Cabelo & Arte;(41) 91001-6988;lead-124@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-124
+Salão Estilo;(51) 91001-7125;lead-125@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-125
+Barbearia Urbana;(71) 91001-7262;lead-126@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-126
+Studio Beleza Real;(81) 91001-7399;lead-127@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-127
+Barbearia Nobre;(85) 91001-7536;lead-128@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-128
+Salão da Praça;(62) 91001-7673;lead-129@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-129
+Barbearia do João;(11) 91001-7810;lead-130@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-130
+Salão da Maria;(21) 91001-7947;lead-131@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-131
+Studio Corte Fix;(31) 91001-8084;lead-132@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-132
+Barbearia Central;(19) 91001-8221;lead-133@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-133
+Cabelo & Arte;(41) 91001-8358;;Cabelo & Arte;Curitiba;PR;EXT-134
+Salão Estilo;(51) 91001-8495;lead-135@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-135
+Barbearia Urbana;(71) 91001-8632;lead-136@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-136
+Studio Beleza Real;(81) 91001-8769;lead-137@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-137
+Barbearia Nobre;(85) 91001-8906;lead-138@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-138
+Salão da Praça;(62) 91001-9043;lead-139@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-139
+Barbearia do João;(11) 91001-9180;lead-140@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-140
+Salão da Maria;SEM_TELEFONE_VALIDO;;Salão da Maria;Rio de Janeiro;RJ;EXT-141
+Studio Corte Fix;(21) 91001-9317;lead-142@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-142
+Barbearia Central;(19) 91001-9591;lead-143@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-143
+Cabelo & Arte;(41) 91001-9728;lead-144@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-144
+Salão Estilo;(51) 91001-9865;lead-145@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-145
+Barbearia Urbana;(71) 91002-0002;lead-146@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-146
+Studio Beleza Real;(81) 91002-0139;lead-147@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-147
+Barbearia Nobre;(85) 91002-0276;lead-148@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-148
+Salão da Praça;(62) 91002-0413;lead-149@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-149
+Barbearia do João;(11) 91002-0550;lead-150@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-150
+Salão da Maria;(21) 91002-0687;lead-151@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-151
+Studio Corte Fix;(31) 91002-0824;lead-152@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-152
+Barbearia Central;(19) 91002-0961;lead-153@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-153
+Cabelo & Arte;(41) 91002-1098;lead-154@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-154
+Salão Estilo;(51) 91002-1235;lead-155@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-155
+Barbearia Urbana;(71) 91002-1372;lead-156@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-156
+Studio Beleza Real;(81) 91002-1509;lead-157@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-157
+Barbearia Nobre;(85) 91002-1646;lead-158@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-158
+Salão da Praça;(62) 91002-1783;lead-159@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-159
+Barbearia do João;(11) 91002-1920;lead-160@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-160
+Salão da Maria;(21) 91002-2057;lead-161@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-161
+Studio Corte Fix;(31) 91002-2194;lead-162@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-162
+Barbearia Central;(19) 91002-2331;lead-163@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-163
+Cabelo & Arte;(41) 91002-2468;lead-164@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-164
+Salão Estilo;(51) 91002-2605;lead-165@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-165
+Barbearia Urbana;(71) 91002-2742;lead-166@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-166
+Studio Beleza Real;(81) 91002-2879;lead-167@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-167
+Barbearia Nobre;(85) 91002-3016;lead-168@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-168
+Salão da Praça;(62) 91002-3153;lead-169@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-169
+Barbearia do João;(11) 91002-3290;lead-170@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-170
+Salão da Maria;(21) 91002-3427;lead-171@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-171
+Studio Corte Fix;(31) 91002-3564;lead-172@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-172
+Barbearia Central;(19) 91002-3701;lead-173@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-173
+Cabelo & Arte;(41) 91002-3838;lead-174@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-174
+Salão Estilo;(51) 91002-3975;lead-175@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-175
+Barbearia Urbana;(71) 91002-4112;lead-176@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-176
+Studio Beleza Real;(81) 91002-4249;lead-177@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-177
+Barbearia Nobre;(85) 91002-4386;lead-178@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-178
+Salão da Praça;(62) 91002-4523;lead-179@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-179
+Barbearia do João;(11) 91002-4660;lead-180@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-180
+Salão da Maria;(21) 91002-4797;lead-181@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-181
+Studio Corte Fix;(31) 91002-4934;lead-182@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-182
+Barbearia Central;(19) 91002-5071;lead-183@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-183
+Cabelo & Arte;(41) 91002-5208;lead-184@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-184
+Salão Estilo;(51) 91002-5345;lead-185@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-185
+Barbearia Urbana;(71) 91002-5482;lead-186@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-186
+Studio Beleza Real;(81) 91002-5619;lead-187@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-187
+Barbearia Nobre;SEM_TELEFONE_VALIDO;;Barbearia Nobre;Fortaleza;CE;EXT-188
+Salão da Praça;(62) 91002-5893;lead-189@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-189
+Barbearia do João;(11) 91002-6030;lead-190@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-190
+Salão da Maria;(21) 91002-6167;lead-191@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-191
+Studio Corte Fix;(31) 91002-6304;lead-192@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-192
+Barbearia Central;(19) 91002-6441;lead-193@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-193
+Cabelo & Arte;(41) 91002-6578;lead-194@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-194
+Salão Estilo;(51) 91002-6715;lead-195@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-195
+Barbearia Urbana;(71) 91002-6852;lead-196@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-196
+Studio Beleza Real;(81) 91002-6989;lead-197@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-197
+Barbearia Nobre;(85) 91002-7126;lead-198@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-198
+Salão da Praça;(62) 91002-7263;lead-199@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-199
+Barbearia do João;(11) 91002-7400;lead-200@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-200
+Salão da Maria;(21) 91002-7537;;Salão da Maria;Rio de Janeiro;RJ;EXT-201
+Studio Corte Fix;(31) 91002-7674;lead-202@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-202
+Barbearia Central;(19) 91002-7811;lead-203@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-203
+Cabelo & Arte;(41) 91002-7948;lead-204@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-204
+Salão Estilo;(51) 91002-8085;lead-205@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-205
+Barbearia Urbana;(71) 91002-8222;lead-206@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-206
+Studio Beleza Real;(81) 91002-8359;lead-207@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-207
+Barbearia Nobre;(85) 91002-8496;lead-208@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-208
+Salão da Praça;(62) 91002-8633;lead-209@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-209
+Barbearia do João;(11) 91002-8770;lead-210@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-210
+Salão da Maria;(21) 91002-8907;lead-211@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-211
+Studio Corte Fix;(31) 91002-9044;lead-212@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-212
+Barbearia Central;(31) 91002-9044;lead-213@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-213
+Cabelo & Arte;(41) 91002-9318;lead-214@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-214
+Salão Estilo;(51) 91002-9455;lead-215@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-215
+Barbearia Urbana;(71) 91002-9592;lead-216@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-216
+Studio Beleza Real;(81) 91002-9729;lead-217@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-217
+Barbearia Nobre;(85) 91002-9866;lead-218@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-218
+Salão da Praça;(62) 91003-0003;lead-219@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-219
+Barbearia do João;(11) 91003-0140;lead-220@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-220
+Salão da Maria;(21) 91003-0277;lead-221@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-221
+Studio Corte Fix;(31) 91003-0414;lead-222@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-222
+Barbearia Central;(19) 91003-0551;lead-223@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-223
+Cabelo & Arte;(41) 91003-0688;lead-224@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-224
+Salão Estilo;(51) 91003-0825;lead-225@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-225
+Barbearia Urbana;(71) 91003-0962;lead-226@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-226
+Studio Beleza Real;(81) 91003-1099;lead-227@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-227
+Barbearia Nobre;(85) 91003-1236;lead-228@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-228
+Salão da Praça;(62) 91003-1373;lead-229@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-229
+Barbearia do João;(11) 91003-1510;lead-230@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-230
+Salão da Maria;(21) 91003-1647;lead-231@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-231
+Studio Corte Fix;(31) 91003-1784;lead-232@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-232
+Barbearia Central;(19) 91003-1921;lead-233@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-233
+Cabelo & Arte;(41) 91003-2058;lead-234@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-234
+Salão Estilo;SEM_TELEFONE_VALIDO;;Salão Estilo;Porto Alegre;RS;EXT-235
+Barbearia Urbana;(71) 91003-2332;lead-236@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-236
+Studio Beleza Real;(81) 91003-2469;lead-237@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-237
+Barbearia Nobre;(85) 91003-2606;lead-238@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-238
+Salão da Praça;(62) 91003-2743;lead-239@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-239
+Barbearia do João;(11) 91003-2880;lead-240@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-240
+Salão da Maria;(21) 91003-3017;lead-241@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-241
+Studio Corte Fix;(31) 91003-3154;lead-242@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-242
+Barbearia Central;(19) 91003-3291;lead-243@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-243
+Cabelo & Arte;(41) 91003-3428;lead-244@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-244
+Salão Estilo;(51) 91003-3565;lead-245@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-245
+Barbearia Urbana;(71) 91003-3702;lead-246@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-246
+Studio Beleza Real;(81) 91003-3839;lead-247@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-247
+Barbearia Nobre;(85) 91003-3976;lead-248@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-248
+Salão da Praça;(62) 91003-4113;lead-249@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-249
+Barbearia do João;(11) 91003-4250;lead-250@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-250
+Salão da Maria;(21) 91003-4387;lead-251@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-251
+Studio Corte Fix;(31) 91003-4524;lead-252@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-252
+Barbearia Central;(19) 91003-4661;lead-253@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-253
+Cabelo & Arte;(41) 91003-4798;lead-254@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-254
+Salão Estilo;(51) 91003-4935;lead-255@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-255
+Barbearia Urbana;(71) 91003-5072;lead-256@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-256
+Studio Beleza Real;(81) 91003-5209;lead-257@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-257
+Barbearia Nobre;(85) 91003-5346;lead-258@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-258
+Salão da Praça;(62) 91003-5483;lead-259@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-259
+Barbearia do João;(11) 91003-5620;lead-260@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-260
+Salão da Maria;(21) 91003-5757;lead-261@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-261
+Studio Corte Fix;(31) 91003-5894;lead-262@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-262
+Barbearia Central;(19) 91003-6031;lead-263@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-263
+Cabelo & Arte;(41) 91003-6168;lead-264@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-264
+Salão Estilo;(51) 91003-6305;lead-265@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-265
+Barbearia Urbana;(71) 91003-6442;lead-266@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-266
+Studio Beleza Real;(81) 91003-6579;lead-267@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-267
+Barbearia Nobre;(85) 91003-6716;;Barbearia Nobre;Fortaleza;CE;EXT-268
+Salão da Praça;(62) 91003-6853;lead-269@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-269
+Barbearia do João;(11) 91003-6990;lead-270@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-270
+Salão da Maria;(21) 91003-7127;lead-271@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-271
+Studio Corte Fix;(31) 91003-7264;lead-272@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-272
+Barbearia Central;(19) 91003-7401;lead-273@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-273
+Cabelo & Arte;(41) 91003-7538;lead-274@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-274
+Salão Estilo;(51) 91003-7675;lead-275@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-275
+Barbearia Urbana;(71) 91003-7812;lead-276@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-276
+Studio Beleza Real;(81) 91003-7949;lead-277@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-277
+Barbearia Nobre;(85) 91003-8086;lead-278@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-278
+Salão da Praça;(62) 91003-8223;lead-279@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-279
+Barbearia do João;(11) 91003-8360;lead-280@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-280
+Salão da Maria;(21) 91003-8497;lead-281@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-281
+Studio Corte Fix;SEM_TELEFONE_VALIDO;;Studio Corte Fix;Belo Horizonte;MG;EXT-282
+Barbearia Central;(19) 91003-8771;lead-283@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-283
+Cabelo & Arte;(19) 91003-8771;lead-284@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-284
+Salão Estilo;(51) 91003-9045;lead-285@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-285
+Barbearia Urbana;(71) 91003-9182;lead-286@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-286
+Studio Beleza Real;(81) 91003-9319;lead-287@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-287
+Barbearia Nobre;(85) 91003-9456;lead-288@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-288
+Salão da Praça;(62) 91003-9593;lead-289@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-289
+Barbearia do João;(11) 91003-9730;lead-290@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-290
+Salão da Maria;(21) 91003-9867;lead-291@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-291
+Studio Corte Fix;(31) 91004-0004;lead-292@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-292
+Barbearia Central;(19) 91004-0141;lead-293@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-293
+Cabelo & Arte;(41) 91004-0278;lead-294@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-294
+Salão Estilo;(51) 91004-0415;lead-295@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-295
+Barbearia Urbana;(71) 91004-0552;lead-296@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-296
+Studio Beleza Real;(81) 91004-0689;lead-297@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-297
+Barbearia Nobre;(85) 91004-0826;lead-298@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-298
+Salão da Praça;(62) 91004-0963;lead-299@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-299
+Barbearia do João;(11) 91004-1100;lead-300@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-300
+Salão da Maria;(21) 91004-1237;lead-301@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-301
+Studio Corte Fix;(31) 91004-1374;lead-302@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-302
+Barbearia Central;(19) 91004-1511;lead-303@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-303
+Cabelo & Arte;(41) 91004-1648;lead-304@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-304
+Salão Estilo;(51) 91004-1785;lead-305@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-305
+Barbearia Urbana;(71) 91004-1922;lead-306@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-306
+Studio Beleza Real;(81) 91004-2059;lead-307@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-307
+Barbearia Nobre;(85) 91004-2196;lead-308@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-308
+Salão da Praça;(62) 91004-2333;lead-309@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-309
+Barbearia do João;(11) 91004-2470;lead-310@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-310
+Salão da Maria;(21) 91004-2607;lead-311@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-311
+Studio Corte Fix;(31) 91004-2744;lead-312@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-312
+Barbearia Central;(19) 91004-2881;lead-313@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-313
+Cabelo & Arte;(41) 91004-3018;lead-314@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-314
+Salão Estilo;(51) 91004-3155;lead-315@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-315
+Barbearia Urbana;(71) 91004-3292;lead-316@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-316
+Studio Beleza Real;(81) 91004-3429;lead-317@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-317
+Barbearia Nobre;(85) 91004-3566;lead-318@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-318
+Salão da Praça;(62) 91004-3703;lead-319@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-319
+Barbearia do João;(11) 91004-3840;lead-320@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-320
+Salão da Maria;(21) 91004-3977;lead-321@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-321
+Studio Corte Fix;(31) 91004-4114;lead-322@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-322
+Barbearia Central;(19) 91004-4251;lead-323@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-323
+Cabelo & Arte;(41) 91004-4388;lead-324@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-324
+Salão Estilo;(51) 91004-4525;lead-325@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-325
+Barbearia Urbana;(71) 91004-4662;lead-326@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-326
+Studio Beleza Real;(81) 91004-4799;lead-327@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-327
+Barbearia Nobre;(85) 91004-4936;lead-328@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-328
+Salão da Praça;SEM_TELEFONE_VALIDO;;Salão da Praça;Goiânia;GO;EXT-329
+Barbearia do João;(11) 91004-5210;lead-330@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-330
+Salão da Maria;(21) 91004-5347;lead-331@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-331
+Studio Corte Fix;(31) 91004-5484;lead-332@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-332
+Barbearia Central;(19) 91004-5621;lead-333@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-333
+Cabelo & Arte;(41) 91004-5758;lead-334@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-334
+Salão Estilo;(51) 91004-5895;;Salão Estilo;Porto Alegre;RS;EXT-335
+Barbearia Urbana;(71) 91004-6032;lead-336@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-336
+Studio Beleza Real;(81) 91004-6169;lead-337@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-337
+Barbearia Nobre;(85) 91004-6306;lead-338@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-338
+Salão da Praça;(62) 91004-6443;lead-339@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-339
+Barbearia do João;(11) 91004-6580;lead-340@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-340
+Salão da Maria;(21) 91004-6717;lead-341@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-341
+Studio Corte Fix;(31) 91004-6854;lead-342@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-342
+Barbearia Central;(19) 91004-6991;lead-343@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-343
+Cabelo & Arte;(41) 91004-7128;lead-344@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-344
+Salão Estilo;(51) 91004-7265;lead-345@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-345
+Barbearia Urbana;(71) 91004-7402;lead-346@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-346
+Studio Beleza Real;(81) 91004-7539;lead-347@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-347
+Barbearia Nobre;(85) 91004-7676;lead-348@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-348
+Salão da Praça;(62) 91004-7813;lead-349@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-349
+Barbearia do João;(11) 91004-7950;lead-350@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-350
+Salão da Maria;(21) 91004-8087;lead-351@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-351
+Studio Corte Fix;(31) 91004-8224;lead-352@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-352
+Barbearia Central;(19) 91004-8361;lead-353@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-353
+Cabelo & Arte;(41) 91004-8498;lead-354@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-354
+Salão Estilo;(41) 91004-8498;lead-355@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-355
+Barbearia Urbana;(71) 91004-8772;lead-356@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-356
+Studio Beleza Real;(81) 91004-8909;lead-357@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-357
+Barbearia Nobre;(85) 91004-9046;lead-358@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-358
+Salão da Praça;(62) 91004-9183;lead-359@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-359
+Barbearia do João;(11) 91004-9320;lead-360@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-360
+Salão da Maria;(21) 91004-9457;lead-361@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-361
+Studio Corte Fix;(31) 91004-9594;lead-362@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-362
+Barbearia Central;(19) 91004-9731;lead-363@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-363
+Cabelo & Arte;(41) 91004-9868;lead-364@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-364
+Salão Estilo;(51) 91005-0005;lead-365@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-365
+Barbearia Urbana;(71) 91005-0142;lead-366@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-366
+Studio Beleza Real;(81) 91005-0279;lead-367@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-367
+Barbearia Nobre;(85) 91005-0416;lead-368@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-368
+Salão da Praça;(62) 91005-0553;lead-369@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-369
+Barbearia do João;(11) 91005-0690;lead-370@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-370
+Salão da Maria;(21) 91005-0827;lead-371@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-371
+Studio Corte Fix;(31) 91005-0964;lead-372@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-372
+Barbearia Central;(19) 91005-1101;lead-373@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-373
+Cabelo & Arte;(41) 91005-1238;lead-374@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-374
+Salão Estilo;(51) 91005-1375;lead-375@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-375
+Barbearia Urbana;SEM_TELEFONE_VALIDO;;Barbearia Urbana;Salvador;BA;EXT-376
+Studio Beleza Real;(81) 91005-1649;lead-377@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-377
+Barbearia Nobre;(85) 91005-1786;lead-378@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-378
+Salão da Praça;(62) 91005-1923;lead-379@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-379
+Barbearia do João;(11) 91005-2060;lead-380@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-380
+Salão da Maria;(21) 91005-2197;lead-381@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-381
+Studio Corte Fix;(31) 91005-2334;lead-382@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-382
+Barbearia Central;(19) 91005-2471;lead-383@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-383
+Cabelo & Arte;(41) 91005-2608;lead-384@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-384
+Salão Estilo;(51) 91005-2745;lead-385@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-385
+Barbearia Urbana;(71) 91005-2882;lead-386@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-386
+Studio Beleza Real;(81) 91005-3019;lead-387@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-387
+Barbearia Nobre;(85) 91005-3156;lead-388@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-388
+Salão da Praça;(62) 91005-3293;lead-389@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-389
+Barbearia do João;(11) 91005-3430;lead-390@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-390
+Salão da Maria;(21) 91005-3567;lead-391@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-391
+Studio Corte Fix;(31) 91005-3704;lead-392@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-392
+Barbearia Central;(19) 91005-3841;lead-393@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-393
+Cabelo & Arte;(41) 91005-3978;lead-394@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-394
+Salão Estilo;(51) 91005-4115;lead-395@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-395
+Barbearia Urbana;(71) 91005-4252;lead-396@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-396
+Studio Beleza Real;(81) 91005-4389;lead-397@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-397
+Barbearia Nobre;(85) 91005-4526;lead-398@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-398
+Salão da Praça;(62) 91005-4663;lead-399@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-399
+Barbearia do João;(11) 91005-4800;lead-400@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-400
+Salão da Maria;(21) 91005-4937;lead-401@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-401
+Studio Corte Fix;(31) 91005-5074;;Studio Corte Fix;Belo Horizonte;MG;EXT-402
+Barbearia Central;(19) 91005-5211;lead-403@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-403
+Cabelo & Arte;(41) 91005-5348;lead-404@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-404
+Salão Estilo;(51) 91005-5485;lead-405@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-405
+Barbearia Urbana;(71) 91005-5622;lead-406@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-406
+Studio Beleza Real;(81) 91005-5759;lead-407@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-407
+Barbearia Nobre;(85) 91005-5896;lead-408@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-408
+Salão da Praça;(62) 91005-6033;lead-409@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-409
+Barbearia do João;(11) 91005-6170;lead-410@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-410
+Salão da Maria;(21) 91005-6307;lead-411@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-411
+Studio Corte Fix;(31) 91005-6444;lead-412@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-412
+Barbearia Central;(19) 91005-6581;lead-413@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-413
+Cabelo & Arte;(41) 91005-6718;lead-414@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-414
+Salão Estilo;(51) 91005-6855;lead-415@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-415
+Barbearia Urbana;(71) 91005-6992;lead-416@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-416
+Studio Beleza Real;(81) 91005-7129;lead-417@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-417
+Barbearia Nobre;(85) 91005-7266;lead-418@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-418
+Salão da Praça;(62) 91005-7403;lead-419@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-419
+Barbearia do João;(11) 91005-7540;lead-420@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-420
+Salão da Maria;(21) 91005-7677;lead-421@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-421
+Studio Corte Fix;(31) 91005-7814;lead-422@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-422
+Barbearia Central;SEM_TELEFONE_VALIDO;;Barbearia Central;Campinas;SP;EXT-423
+Cabelo & Arte;(41) 91005-8088;lead-424@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-424
+Salão Estilo;(51) 91005-8225;lead-425@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-425
+Barbearia Urbana;(51) 91005-8225;lead-426@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-426
+Studio Beleza Real;(81) 91005-8499;lead-427@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-427
+Barbearia Nobre;(85) 91005-8636;lead-428@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-428
+Salão da Praça;(62) 91005-8773;lead-429@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-429
+Barbearia do João;(11) 91005-8910;lead-430@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-430
+Salão da Maria;(21) 91005-9047;lead-431@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-431
+Studio Corte Fix;(31) 91005-9184;lead-432@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-432
+Barbearia Central;(19) 91005-9321;lead-433@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-433
+Cabelo & Arte;(41) 91005-9458;lead-434@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-434
+Salão Estilo;(51) 91005-9595;lead-435@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-435
+Barbearia Urbana;(71) 91005-9732;lead-436@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-436
+Studio Beleza Real;(81) 91005-9869;lead-437@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-437
+Barbearia Nobre;(85) 91006-0006;lead-438@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-438
+Salão da Praça;(62) 91006-0143;lead-439@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-439
+Barbearia do João;(11) 91006-0280;lead-440@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-440
+Salão da Maria;(21) 91006-0417;lead-441@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-441
+Studio Corte Fix;(31) 91006-0554;lead-442@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-442
+Barbearia Central;(19) 91006-0691;lead-443@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-443
+Cabelo & Arte;(41) 91006-0828;lead-444@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-444
+Salão Estilo;(51) 91006-0965;lead-445@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-445
+Barbearia Urbana;(71) 91006-1102;lead-446@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-446
+Studio Beleza Real;(81) 91006-1239;lead-447@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-447
+Barbearia Nobre;(85) 91006-1376;lead-448@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-448
+Salão da Praça;(62) 91006-1513;lead-449@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-449
+Barbearia do João;(11) 91006-1650;lead-450@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-450
+Salão da Maria;(21) 91006-1787;lead-451@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-451
+Studio Corte Fix;(31) 91006-1924;lead-452@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-452
+Barbearia Central;(19) 91006-2061;lead-453@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-453
+Cabelo & Arte;(41) 91006-2198;lead-454@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-454
+Salão Estilo;(51) 91006-2335;lead-455@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-455
+Barbearia Urbana;(71) 91006-2472;lead-456@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-456
+Studio Beleza Real;(81) 91006-2609;lead-457@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-457
+Barbearia Nobre;(85) 91006-2746;lead-458@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-458
+Salão da Praça;(62) 91006-2883;lead-459@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-459
+Barbearia do João;(11) 91006-3020;lead-460@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-460
+Salão da Maria;(21) 91006-3157;lead-461@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-461
+Studio Corte Fix;(31) 91006-3294;lead-462@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-462
+Barbearia Central;(19) 91006-3431;lead-463@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-463
+Cabelo & Arte;(41) 91006-3568;lead-464@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-464
+Salão Estilo;(51) 91006-3705;lead-465@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-465
+Barbearia Urbana;(71) 91006-3842;lead-466@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-466
+Studio Beleza Real;(81) 91006-3979;lead-467@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-467
+Barbearia Nobre;(85) 91006-4116;lead-468@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-468
+Salão da Praça;(62) 91006-4253;;Salão da Praça;Goiânia;GO;EXT-469
+Barbearia do João;SEM_TELEFONE_VALIDO;;Barbearia do João;São Paulo;SP;EXT-470
+Salão da Maria;(21) 91006-4527;lead-471@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-471
+Studio Corte Fix;(31) 91006-4664;lead-472@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-472
+Barbearia Central;(19) 91006-4801;lead-473@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-473
+Cabelo & Arte;(41) 91006-4938;lead-474@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-474
+Salão Estilo;(51) 91006-5075;lead-475@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-475
+Barbearia Urbana;(71) 91006-5212;lead-476@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-476
+Studio Beleza Real;(81) 91006-5349;lead-477@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-477
+Barbearia Nobre;(85) 91006-5486;lead-478@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-478
+Salão da Praça;(62) 91006-5623;lead-479@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-479
+Barbearia do João;(11) 91006-5760;lead-480@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-480
+Salão da Maria;(21) 91006-5897;lead-481@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-481
+Studio Corte Fix;(31) 91006-6034;lead-482@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-482
+Barbearia Central;(19) 91006-6171;lead-483@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-483
+Cabelo & Arte;(41) 91006-6308;lead-484@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-484
+Salão Estilo;(51) 91006-6445;lead-485@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-485
+Barbearia Urbana;(71) 91006-6582;lead-486@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-486
+Studio Beleza Real;(81) 91006-6719;lead-487@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-487
+Barbearia Nobre;(85) 91006-6856;lead-488@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-488
+Salão da Praça;(62) 91006-6993;lead-489@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-489
+Barbearia do João;(11) 91006-7130;lead-490@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-490
+Salão da Maria;(21) 91006-7267;lead-491@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-491
+Studio Corte Fix;(31) 91006-7404;lead-492@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-492
+Barbearia Central;(19) 91006-7541;lead-493@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-493
+Cabelo & Arte;(41) 91006-7678;lead-494@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-494
+Salão Estilo;(51) 91006-7815;lead-495@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-495
+Barbearia Urbana;(71) 91006-7952;lead-496@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-496
+Studio Beleza Real;(71) 91006-7952;lead-497@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-497
+Barbearia Nobre;(85) 91006-8226;lead-498@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-498
+Salão da Praça;(62) 91006-8363;lead-499@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-499
+Barbearia do João;(11) 91006-8500;lead-500@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-500
+Salão da Maria;(21) 91006-8637;lead-501@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-501
+Studio Corte Fix;(31) 91006-8774;lead-502@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-502
+Barbearia Central;(19) 91006-8911;lead-503@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-503
+Cabelo & Arte;(41) 91006-9048;lead-504@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-504
+Salão Estilo;(51) 91006-9185;lead-505@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-505
+Barbearia Urbana;(71) 91006-9322;lead-506@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-506
+Studio Beleza Real;(81) 91006-9459;lead-507@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-507
+Barbearia Nobre;(85) 91006-9596;lead-508@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-508
+Salão da Praça;(62) 91006-9733;lead-509@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-509
+Barbearia do João;(11) 91006-9870;lead-510@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-510
+Salão da Maria;(21) 91007-0007;lead-511@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-511
+Studio Corte Fix;(31) 91007-0144;lead-512@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-512
+Barbearia Central;(19) 91007-0281;lead-513@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-513
+Cabelo & Arte;(41) 91007-0418;lead-514@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-514
+Salão Estilo;(51) 91007-0555;lead-515@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-515
+Barbearia Urbana;(71) 91007-0692;lead-516@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-516
+Studio Beleza Real;SEM_TELEFONE_VALIDO;;Studio Beleza Real;Recife;PE;EXT-517
+Barbearia Nobre;(85) 91007-0966;lead-518@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-518
+Salão da Praça;(62) 91007-1103;lead-519@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-519
+Barbearia do João;(11) 91007-1240;lead-520@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-520
+Salão da Maria;(21) 91007-1377;lead-521@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-521
+Studio Corte Fix;(31) 91007-1514;lead-522@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-522
+Barbearia Central;(19) 91007-1651;lead-523@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-523
+Cabelo & Arte;(41) 91007-1788;lead-524@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-524
+Salão Estilo;(51) 91007-1925;lead-525@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-525
+Barbearia Urbana;(71) 91007-2062;lead-526@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-526
+Studio Beleza Real;(81) 91007-2199;lead-527@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-527
+Barbearia Nobre;(85) 91007-2336;lead-528@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-528
+Salão da Praça;(62) 91007-2473;lead-529@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-529
+Barbearia do João;(11) 91007-2610;lead-530@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-530
+Salão da Maria;(21) 91007-2747;lead-531@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-531
+Studio Corte Fix;(31) 91007-2884;lead-532@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-532
+Barbearia Central;(19) 91007-3021;lead-533@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-533
+Cabelo & Arte;(41) 91007-3158;lead-534@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-534
+Salão Estilo;(51) 91007-3295;lead-535@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-535
+Barbearia Urbana;(71) 91007-3432;;Barbearia Urbana;Salvador;BA;EXT-536
+Studio Beleza Real;(81) 91007-3569;lead-537@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-537
+Barbearia Nobre;(85) 91007-3706;lead-538@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-538
+Salão da Praça;(62) 91007-3843;lead-539@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-539
+Barbearia do João;(11) 91007-3980;lead-540@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-540
+Salão da Maria;(21) 91007-4117;lead-541@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-541
+Studio Corte Fix;(31) 91007-4254;lead-542@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-542
+Barbearia Central;(19) 91007-4391;lead-543@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-543
+Cabelo & Arte;(41) 91007-4528;lead-544@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-544
+Salão Estilo;(51) 91007-4665;lead-545@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-545
+Barbearia Urbana;(71) 91007-4802;lead-546@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-546
+Studio Beleza Real;(81) 91007-4939;lead-547@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-547
+Barbearia Nobre;(85) 91007-5076;lead-548@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-548
+Salão da Praça;(62) 91007-5213;lead-549@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-549
+Barbearia do João;(11) 91007-5350;lead-550@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-550
+Salão da Maria;(21) 91007-5487;lead-551@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-551
+Studio Corte Fix;(31) 91007-5624;lead-552@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-552
+Barbearia Central;(19) 91007-5761;lead-553@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-553
+Cabelo & Arte;(41) 91007-5898;lead-554@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-554
+Salão Estilo;(51) 91007-6035;lead-555@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-555
+Barbearia Urbana;(71) 91007-6172;lead-556@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-556
+Studio Beleza Real;(81) 91007-6309;lead-557@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-557
+Barbearia Nobre;(85) 91007-6446;lead-558@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-558
+Salão da Praça;(62) 91007-6583;lead-559@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-559
+Barbearia do João;(11) 91007-6720;lead-560@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-560
+Salão da Maria;(21) 91007-6857;lead-561@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-561
+Studio Corte Fix;(31) 91007-6994;lead-562@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-562
+Barbearia Central;(19) 91007-7131;lead-563@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-563
+Cabelo & Arte;SEM_TELEFONE_VALIDO;;Cabelo & Arte;Curitiba;PR;EXT-564
+Salão Estilo;(51) 91007-7405;lead-565@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-565
+Barbearia Urbana;(71) 91007-7542;lead-566@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-566
+Studio Beleza Real;(81) 91007-7679;lead-567@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-567
+Barbearia Nobre;(81) 91007-7679;lead-568@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-568
+Salão da Praça;(62) 91007-7953;lead-569@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-569
+Barbearia do João;(11) 91007-8090;lead-570@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-570
+Salão da Maria;(21) 91007-8227;lead-571@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-571
+Studio Corte Fix;(31) 91007-8364;lead-572@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-572
+Barbearia Central;(19) 91007-8501;lead-573@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-573
+Cabelo & Arte;(41) 91007-8638;lead-574@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-574
+Salão Estilo;(51) 91007-8775;lead-575@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-575
+Barbearia Urbana;(71) 91007-8912;lead-576@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-576
+Studio Beleza Real;(81) 91007-9049;lead-577@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-577
+Barbearia Nobre;(85) 91007-9186;lead-578@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-578
+Salão da Praça;(62) 91007-9323;lead-579@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-579
+Barbearia do João;(11) 91007-9460;lead-580@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-580
+Salão da Maria;(21) 91007-9597;lead-581@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-581
+Studio Corte Fix;(31) 91007-9734;lead-582@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-582
+Barbearia Central;(19) 91007-9871;lead-583@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-583
+Cabelo & Arte;(41) 91008-0008;lead-584@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-584
+Salão Estilo;(51) 91008-0145;lead-585@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-585
+Barbearia Urbana;(71) 91008-0282;lead-586@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-586
+Studio Beleza Real;(81) 91008-0419;lead-587@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-587
+Barbearia Nobre;(85) 91008-0556;lead-588@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-588
+Salão da Praça;(62) 91008-0693;lead-589@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-589
+Barbearia do João;(11) 91008-0830;lead-590@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-590
+Salão da Maria;(21) 91008-0967;lead-591@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-591
+Studio Corte Fix;(31) 91008-1104;lead-592@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-592
+Barbearia Central;(19) 91008-1241;lead-593@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-593
+Cabelo & Arte;(41) 91008-1378;lead-594@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-594
+Salão Estilo;(51) 91008-1515;lead-595@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-595
+Barbearia Urbana;(71) 91008-1652;lead-596@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-596
+Studio Beleza Real;(81) 91008-1789;lead-597@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-597
+Barbearia Nobre;(85) 91008-1926;lead-598@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-598
+Salão da Praça;(62) 91008-2063;lead-599@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-599
+Barbearia do João;(11) 91008-2200;lead-600@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-600
+Salão da Maria;(21) 91008-2337;lead-601@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-601
+Studio Corte Fix;(31) 91008-2474;lead-602@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-602
+Barbearia Central;(19) 91008-2611;;Barbearia Central;Campinas;SP;EXT-603
+Cabelo & Arte;(41) 91008-2748;lead-604@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-604
+Salão Estilo;(51) 91008-2885;lead-605@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-605
+Barbearia Urbana;(71) 91008-3022;lead-606@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-606
+Studio Beleza Real;(81) 91008-3159;lead-607@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-607
+Barbearia Nobre;(85) 91008-3296;lead-608@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-608
+Salão da Praça;(62) 91008-3433;lead-609@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-609
+Barbearia do João;(11) 91008-3570;lead-610@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-610
+Salão da Maria;SEM_TELEFONE_VALIDO;;Salão da Maria;Rio de Janeiro;RJ;EXT-611
+Studio Corte Fix;(31) 91008-3844;lead-612@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-612
+Barbearia Central;(19) 91008-3981;lead-613@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-613
+Cabelo & Arte;(41) 91008-4118;lead-614@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-614
+Salão Estilo;(51) 91008-4255;lead-615@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-615
+Barbearia Urbana;(71) 91008-4392;lead-616@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-616
+Studio Beleza Real;(81) 91008-4529;lead-617@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-617
+Barbearia Nobre;(85) 91008-4666;lead-618@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-618
+Salão da Praça;(62) 91008-4803;lead-619@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-619
+Barbearia do João;(11) 91008-4940;lead-620@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-620
+Salão da Maria;(21) 91008-5077;lead-621@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-621
+Studio Corte Fix;(31) 91008-5214;lead-622@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-622
+Barbearia Central;(19) 91008-5351;lead-623@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-623
+Cabelo & Arte;(41) 91008-5488;lead-624@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-624
+Salão Estilo;(51) 91008-5625;lead-625@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-625
+Barbearia Urbana;(71) 91008-5762;lead-626@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-626
+Studio Beleza Real;(81) 91008-5899;lead-627@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-627
+Barbearia Nobre;(85) 91008-6036;lead-628@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-628
+Salão da Praça;(62) 91008-6173;lead-629@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-629
+Barbearia do João;(11) 91008-6310;lead-630@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-630
+Salão da Maria;(21) 91008-6447;lead-631@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-631
+Studio Corte Fix;(31) 91008-6584;lead-632@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-632
+Barbearia Central;(19) 91008-6721;lead-633@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-633
+Cabelo & Arte;(41) 91008-6858;lead-634@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-634
+Salão Estilo;(51) 91008-6995;lead-635@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-635
+Barbearia Urbana;(71) 91008-7132;lead-636@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-636
+Studio Beleza Real;(81) 91008-7269;lead-637@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-637
+Barbearia Nobre;(85) 91008-7406;lead-638@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-638
+Salão da Praça;(85) 91008-7406;lead-639@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-639
+Barbearia do João;(11) 91008-7680;lead-640@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-640
+Salão da Maria;(21) 91008-7817;lead-641@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-641
+Studio Corte Fix;(31) 91008-7954;lead-642@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-642
+Barbearia Central;(19) 91008-8091;lead-643@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-643
+Cabelo & Arte;(41) 91008-8228;lead-644@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-644
+Salão Estilo;(51) 91008-8365;lead-645@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-645
+Barbearia Urbana;(71) 91008-8502;lead-646@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-646
+Studio Beleza Real;(81) 91008-8639;lead-647@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-647
+Barbearia Nobre;(85) 91008-8776;lead-648@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-648
+Salão da Praça;(62) 91008-8913;lead-649@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-649
+Barbearia do João;(11) 91008-9050;lead-650@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-650
+Salão da Maria;(21) 91008-9187;lead-651@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-651
+Studio Corte Fix;(31) 91008-9324;lead-652@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-652
+Barbearia Central;(19) 91008-9461;lead-653@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-653
+Cabelo & Arte;(41) 91008-9598;lead-654@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-654
+Salão Estilo;(51) 91008-9735;lead-655@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-655
+Barbearia Urbana;(71) 91008-9872;lead-656@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-656
+Studio Beleza Real;(81) 91009-0009;lead-657@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-657
+Barbearia Nobre;SEM_TELEFONE_VALIDO;;Barbearia Nobre;Fortaleza;CE;EXT-658
+Salão da Praça;(62) 91009-0283;lead-659@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-659
+Barbearia do João;(11) 91009-0420;lead-660@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-660
+Salão da Maria;(21) 91009-0557;lead-661@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-661
+Studio Corte Fix;(31) 91009-0694;lead-662@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-662
+Barbearia Central;(19) 91009-0831;lead-663@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-663
+Cabelo & Arte;(41) 91009-0968;lead-664@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-664
+Salão Estilo;(51) 91009-1105;lead-665@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-665
+Barbearia Urbana;(71) 91009-1242;lead-666@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-666
+Studio Beleza Real;(81) 91009-1379;lead-667@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-667
+Barbearia Nobre;(85) 91009-1516;lead-668@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-668
+Salão da Praça;(62) 91009-1653;lead-669@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-669
+Barbearia do João;(11) 91009-1790;;Barbearia do João;São Paulo;SP;EXT-670
+Salão da Maria;(21) 91009-1927;lead-671@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-671
+Studio Corte Fix;(31) 91009-2064;lead-672@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-672
+Barbearia Central;(19) 91009-2201;lead-673@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-673
+Cabelo & Arte;(41) 91009-2338;lead-674@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-674
+Salão Estilo;(51) 91009-2475;lead-675@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-675
+Barbearia Urbana;(71) 91009-2612;lead-676@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-676
+Studio Beleza Real;(81) 91009-2749;lead-677@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-677
+Barbearia Nobre;(85) 91009-2886;lead-678@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-678
+Salão da Praça;(62) 91009-3023;lead-679@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-679
+Barbearia do João;(11) 91009-3160;lead-680@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-680
+Salão da Maria;(21) 91009-3297;lead-681@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-681
+Studio Corte Fix;(31) 91009-3434;lead-682@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-682
+Barbearia Central;(19) 91009-3571;lead-683@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-683
+Cabelo & Arte;(41) 91009-3708;lead-684@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-684
+Salão Estilo;(51) 91009-3845;lead-685@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-685
+Barbearia Urbana;(71) 91009-3982;lead-686@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-686
+Studio Beleza Real;(81) 91009-4119;lead-687@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-687
+Barbearia Nobre;(85) 91009-4256;lead-688@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-688
+Salão da Praça;(62) 91009-4393;lead-689@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-689
+Barbearia do João;(11) 91009-4530;lead-690@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-690
+Salão da Maria;(21) 91009-4667;lead-691@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-691
+Studio Corte Fix;(31) 91009-4804;lead-692@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-692
+Barbearia Central;(19) 91009-4941;lead-693@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-693
+Cabelo & Arte;(41) 91009-5078;lead-694@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-694
+Salão Estilo;(51) 91009-5215;lead-695@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-695
+Barbearia Urbana;(71) 91009-5352;lead-696@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-696
+Studio Beleza Real;(81) 91009-5489;lead-697@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-697
+Barbearia Nobre;(85) 91009-5626;lead-698@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-698
+Salão da Praça;(62) 91009-5763;lead-699@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-699
+Barbearia do João;(11) 91009-5900;lead-700@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-700
+Salão da Maria;(21) 91009-6037;lead-701@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-701
+Studio Corte Fix;(31) 91009-6174;lead-702@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-702
+Barbearia Central;(19) 91009-6311;lead-703@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-703
+Cabelo & Arte;(41) 91009-6448;lead-704@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-704
+Salão Estilo;SEM_TELEFONE_VALIDO;;Salão Estilo;Porto Alegre;RS;EXT-705
+Barbearia Urbana;(71) 91009-6722;lead-706@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-706
+Studio Beleza Real;(81) 91009-6859;lead-707@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-707
+Barbearia Nobre;(85) 91009-6996;lead-708@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-708
+Salão da Praça;(62) 91009-7133;lead-709@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-709
+Barbearia do João;(62) 91009-7133;lead-710@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-710
+Salão da Maria;(21) 91009-7407;lead-711@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-711
+Studio Corte Fix;(31) 91009-7544;lead-712@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-712
+Barbearia Central;(19) 91009-7681;lead-713@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-713
+Cabelo & Arte;(41) 91009-7818;lead-714@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-714
+Salão Estilo;(51) 91009-7955;lead-715@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-715
+Barbearia Urbana;(71) 91009-8092;lead-716@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-716
+Studio Beleza Real;(81) 91009-8229;lead-717@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-717
+Barbearia Nobre;(85) 91009-8366;lead-718@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-718
+Salão da Praça;(62) 91009-8503;lead-719@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-719
+Barbearia do João;(11) 91009-8640;lead-720@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-720
+Salão da Maria;(21) 91009-8777;lead-721@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-721
+Studio Corte Fix;(31) 91009-8914;lead-722@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-722
+Barbearia Central;(19) 91009-9051;lead-723@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-723
+Cabelo & Arte;(41) 91009-9188;lead-724@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-724
+Salão Estilo;(51) 91009-9325;lead-725@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-725
+Barbearia Urbana;(71) 91009-9462;lead-726@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-726
+Studio Beleza Real;(81) 91009-9599;lead-727@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-727
+Barbearia Nobre;(85) 91009-9736;lead-728@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-728
+Salão da Praça;(62) 91009-9873;lead-729@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-729
+Barbearia do João;(11) 91010-0010;lead-730@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-730
+Salão da Maria;(21) 91010-0147;lead-731@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-731
+Studio Corte Fix;(31) 91010-0284;lead-732@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-732
+Barbearia Central;(19) 91010-0421;lead-733@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-733
+Cabelo & Arte;(41) 91010-0558;lead-734@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-734
+Salão Estilo;(51) 91010-0695;lead-735@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-735
+Barbearia Urbana;(71) 91010-0832;lead-736@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-736
+Studio Beleza Real;(81) 91010-0969;;Studio Beleza Real;Recife;PE;EXT-737
+Barbearia Nobre;(85) 91010-1106;lead-738@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-738
+Salão da Praça;(62) 91010-1243;lead-739@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-739
+Barbearia do João;(11) 91010-1380;lead-740@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-740
+Salão da Maria;(21) 91010-1517;lead-741@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-741
+Studio Corte Fix;(31) 91010-1654;lead-742@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-742
+Barbearia Central;(19) 91010-1791;lead-743@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-743
+Cabelo & Arte;(41) 91010-1928;lead-744@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-744
+Salão Estilo;(51) 91010-2065;lead-745@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-745
+Barbearia Urbana;(71) 91010-2202;lead-746@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-746
+Studio Beleza Real;(81) 91010-2339;lead-747@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-747
+Barbearia Nobre;(85) 91010-2476;lead-748@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-748
+Salão da Praça;(62) 91010-2613;lead-749@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-749
+Barbearia do João;(11) 91010-2750;lead-750@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-750
+Salão da Maria;(21) 91010-2887;lead-751@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-751
+Studio Corte Fix;SEM_TELEFONE_VALIDO;;Studio Corte Fix;Belo Horizonte;MG;EXT-752
+Barbearia Central;(19) 91010-3161;lead-753@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-753
+Cabelo & Arte;(41) 91010-3298;lead-754@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-754
+Salão Estilo;(51) 91010-3435;lead-755@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-755
+Barbearia Urbana;(71) 91010-3572;lead-756@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-756
+Studio Beleza Real;(81) 91010-3709;lead-757@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-757
+Barbearia Nobre;(85) 91010-3846;lead-758@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-758
+Salão da Praça;(62) 91010-3983;lead-759@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-759
+Barbearia do João;(11) 91010-4120;lead-760@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-760
+Salão da Maria;(21) 91010-4257;lead-761@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-761
+Studio Corte Fix;(31) 91010-4394;lead-762@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-762
+Barbearia Central;(19) 91010-4531;lead-763@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-763
+Cabelo & Arte;(41) 91010-4668;lead-764@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-764
+Salão Estilo;(51) 91010-4805;lead-765@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-765
+Barbearia Urbana;(71) 91010-4942;lead-766@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-766
+Studio Beleza Real;(81) 91010-5079;lead-767@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-767
+Barbearia Nobre;(85) 91010-5216;lead-768@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-768
+Salão da Praça;(62) 91010-5353;lead-769@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-769
+Barbearia do João;(11) 91010-5490;lead-770@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-770
+Salão da Maria;(21) 91010-5627;lead-771@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-771
+Studio Corte Fix;(31) 91010-5764;lead-772@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-772
+Barbearia Central;(19) 91010-5901;lead-773@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-773
+Cabelo & Arte;(41) 91010-6038;lead-774@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-774
+Salão Estilo;(51) 91010-6175;lead-775@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-775
+Barbearia Urbana;(71) 91010-6312;lead-776@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-776
+Studio Beleza Real;(81) 91010-6449;lead-777@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-777
+Barbearia Nobre;(85) 91010-6586;lead-778@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-778
+Salão da Praça;(62) 91010-6723;lead-779@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-779
+Barbearia do João;(11) 91010-6860;lead-780@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-780
+Salão da Maria;(11) 91010-6860;lead-781@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-781
+Studio Corte Fix;(31) 91010-7134;lead-782@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-782
+Barbearia Central;(19) 91010-7271;lead-783@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-783
+Cabelo & Arte;(41) 91010-7408;lead-784@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-784
+Salão Estilo;(51) 91010-7545;lead-785@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-785
+Barbearia Urbana;(71) 91010-7682;lead-786@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-786
+Studio Beleza Real;(81) 91010-7819;lead-787@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-787
+Barbearia Nobre;(85) 91010-7956;lead-788@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-788
+Salão da Praça;(62) 91010-8093;lead-789@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-789
+Barbearia do João;(11) 91010-8230;lead-790@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-790
+Salão da Maria;(21) 91010-8367;lead-791@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-791
+Studio Corte Fix;(31) 91010-8504;lead-792@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-792
+Barbearia Central;(19) 91010-8641;lead-793@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-793
+Cabelo & Arte;(41) 91010-8778;lead-794@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-794
+Salão Estilo;(51) 91010-8915;lead-795@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-795
+Barbearia Urbana;(71) 91010-9052;lead-796@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-796
+Studio Beleza Real;(81) 91010-9189;lead-797@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-797
+Barbearia Nobre;(85) 91010-9326;lead-798@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-798
+Salão da Praça;SEM_TELEFONE_VALIDO;;Salão da Praça;Goiânia;GO;EXT-799
+Barbearia do João;(11) 91010-9600;lead-800@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-800
+Salão da Maria;(21) 91010-9737;lead-801@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-801
+Studio Corte Fix;(31) 91010-9874;lead-802@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-802
+Barbearia Central;(19) 91011-0011;lead-803@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-803
+Cabelo & Arte;(41) 91011-0148;;Cabelo & Arte;Curitiba;PR;EXT-804
+Salão Estilo;(51) 91011-0285;lead-805@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-805
+Barbearia Urbana;(71) 91011-0422;lead-806@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-806
+Studio Beleza Real;(81) 91011-0559;lead-807@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-807
+Barbearia Nobre;(85) 91011-0696;lead-808@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-808
+Salão da Praça;(62) 91011-0833;lead-809@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-809
+Barbearia do João;(11) 91011-0970;lead-810@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-810
+Salão da Maria;(21) 91011-1107;lead-811@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-811
+Studio Corte Fix;(31) 91011-1244;lead-812@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-812
+Barbearia Central;(19) 91011-1381;lead-813@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-813
+Cabelo & Arte;(41) 91011-1518;lead-814@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-814
+Salão Estilo;(51) 91011-1655;lead-815@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-815
+Barbearia Urbana;(71) 91011-1792;lead-816@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-816
+Studio Beleza Real;(81) 91011-1929;lead-817@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-817
+Barbearia Nobre;(85) 91011-2066;lead-818@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-818
+Salão da Praça;(62) 91011-2203;lead-819@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-819
+Barbearia do João;(11) 91011-2340;lead-820@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-820
+Salão da Maria;(21) 91011-2477;lead-821@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-821
+Studio Corte Fix;(31) 91011-2614;lead-822@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-822
+Barbearia Central;(19) 91011-2751;lead-823@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-823
+Cabelo & Arte;(41) 91011-2888;lead-824@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-824
+Salão Estilo;(51) 91011-3025;lead-825@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-825
+Barbearia Urbana;(71) 91011-3162;lead-826@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-826
+Studio Beleza Real;(81) 91011-3299;lead-827@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-827
+Barbearia Nobre;(85) 91011-3436;lead-828@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-828
+Salão da Praça;(62) 91011-3573;lead-829@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-829
+Barbearia do João;(11) 91011-3710;lead-830@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-830
+Salão da Maria;(21) 91011-3847;lead-831@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-831
+Studio Corte Fix;(31) 91011-3984;lead-832@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-832
+Barbearia Central;(19) 91011-4121;lead-833@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-833
+Cabelo & Arte;(41) 91011-4258;lead-834@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-834
+Salão Estilo;(51) 91011-4395;lead-835@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-835
+Barbearia Urbana;(71) 91011-4532;lead-836@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-836
+Studio Beleza Real;(81) 91011-4669;lead-837@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-837
+Barbearia Nobre;(85) 91011-4806;lead-838@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-838
+Salão da Praça;(62) 91011-4943;lead-839@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-839
+Barbearia do João;(11) 91011-5080;lead-840@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-840
+Salão da Maria;(21) 91011-5217;lead-841@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-841
+Studio Corte Fix;(31) 91011-5354;lead-842@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-842
+Barbearia Central;(19) 91011-5491;lead-843@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-843
+Cabelo & Arte;(41) 91011-5628;lead-844@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-844
+Salão Estilo;(51) 91011-5765;lead-845@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-845
+Barbearia Urbana;SEM_TELEFONE_VALIDO;;Barbearia Urbana;Salvador;BA;EXT-846
+Studio Beleza Real;(81) 91011-6039;lead-847@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-847
+Barbearia Nobre;(85) 91011-6176;lead-848@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-848
+Salão da Praça;(62) 91011-6313;lead-849@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-849
+Barbearia do João;(11) 91011-6450;lead-850@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-850
+Salão da Maria;(21) 91011-6587;lead-851@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-851
+Studio Corte Fix;(21) 91011-6587;lead-852@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-852
+Barbearia Central;(19) 91011-6861;lead-853@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-853
+Cabelo & Arte;(41) 91011-6998;lead-854@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-854
+Salão Estilo;(51) 91011-7135;lead-855@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-855
+Barbearia Urbana;(71) 91011-7272;lead-856@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-856
+Studio Beleza Real;(81) 91011-7409;lead-857@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-857
+Barbearia Nobre;(85) 91011-7546;lead-858@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-858
+Salão da Praça;(62) 91011-7683;lead-859@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-859
+Barbearia do João;(11) 91011-7820;lead-860@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-860
+Salão da Maria;(21) 91011-7957;lead-861@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-861
+Studio Corte Fix;(31) 91011-8094;lead-862@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-862
+Barbearia Central;(19) 91011-8231;lead-863@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-863
+Cabelo & Arte;(41) 91011-8368;lead-864@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-864
+Salão Estilo;(51) 91011-8505;lead-865@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-865
+Barbearia Urbana;(71) 91011-8642;lead-866@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-866
+Studio Beleza Real;(81) 91011-8779;lead-867@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-867
+Barbearia Nobre;(85) 91011-8916;lead-868@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-868
+Salão da Praça;(62) 91011-9053;lead-869@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-869
+Barbearia do João;(11) 91011-9190;lead-870@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-870
+Salão da Maria;(21) 91011-9327;;Salão da Maria;Rio de Janeiro;RJ;EXT-871
+Studio Corte Fix;(31) 91011-9464;lead-872@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-872
+Barbearia Central;(19) 91011-9601;lead-873@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-873
+Cabelo & Arte;(41) 91011-9738;lead-874@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-874
+Salão Estilo;(51) 91011-9875;lead-875@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-875
+Barbearia Urbana;(71) 91012-0012;lead-876@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-876
+Studio Beleza Real;(81) 91012-0149;lead-877@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-877
+Barbearia Nobre;(85) 91012-0286;lead-878@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-878
+Salão da Praça;(62) 91012-0423;lead-879@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-879
+Barbearia do João;(11) 91012-0560;lead-880@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-880
+Salão da Maria;(21) 91012-0697;lead-881@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-881
+Studio Corte Fix;(31) 91012-0834;lead-882@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-882
+Barbearia Central;(19) 91012-0971;lead-883@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-883
+Cabelo & Arte;(41) 91012-1108;lead-884@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-884
+Salão Estilo;(51) 91012-1245;lead-885@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-885
+Barbearia Urbana;(71) 91012-1382;lead-886@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-886
+Studio Beleza Real;(81) 91012-1519;lead-887@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-887
+Barbearia Nobre;(85) 91012-1656;lead-888@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-888
+Salão da Praça;(62) 91012-1793;lead-889@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-889
+Barbearia do João;(11) 91012-1930;lead-890@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-890
+Salão da Maria;(21) 91012-2067;lead-891@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-891
+Studio Corte Fix;(31) 91012-2204;lead-892@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-892
+Barbearia Central;SEM_TELEFONE_VALIDO;;Barbearia Central;Campinas;SP;EXT-893
+Cabelo & Arte;(41) 91012-2478;lead-894@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-894
+Salão Estilo;(51) 91012-2615;lead-895@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-895
+Barbearia Urbana;(71) 91012-2752;lead-896@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-896
+Studio Beleza Real;(81) 91012-2889;lead-897@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-897
+Barbearia Nobre;(85) 91012-3026;lead-898@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-898
+Salão da Praça;(62) 91012-3163;lead-899@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-899
+Barbearia do João;(11) 91012-3300;lead-900@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-900
+Salão da Maria;(21) 91012-3437;lead-901@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-901
+Studio Corte Fix;(31) 91012-3574;lead-902@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-902
+Barbearia Central;(19) 91012-3711;lead-903@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-903
+Cabelo & Arte;(41) 91012-3848;lead-904@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-904
+Salão Estilo;(51) 91012-3985;lead-905@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-905
+Barbearia Urbana;(71) 91012-4122;lead-906@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-906
+Studio Beleza Real;(81) 91012-4259;lead-907@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-907
+Barbearia Nobre;(85) 91012-4396;lead-908@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-908
+Salão da Praça;(62) 91012-4533;lead-909@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-909
+Barbearia do João;(11) 91012-4670;lead-910@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-910
+Salão da Maria;(21) 91012-4807;lead-911@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-911
+Studio Corte Fix;(31) 91012-4944;lead-912@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-912
+Barbearia Central;(19) 91012-5081;lead-913@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-913
+Cabelo & Arte;(41) 91012-5218;lead-914@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-914
+Salão Estilo;(51) 91012-5355;lead-915@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-915
+Barbearia Urbana;(71) 91012-5492;lead-916@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-916
+Studio Beleza Real;(81) 91012-5629;lead-917@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-917
+Barbearia Nobre;(85) 91012-5766;lead-918@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-918
+Salão da Praça;(62) 91012-5903;lead-919@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-919
+Barbearia do João;(11) 91012-6040;lead-920@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-920
+Salão da Maria;(21) 91012-6177;lead-921@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-921
+Studio Corte Fix;(31) 91012-6314;lead-922@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-922
+Barbearia Central;(31) 91012-6314;lead-923@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-923
+Cabelo & Arte;(41) 91012-6588;lead-924@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-924
+Salão Estilo;(51) 91012-6725;lead-925@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-925
+Barbearia Urbana;(71) 91012-6862;lead-926@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-926
+Studio Beleza Real;(81) 91012-6999;lead-927@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-927
+Barbearia Nobre;(85) 91012-7136;lead-928@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-928
+Salão da Praça;(62) 91012-7273;lead-929@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-929
+Barbearia do João;(11) 91012-7410;lead-930@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-930
+Salão da Maria;(21) 91012-7547;lead-931@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-931
+Studio Corte Fix;(31) 91012-7684;lead-932@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-932
+Barbearia Central;(19) 91012-7821;lead-933@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-933
+Cabelo & Arte;(41) 91012-7958;lead-934@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-934
+Salão Estilo;(51) 91012-8095;lead-935@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-935
+Barbearia Urbana;(71) 91012-8232;lead-936@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-936
+Studio Beleza Real;(81) 91012-8369;lead-937@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-937
+Barbearia Nobre;(85) 91012-8506;;Barbearia Nobre;Fortaleza;CE;EXT-938
+Salão da Praça;(62) 91012-8643;lead-939@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-939
+Barbearia do João;SEM_TELEFONE_VALIDO;;Barbearia do João;São Paulo;SP;EXT-940
+Salão da Maria;(21) 91012-8917;lead-941@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-941
+Studio Corte Fix;(31) 91012-9054;lead-942@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-942
+Barbearia Central;(19) 91012-9191;lead-943@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-943
+Cabelo & Arte;(41) 91012-9328;lead-944@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-944
+Salão Estilo;(51) 91012-9465;lead-945@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-945
+Barbearia Urbana;(71) 91012-9602;lead-946@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-946
+Studio Beleza Real;(81) 91012-9739;lead-947@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-947
+Barbearia Nobre;(85) 91012-9876;lead-948@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-948
+Salão da Praça;(62) 91013-0013;lead-949@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-949
+Barbearia do João;(11) 91013-0150;lead-950@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-950
+Salão da Maria;(21) 91013-0287;lead-951@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-951
+Studio Corte Fix;(31) 91013-0424;lead-952@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-952
+Barbearia Central;(19) 91013-0561;lead-953@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-953
+Cabelo & Arte;(41) 91013-0698;lead-954@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-954
+Salão Estilo;(51) 91013-0835;lead-955@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-955
+Barbearia Urbana;(71) 91013-0972;lead-956@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-956
+Studio Beleza Real;(81) 91013-1109;lead-957@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-957
+Barbearia Nobre;(85) 91013-1246;lead-958@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-958
+Salão da Praça;(62) 91013-1383;lead-959@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-959
+Barbearia do João;(11) 91013-1520;lead-960@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-960
+Salão da Maria;(21) 91013-1657;lead-961@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-961
+Studio Corte Fix;(31) 91013-1794;lead-962@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-962
+Barbearia Central;(19) 91013-1931;lead-963@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-963
+Cabelo & Arte;(41) 91013-2068;lead-964@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-964
+Salão Estilo;(51) 91013-2205;lead-965@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-965
+Barbearia Urbana;(71) 91013-2342;lead-966@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-966
+Studio Beleza Real;(81) 91013-2479;lead-967@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-967
+Barbearia Nobre;(85) 91013-2616;lead-968@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-968
+Salão da Praça;(62) 91013-2753;lead-969@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-969
+Barbearia do João;(11) 91013-2890;lead-970@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-970
+Salão da Maria;(21) 91013-3027;lead-971@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-971
+Studio Corte Fix;(31) 91013-3164;lead-972@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-972
+Barbearia Central;(19) 91013-3301;lead-973@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-973
+Cabelo & Arte;(41) 91013-3438;lead-974@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-974
+Salão Estilo;(51) 91013-3575;lead-975@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-975
+Barbearia Urbana;(71) 91013-3712;lead-976@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-976
+Studio Beleza Real;(81) 91013-3849;lead-977@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-977
+Barbearia Nobre;(85) 91013-3986;lead-978@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-978
+Salão da Praça;(62) 91013-4123;lead-979@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-979
+Barbearia do João;(11) 91013-4260;lead-980@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-980
+Salão da Maria;(21) 91013-4397;lead-981@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-981
+Studio Corte Fix;(31) 91013-4534;lead-982@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-982
+Barbearia Central;(19) 91013-4671;lead-983@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-983
+Cabelo & Arte;(41) 91013-4808;lead-984@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-984
+Salão Estilo;(51) 91013-4945;lead-985@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-985
+Barbearia Urbana;(71) 91013-5082;lead-986@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-986
+Studio Beleza Real;SEM_TELEFONE_VALIDO;;Studio Beleza Real;Recife;PE;EXT-987
+Barbearia Nobre;(85) 91013-5356;lead-988@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-988
+Salão da Praça;(62) 91013-5493;lead-989@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-989
+Barbearia do João;(11) 91013-5630;lead-990@exemplo.com.br;Barbearia do João;São Paulo;SP;EXT-990
+Salão da Maria;(21) 91013-5767;lead-991@exemplo.com.br;Salão da Maria;Rio de Janeiro;RJ;EXT-991
+Studio Corte Fix;(31) 91013-5904;lead-992@exemplo.com.br;Studio Corte Fix;Belo Horizonte;MG;EXT-992
+Barbearia Central;(19) 91013-6041;lead-993@exemplo.com.br;Barbearia Central;Campinas;SP;EXT-993
+Cabelo & Arte;(19) 91013-6041;lead-994@exemplo.com.br;Cabelo & Arte;Curitiba;PR;EXT-994
+Salão Estilo;(51) 91013-6315;lead-995@exemplo.com.br;Salão Estilo;Porto Alegre;RS;EXT-995
+Barbearia Urbana;(71) 91013-6452;lead-996@exemplo.com.br;Barbearia Urbana;Salvador;BA;EXT-996
+Studio Beleza Real;(81) 91013-6589;lead-997@exemplo.com.br;Studio Beleza Real;Recife;PE;EXT-997
+Barbearia Nobre;(85) 91013-6726;lead-998@exemplo.com.br;Barbearia Nobre;Fortaleza;CE;EXT-998
+Salão da Praça;(62) 91013-6863;lead-999@exemplo.com.br;Salão da Praça;Goiânia;GO;EXT-999

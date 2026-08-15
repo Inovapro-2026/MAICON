@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    --background: 0 0% 98%;          /* #FAFAFA — fundo do app */
+    --foreground: 0 0% 4%;           /* #0A0A0A — texto principal */
+    --card: 0 0% 100%;               /* branco */
+    --card-foreground: 0 0% 4%;
+    --muted: 0 0% 96%;               /* #F5F5F5 */
+    --muted-foreground: 240 5% 30%;  /* #494B50 — secundário legível (itens não ativos do menu) */
+    --border: 0 0% 90%;              /* #E5E5E5 */
+    --input: 0 0% 84%;               /* #D6D6D6 */
+    --ring: 152 76% 40%;             /* emerald-600 #059669 */
+    --primary: 152 76% 40%;          /* #059669 */
+    --primary-foreground: 0 0% 100%;
+    --success: 152 76% 40%;
+    --warning: 38 92% 50%;
+    --error: 0 84% 60%;
+  }
+
+  body {
+    @apply bg-zinc-50 text-zinc-900 font-sans antialiased;
+  }
+
+  * {
+    @apply border-zinc-200;
+  }
+}
+
+@layer components {
+  /* Card centralizado: borda fina com leve tom/brilho da marca (fluorescente sutil).
+     Utilitários explícitos de borda (ex.: border-red-500/30) têm precedência. */
+  .card {
+    @apply bg-white rounded-xl p-4 shadow-sm;
+    border: 1px solid rgba(5, 150, 105, 0.16);
+    box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Título/heading centralizado: negrito + tom escuro do design system (--foreground). */
+  .heading-strong {
+    @apply font-display font-bold text-foreground;
+  }
+
+  /*
+   * Divisor "fluorescente" — linha fina com leve brilho/borda na cor da marca.
+   * Única definição de divisor do sistema (não repetir estilo por tela).
+   */
+  .divider-fluorescent {
+    border-bottom: 1px solid rgba(5, 150, 105, 0.28);
+    box-shadow: 0 1px 0 rgba(5, 150, 105, 0.16);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-zinc-300 disabled:text-zinc-500 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50 transition-colors;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-500 disabled:opacity-50 transition-colors;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:opacity-50;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-medium text-zinc-600;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 rounded-full;
+}
+
+/* ==========================================================================
+   Tempo real — animações dos cards do Inbox
+   ========================================================================== */
+
+/* Flash sutil quando um card recebe atualização em tempo real */
+@keyframes inbox-flash {
+  0% {
+    transform: scale(1);
+    border-color: rgba(5, 150, 105, 0.55);
+    box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.5), 0 8px 28px rgba(5, 150, 105, 0.2);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    border-color: rgba(228, 228, 231, 1);
+  }
+}
+
+.inbox-card-flash {
+  animation: inbox-flash 600ms ease-in-out;
+}
+
+/* Shimmer dos skeleton cards */
+@keyframes inbox-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.inbox-shimmer {
+  background: linear-gradient(100deg, rgba(228, 228, 231, 0.6) 20%, rgba(244, 244, 245, 0.9) 40%, rgba(228, 228, 231, 0.6) 60%);
+  background-size: 200% 100%;
+  animation: inbox-shimmer 1.4s linear infinite;
+}
+
+/* Scrollbar discreto no carrossel de filtros do mobile */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 212, 216, 0.6) transparent;
+}
+
+/* ==========================================================================
+   Chat — scrollbar fina e indicador de digitando
+   ========================================================================== */
+
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 212, 216, 0.8) transparent;
+}
+.chat-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212, 212, 216, 0.8);
+  border-radius: 9999px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Pulso dos 3 pontinhos do "digitando…" */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ==========================================================================
+   Card com efeito 3D (tilt) — login / cadastro / pagamento
+   ========================================================================== */
+
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.12s ease-out;
+  will-change: transform;
+}
+.tilt-inner {
+  transform: translateZ(24px);
+}

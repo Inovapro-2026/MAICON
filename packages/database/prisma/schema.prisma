@@ -1,0 +1,776 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================= ENUMS =============================
+
+enum LeadStatus {
+  PENDING
+  PROCESSING
+  SENT
+  RESPONDED
+  AGENT_ACTIVE
+  INTERESTED
+  NOT_INTERESTED
+  OPT_OUT
+  ERROR
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  FINISHED
+}
+
+enum MessageChannel {
+  WHATSAPP
+  EMAIL
+}
+
+enum MessageDirection {
+  IN
+  OUT
+}
+
+enum MessageStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+/** Estágio de onboarding/captura do nome da conversa (IA). */
+enum OnboardingStage {
+  NOT_STARTED
+  GREETED
+  COMPANY_INTRODUCED
+  AWAITING_NAME
+  NAME_CAPTURED
+}
+
+enum LeadSource {
+  CSV
+  MANUAL
+  TEST
+  WEB
+}
+
+enum OptOutChannel {
+  WHATSAPP
+  EMAIL
+}
+
+enum ProspectionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
+enum ImportStatus {
+  QUEUED
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum UserRole {
+  ADMIN
+}
+
+enum ChannelType {
+  WHATSAPP
+  EMAIL
+}
+
+// ==================== MULTI-TENANT / PLATAFORMA (SAVYRON) ====================
+
+enum BusinessStatus {
+  PENDING_PAYMENT
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+}
+
+enum BusinessRole {
+  OWNER
+  BUSINESS_ADMIN
+  MANAGER
+  AGENT
+}
+
+enum PlatformRole {
+  NONE
+  PLATFORM_ADMIN
+  PLATFORM_STAFF
+}
+
+// ============================= AUTH =============================
+
+model User {
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  password_hash      String
+  name               String
+  role               UserRole      @default(ADMIN)
+  platform_role      PlatformRole  @default(NONE)
+  active             Boolean       @default(true)
+  must_change_password Boolean     @default(true)
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  memberships BusinessMember[]
+}
+
+model Setting {
+  key        String   @id
+  value      String
+  updated_at DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// MULTI-TENANT: Business = a empresa/tenant.
+// Toda entidade de domínio pertence a um Business (via business_id).
+// ---------------------------------------------------------------------------
+model Business {
+  id           String          @id @default(cuid())
+  name         String
+  slug         String          @unique
+  status       BusinessStatus  @default(TRIAL)
+  legal_name   String?
+  trade_name   String?
+  cnpj         String?
+  segment      String?
+  description  String?
+  email        String?
+  phone        String?
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+
+  members    BusinessMember[]
+  settings   BusinessSettings?
+  leads      Lead[]
+  lead_imports LeadImport[]
+  campaigns  Campaign[]
+  campaign_leads CampaignLead[]
+  prospection_runs ProspectionRun[]
+  messages   Message[]
+  conversations Conversation[]
+  ai_generations AIGeneration[]
+  opt_outs   OptOut[]
+  delivery_events DeliveryEvent[]
+  subscriptions Subscription[]
+  payments   Payment[]
+  usage      Usage[]
+  audit_logs AuditLog[]
+  ai_agents  AIAgent[]
+  ai_settings AISettings[]
+  ai_knowledge AIKnowledge[]
+  email_logs EmailLog[]
+
+  @@index([status])
+}
+
+model BusinessSettings {
+  business_id           String @id
+  whatsapp_daily_limit  Int    @default(30)
+  email_daily_limit     Int    @default(100)
+  interval_seconds      Int    @default(7200)
+  test_mode_max_leads   Int    @default(5)
+  address               String?
+  website               String?
+  instagram             String?
+  opening_hours         String?
+  timezone              String @default("America/Sao_Paulo")
+  logo_url              String?
+  additional_info       String?
+  updated_at            DateTime @updatedAt
+  created_at            DateTime @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+}
+
+model BusinessMember {
+  id          String        @id @default(cuid())
+  business_id String
+  user_id     String
+  role        BusinessRole  @default(AGENT)
+  created_at  DateTime      @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, user_id])
+  @@index([user_id])
+  @@index([business_id])
+}
+
+// ============================= LEADS =============================
+
+model Lead {
+  id            String        @id @default(cuid())
+  business_id   String
+  name          String?
+  phone         String?
+  email         String?
+  business_name String?
+  city          String?
+  state         String?
+  source        LeadSource    @default(CSV)
+  status        LeadStatus    @default(PENDING)
+  external_id   String?
+  imported_via  LeadImport?   @relation(fields: [imported_via_id], references: [id])
+  imported_via_id String?
+
+  fingerprint_phone  String?
+  fingerprint_email  String?
+  fingerprint_extid  String?
+
+  // Prospecção automática (SAVYRON Prospector)
+  fingerprint_domain   String?
+  fingerprint_namecity String?
+  website              String?
+  instagram            String?
+  facebook             String?
+  whatsapp             String?
+  address              String?
+  country              String?
+  segment              String?
+  source_url           String?
+  source_type          String?
+  collected_at         DateTime?
+  lead_score           Int?
+  prospection_run_id   String?
+
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  business         Business         @relation(fields: [business_id], references: [id])
+  campaign_leads   CampaignLead[]
+  messages         Message[]
+  conversations    Conversation[]
+  opt_outs         OptOut[]
+  ai_generations   AIGeneration[]
+  prospection_run  ProspectionRun?  @relation(fields: [prospection_run_id], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([email])
+  @@index([created_at])
+  @@index([business_id])
+  @@index([business_id, created_at])
+  @@index([business_id, status])
+  @@unique([business_id, fingerprint_phone])
+  @@unique([business_id, fingerprint_email])
+  @@unique([business_id, fingerprint_extid])
+}
+
+model LeadImport {
+  id         String       @id @default(cuid())
+  business_id String
+  filename   String
+  source     String       @default("CSV")
+  status     ImportStatus @default(QUEUED)
+  summary    Json?
+  total      Int          @default(0)
+  new_leads  Int          @default(0)
+  duplicates Int          @default(0)
+  invalid    Int          @default(0)
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id])
+  leads Lead[]
+
+  @@index([business_id])
+  @@index([business_id, created_at])
+}
+
+// ============================= CAMPANHAS =============================
+
+model Campaign {
+  id                   String         @id @default(cuid())
+  business_id          String
+  name                 String
+  status               CampaignStatus @default(PAUSED)
+  daily_whatsapp_limit Int            @default(30)
+  daily_email_limit    Int            @default(100)
+  interval_seconds     Int            @default(7200)
+  is_test              Boolean        @default(false)
+  start_hour           Int?
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+
+  business      Business       @relation(fields: [business_id], references: [id])
+  campaign_leads CampaignLead[]
+  messages      Message[]
+  prospection_runs ProspectionRun[]
+
+  @@index([business_id])
+  @@index([business_id, status])
+  @@index([business_id, created_at])
+}
+
+model CampaignLead {
+  id              String   @id @default(cuid())
+  business_id     String
+  campaign_id     String
+  lead_id         String
+  status          LeadStatus @default(PENDING)
+  attempts        Int      @default(0)
+  last_attempt_at DateTime?
+  next_attempt_at DateTime?
+  channel         MessageChannel?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  lead     Lead     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [business_id], references: [id])
+
+  @@unique([business_id, campaign_id, lead_id])
+  @@index([campaign_id, status])
+  @@index([next_attempt_at])
+  @@index([business_id])
+}
+
+// ============================= PROSPECÇÃO =============================
+
+model ProspectionRun {
+  id               String            @id @default(cuid())
+  business_id      String
+  campaign_id      String?
+  segment          String?
+  country          String?
+  state            String?
+  city             String?
+  target_quantity  Int               @default(100)
+  status           ProspectionStatus @default(PENDING)
+  found_count      Int               @default(0)
+  saved_count      Int               @default(0)
+  duplicate_count  Int               @default(0)
+  discarded_count  Int               @default(0)
+  error_count      Int               @default(0)
+  phone_count      Int               @default(0)
+  email_count      Int               @default(0)
+  avg_score        Float?
+  summary          Json?
+  started_at       DateTime?
+  completed_at     DateTime?
+  cancelled_at     DateTime?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  business Business  @relation(fields: [business_id], references: [id])
+  campaign Campaign? @relation(fields: [campaign_id], references: [id], onDelete: SetNull)
+  leads    Lead[]
+
+  @@index([business_id])
+  @@index([business_id, created_at])
+}
+
+// ============================= MENSAGENS =============================
+
+model Message {
+  id          String            @id @default(cuid())
+  business_id String
+  lead_id     String
+  campaign_id String?
+  channel     MessageChannel
+  direction   MessageDirection
+  content     String
+  status      MessageStatus     @default(QUEUED)
+  provider    String?
+  external_id String?
+  created_at  DateTime          @default(now())
+
+  business        Business          @relation(fields: [business_id], references: [id])
+  lead            Lead              @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  campaign        Campaign?         @relation(fields: [campaign_id], references: [id], onDelete: SetNull)
+  delivery_events DeliveryEvent[]
+
+  @@index([lead_id, created_at])
+  @@index([campaign_id, created_at])
+  @@index([channel, created_at])
+  @@index([business_id, created_at])
+}
+
+// ============================= CONVERSAS =============================
+
+model Conversation {
+  id              String             @id @default(cuid())
+  business_id     String
+  lead_id         String
+  status          ConversationStatus @default(OPEN)
+  ai_provider     String?
+  human_handled   Boolean            @default(false)
+  onboarding_stage OnboardingStage?
+  last_message_at DateTime?
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+
+  business       Business        @relation(fields: [business_id], references: [id])
+  lead           Lead            @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  ai_generations AIGeneration[]
+
+  @@unique([business_id, lead_id])
+  @@index([business_id, last_message_at])
+}
+
+// ============================= IA =============================
+
+model AIGeneration {
+  id               String  @id @default(cuid())
+  business_id      String
+  lead_id          String
+  conversation_id  String?
+  provider         String
+  model            String
+  prompt_version   String
+  prompt           String?
+  completion       String?
+  input_tokens     Int     @default(0)
+  output_tokens    Int     @default(0)
+  latency_ms       Int     @default(0)
+  error            String?
+  created_at       DateTime @default(now())
+
+  business     Business     @relation(fields: [business_id], references: [id])
+  lead         Lead         @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, created_at])
+}
+
+// ============================= OPT-OUT =============================
+
+model OptOut {
+  id         String         @id @default(cuid())
+  business_id String
+  lead_id    String
+  channel    OptOutChannel
+  reason     String?
+  created_at DateTime       @default(now())
+
+  business Business @relation(fields: [business_id], references: [id])
+  lead Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id])
+  @@index([channel])
+  @@index([business_id])
+}
+
+// ============================= WEBHOOKS =============================
+
+model DeliveryEvent {
+  id         String   @id @default(cuid())
+  business_id String?
+  message_id String?
+  event      String
+  payload    Json?
+  created_at DateTime @default(now())
+
+  business Business? @relation(fields: [business_id], references: [id])
+  message Message? @relation(fields: [message_id], references: [id], onDelete: SetNull)
+
+  @@index([business_id, created_at])
+}
+
+// ============================= E-MAILS ENVIADOS (RESEND) =============================
+
+enum EmailLogStatus {
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model EmailLog {
+  id                 String         @id @default(cuid())
+  business_id        String
+  to                 String
+  subject            String
+  status             EmailLogStatus @default(SENT)
+  provider           String         @default("resend")
+  provider_message_id String?
+  related_campaign_id String?
+  error              String?
+  sent_at            DateTime       @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, sent_at])
+  @@index([business_id, status])
+}
+
+// ============================= PLANOS / BILLING (SAVYRON) =============================
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+model Plan {
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  description     String?
+  price           Decimal         @default(0) @db.Decimal(10, 2)
+  billing_interval BillingInterval @default(MONTHLY)
+  trial_days      Int             @default(0)
+  active          Boolean         @default(true)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  sort_order      Int             @default(0)
+  stripe_product_id String?
+  stripe_price_id   String?
+  // Cakto (novo gateway — PIX recorrente).
+  cakto_product_id String?
+  cakto_offer_id   String?
+
+  features     PlanFeature[]
+  subscriptions Subscription[]
+
+  @@index([active])
+}
+
+model PlanFeature {
+  id      String @id @default(cuid())
+  plan_id String
+  feature String
+  enabled Boolean @default(true)
+  limit   Int?
+
+  plan Plan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@unique([plan_id, feature])
+  @@index([plan_id])
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  RECEIVED
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+}
+
+enum AITone {
+  PROFESSIONAL
+  FRIENDLY
+  CASUAL
+  RELAXED
+  PREMIUM
+  CONSULTATIVE
+  TECHNICAL
+}
+
+enum AIKnowledgeCategory {
+  PRODUCTS
+  SERVICES
+  PRICES
+  HOURS
+  POLICIES
+  FAQ
+  ADDRESS
+  PAYMENT
+  INTERNAL_RULES
+}
+
+model Subscription {
+  id                  String             @id @default(cuid())
+  business_id         String
+  plan_id             String?
+  status              SubscriptionStatus  @default(TRIALING)
+  // Stripe (gateway atual).
+  stripe_customer_id   String?
+  stripe_subscription_id String?
+  stripe_price_id      String?
+  // Cakto (novo gateway — PIX recorrente).
+  cakto_subscription_id String?
+  cakto_product_id     String?
+  cakto_offer_id       String?
+  cakto_checkout_url   String?
+  current_period_start DateTime?
+  current_period_end  DateTime?
+  trial_ends_at       DateTime?
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  plan_name           String?
+  plan_price          Decimal?           @db.Decimal(10, 2)
+  cancelled_at        DateTime?
+
+  business Business       @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  plan     Plan?          @relation(fields: [plan_id], references: [id], onDelete: SetNull)
+  payments Payment[]
+
+  @@unique([business_id])
+  @@index([business_id, status])
+  @@index([plan_id])
+  @@index([status])
+  @@index([stripe_customer_id])
+  @@index([stripe_subscription_id])
+  @@index([cakto_subscription_id])
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  subscription_id    String
+  business_id        String
+  // Stripe (gateway atual).
+  stripe_payment_intent_id String?
+  stripe_checkout_session_id String?
+  stripe_charge_id   String?
+  // Cakto (novo gateway — PIX recorrente).
+  cakto_order_id     String?
+  cakto_ref_id       String?
+  cakto_event        String?
+  method             PaymentMethod @default(PIX)
+  status             PaymentStatus @default(PENDING)
+  value              Decimal       @db.Decimal(10, 2)
+  due_date           DateTime?
+  paid_at            DateTime?
+  pix_payload        String?
+  pix_qr_base64      String?
+  external_reference String?
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  subscription Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+  business     Business     @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, created_at])
+  @@index([subscription_id])
+  @@index([status])
+  @@unique([stripe_payment_intent_id])
+  @@unique([stripe_checkout_session_id])
+  @@unique([cakto_order_id])
+}
+
+model EmailVerification {
+  id         String    @id @default(cuid())
+  email      String
+  code_hash  String
+  expires_at DateTime
+  attempts   Int       @default(0)
+  verified_at DateTime?
+  created_at DateTime  @default(now())
+
+  @@index([email, created_at])
+}
+
+model Usage {
+  id          String   @id @default(cuid())
+  business_id String
+  metric      String
+  quantity    Int      @default(0)
+  period      String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, metric, period])
+  @@index([business_id, period])
+  @@index([metric, period])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actor       String?
+  business_id String?
+  action      String
+  entity      String?
+  entity_id   String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  business Business? @relation(fields: [business_id], references: [id], onDelete: SetNull)
+
+  @@index([business_id, created_at])
+  @@index([actor, created_at])
+  @@index([action, created_at])
+  @@index([entity, entity_id])
+}
+
+// ============================= IA (SAVYRON) =============================
+
+model AIAgent {
+  id          String   @id @default(cuid())
+  business_id String
+  name        String
+  role        String?
+  description String?
+  active      Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  business Business    @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  settings AISettings[]
+
+  @@index([business_id])
+  @@index([business_id, active])
+}
+
+model AISettings {
+  id             String   @id @default(cuid())
+  business_id    String
+  agent_id       String?
+  tone           AITone   @default(FRIENDLY)
+  behaviors      Json     @default("{}")
+  message_config Json     @default("{}")
+  custom_prompt  String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  agent    AIAgent? @relation(fields: [agent_id], references: [id], onDelete: SetNull)
+
+  @@unique([business_id])
+  @@index([business_id])
+}
+
+model AIKnowledge {
+  id          String              @id @default(cuid())
+  business_id String
+  title       String
+  content     String
+  category    AIKnowledgeCategory @default(FAQ)
+  active      Boolean             @default(true)
+  created_at  DateTime            @default(now())
+  updated_at  DateTime            @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id])
+  @@index([business_id, active])
+}

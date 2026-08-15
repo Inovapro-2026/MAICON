@@ -1,0 +1,18 @@
+{
+  "name": "@prospector/queues",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json"
+  },
+  "dependencies": {
+    "@prospector/config": "file:../config",
+    "bullmq": "^5.34.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
