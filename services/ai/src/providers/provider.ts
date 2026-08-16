@@ -10,7 +10,7 @@ import {
  * (Groq e OpenRouter). Implementa chamada HTTP com fetch nativo.
  */
 export abstract class OpenAICompatibleProvider implements LLMProvider {
-  abstract readonly name: "groq" | "openrouter";
+  abstract readonly name: "groq";
   protected abstract readonly baseUrl: string;
   protected abstract readonly model: string;
   protected abstract readonly apiKey: string | undefined;
@@ -48,14 +48,6 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${this.apiKey}`,
-            ...(this.name === "openrouter"
-              ? {
-                  "HTTP-Referer":
-                    process.env.NEXT_PUBLIC_APP_URL ||
-                    "https://crm.inovapro.cloud",
-                  "X-Title": "SAVYRON",
-                }
-              : {}),
           },
           body: JSON.stringify({
             model: this.model,

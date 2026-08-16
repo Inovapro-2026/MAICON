@@ -174,7 +174,7 @@ export async function generateStructuredAIConfig(
           content: "Gere o JSON estruturado de configuração do agente.",
         },
       ],
-      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'openrouter' },
+      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'groq' },
     );
     const parsed = extractJsonObject(result.text);
     const config = normalizeStructuredConfig(parsed, input);

@@ -13,7 +13,7 @@ export interface GenerateOptions {
    * Provedor preferido para esta chamada (análise → groq; geração → nvidia).
    * Se não configurado ou falhar, o gerenciador cai para os demais provedores.
    */
-  provider?: "groq" | "openrouter";
+  provider?: "groq";
 }
 
 export interface ProviderResult {
@@ -25,7 +25,7 @@ export interface ProviderResult {
 }
 
 export interface LLMProvider {
-  readonly name: "groq" | "openrouter";
+  readonly name: "groq";
   isConfigured(): boolean;
   generate(
     messages: ChatMessage[],

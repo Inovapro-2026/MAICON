@@ -43,12 +43,7 @@ export const config = {
 
   ai: {
     groqApiKey: optional("GROQ_API_KEY"),
-    openrouterApiKey: optional("OPENROUTER_API_KEY"),
-    groqModel: optional("GROQ_MODEL", "openai/gpt-oss-120b"),
-    openrouterModel: optional(
-      "OPENROUTER_MODEL",
-      "nvidia/nemotron-3-nano-30b-a3b:free",
-    ),
+    groqModel: optional("GROQ_MODEL", "llama-3.1-8b-instant"),
     timeoutMs: int("AI_TIMEOUT_MS", 30000),
     maxMessageLength: int("AI_MAX_MESSAGE_LENGTH", 600),
   },

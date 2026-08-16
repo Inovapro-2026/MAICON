@@ -641,7 +641,7 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // Resposta de canal de aquisição quando acabamos de perguntar.
-  if ((prevNext === "ASK_CURRENT_ACQUISITION" || ACQUISITION_CHANNEL_RE.test(last)) && !known.acquisition_channel && ACQUISITION_CHANNEL_RE.test(last)) {
+  if (prevNext === "ASK_CURRENT_ACQUISITION" && ACQUISITION_CHANNEL_RE.test(last)) {
     known.acquisition_channel = fact(extractAcquisitionChannel(lastRaw) ?? extractAcquisitionChannel(history.map((m) => m.content).join(" ")));
     return buildAnalysis({
       intent: "info_sharing",
@@ -654,20 +654,31 @@ export function deterministicCommercialAnalysis(context: {
     });
   }
 
-  // Resposta de segmento quando acabamos de perguntar (ou fragmento com segmento).
-  if (BUSINESS_TYPE_RE.test(last) && !known.segment) {
+  // Resposta de segmento quando acabamos de perguntar.
+  if (prevNext === "ASK_BUSINESS_TYPE" && BUSINESS_TYPE_RE.test(last)) {
     known.segment = fact(extractSegment(lastRaw));
     const hasNeedHere = NEED_RE.test(last);
     return buildAnalysis({
       intent: "info_sharing",
       stage: "DISCOVERY",
       known,
-      goal: hasNeedHere ? "understand_pain" : "understand_pain",
-      next_action: hasNeedHere ? "ASK_CURRENT_ACQUISITION" : "ASK_CURRENT_ACQUISITION",
+      goal: "understand_pain",
+      next_action: hasNeedHere ? "UNDERSTAND_PAIN" : "ASK_CURRENT_ACQUISITION",
       customer: { name: customerName, segment: known.segment?.value ?? null, interest: null },
       technique_used: hasNeedHere ? "understanding_confirmation" : "calibrated_questions",
       summary: buildConversationSummary(known, "DISCOVERY"),
     });
+  }
+
+  // Fragmento com segmento/canal no meio de uma pergunta de outro tipo —
+  // aproveita o contexto mas segue a pergunta anterior.
+  if (prevNext && prevNext !== "ASK_BUSINESS_TYPE" && prevNext !== "ASK_CURRENT_ACQUISITION") {
+    if (BUSINESS_TYPE_RE.test(last) && !known.segment) {
+      known.segment = fact(extractSegment(lastRaw));
+    }
+    if (ACQUISITION_CHANNEL_RE.test(last) && !known.acquisition_channel) {
+      known.acquisition_channel = fact(extractAcquisitionChannel(lastRaw));
+    }
   }
 
   // OPT-OUT

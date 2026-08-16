@@ -32,7 +32,7 @@ export async function generateAgentReply(
   const result = await providerManager.generate(messages, {
     maxTokens: options.maxTokens ?? 250,
     timeoutMs: options.timeoutMs,
-    provider: 'openrouter',
+    provider: 'groq',
   });
   logger.info('Resposta do agente gerada', {
     lead_name: context.leadName,

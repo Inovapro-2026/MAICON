@@ -276,7 +276,7 @@ async function generateValidatedReply(
         maxTokens: options.maxTokens ?? 600,
         timeoutMs: options.timeoutMs ?? 45000,
         temperature: 0.6,
-        provider: "openrouter",
+        provider: "groq",
       },
     );
     const text = result.text.trim();
@@ -340,8 +340,37 @@ async function analyzeConversation(
     );
     const parsed = extractJsonObject(result.text);
     const normalized = normalizeCommercialAnalysis(parsed);
-    return {
+
+    // O DECISION ENGINE DETERMINÍSTICO é AUTORITATIVO para stage/goal/next_action
+    // (confiável e testado em golden conversations). O groq enriquece intenção e
+    // fatos; a decisão de como conduzir a conversa vem do engine — isso evita que
+    // um modelo pequeno (llama-3.1-8b-instant) trave a conversa na abertura.
+    const decision = deterministicCommercialAnalysis({
+      history: context.history,
+      leadName: context.leadName,
+      contactType: context.contactType,
+      memory: options.memory,
+    });
+
+    const merged: CommercialAnalysis = {
       ...normalized,
+      stage: decision.stage,
+      goal: decision.goal,
+      next_action: decision.next_action,
+      action: decision.action,
+      summary: decision.summary,
+      customer: decision.customer,
+      // Fatos: junta o que o LLM encontrou com o que o engine encontrou.
+      known: {
+        name: normalized.known.name ?? decision.known.name,
+        segment: normalized.known.segment ?? decision.known.segment,
+        need: normalized.known.need ?? decision.known.need,
+        acquisition_channel: normalized.known.acquisition_channel ?? decision.known.acquisition_channel,
+      },
+    };
+
+    return {
+      ...merged,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       latencyMs: Date.now() - started,

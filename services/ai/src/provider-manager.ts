@@ -2,28 +2,26 @@ import { AICompletionResult } from '@prospector/types';
 import { createLogger } from '@prospector/logger';
 import { ChatMessage, GenerateOptions, LLMProvider } from './types';
 import { GroqProvider } from './providers/groq';
-import { OpenRouterProvider } from './providers/openrouter';
 
 const logger = createLogger('ai.provider-manager');
 
 export interface ProviderManagerOptions {
   /** Força o uso de um provedor específico (ex: testes). */
-  forceProvider?: 'groq' | 'openrouter';
+  forceProvider?: 'groq';
   timeoutMs?: number;
 }
 
 /**
- * Gerencia os provedores de IA: tenta Groq primeiro (análise); em caso de falha
- * (timeout, erro HTTP, rate limit, indisponibilidade) faz fallback para OpenRouter
- * (geração). Registra cada tentativa para auditoria.
+ * Gerencia o provedor de IA: Groq é usado tanto para análise quanto para
+ * geração de resposta. Registra cada chamada para auditoria.
  */
 export class AIProviderManager {
   private readonly providers: LLMProvider[];
   private readonly timeoutMs: number;
-  private readonly forceProvider?: 'groq' | 'openrouter';
+  private readonly forceProvider?: 'groq';
 
   constructor(options: ProviderManagerOptions = {}) {
-    this.providers = [new GroqProvider(), new OpenRouterProvider()];
+    this.providers = [new GroqProvider()];
     this.timeoutMs = options.timeoutMs ?? 30000;
     this.forceProvider = options.forceProvider;
   }
@@ -49,7 +47,7 @@ export class AIProviderManager {
   /**
    * Gera uma resposta com fallback automático.
    * Se `options.provider` for informado, esse provedor é tentado primeiro
-   * (ex: groq para análise, openrouter para geração); os demais seguem como fallback.
+   * (análise/geração usam groq); os demais seguem como fallback.
    * Se todos falharem, lança o erro do primeiro provedor.
    */
   async generate(messages: ChatMessage[], options: GenerateOptions = {}): Promise<AICompletionResult> {
