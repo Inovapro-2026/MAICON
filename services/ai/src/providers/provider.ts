@@ -10,7 +10,7 @@ import {
  * (Groq e OpenRouter). Implementa chamada HTTP com fetch nativo.
  */
 export abstract class OpenAICompatibleProvider implements LLMProvider {
-  abstract readonly name: "groq" | "openrouter";
+  abstract readonly name: "groq" | "openrouter" | "nvidia";
   protected abstract readonly baseUrl: string;
   protected abstract readonly model: string;
   protected abstract readonly apiKey: string | undefined;

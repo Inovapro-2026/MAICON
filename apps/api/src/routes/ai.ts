@@ -4,9 +4,14 @@ import { createLogger } from '@prospector/logger';
 import { asyncHandler, ok, ApiError } from '../lib/http';
 import { requireAuth, requireBusiness, requireRole } from '../middleware/auth';
 import { writeAudit } from '../services/audit';
-import { providerManager } from '@prospector/ai';
-import { buildSystemPrompt } from '@prospector/ai';
-import { loadAIConfiguration } from '@prospector/ai';
+import { AgentContext } from '@prospector/types';
+import {
+  providerManager,
+  generateCommercialTurn,
+  loadAIConfiguration,
+  COMMERCIAL_STAGES,
+  CommercialStageValue,
+} from '@prospector/ai';
 
 const logger = createLogger('api.ai');
 
@@ -247,41 +252,63 @@ aiRouter.get(
 );
 
 /**
- * POST /ai/playground — gera uma resposta de teste usando a configuração da
- * empresa + agente + conhecimento + regras globais. Ambiente 100% isolado:
- * não enfileira mensagens nem envia para WhatsApp/e-mail.
+ * POST /ai/playground — chat de teste isolado que usa o MESMO caminho do
+ * WhatsApp real: `generateCommercialTurn` (Motor Comercial Global + camadas de
+ * prompt + saída estruturada). Mantém o histórico da conversa para a IA evoluir
+ * o estágio comercial turno a turno. Ambiente 100% isolado: não enfileira
+ * mensagens nem envia para WhatsApp/e-mail reais.
  */
 aiRouter.post(
   '/playground',
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
-    const message = String(req.body?.message ?? '').slice(0, 2000);
-    if (!message.trim()) throw ApiError.badRequest('Digite uma mensagem para testar');
+
+    // Histórico da conversa (mais antigo → mais novo), com a última sempre "user".
+    const raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    const messages = raw
+      .slice(0, 30)
+      .map((m: { role?: string; content?: string }) => ({
+        role: m?.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: String(m?.content ?? '').slice(0, 4000),
+      }))
+      .filter((m: { content: string }) => m.content.trim());
+    if (messages.length === 0) throw ApiError.badRequest('Digite uma mensagem para testar');
 
     // Mesma fonte de verdade do WhatsApp real (worker): Business + Settings +
     // Agent + Knowledge, tudo filtrado por businessId.
-    const config = await loadAIConfiguration(prisma, businessId);
+    const agentConfig = await loadAIConfiguration(prisma, businessId);
+
+    // Estágio comercial atual informado pela UI (avança turno a turno).
+    const stage = COMMERCIAL_STAGES.includes(req.body?.stage as CommercialStageValue)
+      ? (req.body.stage as CommercialStageValue)
+      : undefined;
+
+    const context: AgentContext = {
+      leadName: null,
+      businessName: null,
+      city: null,
+      state: null,
+      history: messages,
+      contactType: 'novo',
+      conversationStage: stage ?? null,
+    };
+
+    const result = await generateCommercialTurn(context, {
+      agentConfig,
+      maxTokens: 600,
+      timeoutMs: 30000,
+    });
+
     const settings = await prisma.aISettings.findUnique({ where: { business_id: businessId } });
-    const agent = settings?.agent_id
-      ? await prisma.aIAgent.findUnique({ where: { id: settings.agent_id } })
-      : await prisma.aIAgent.findFirst({ where: { business_id: businessId, active: true }, orderBy: { created_at: 'asc' } });
-
-    const systemPrompt = buildSystemPrompt(config);
-
-    const result = await providerManager.generate(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
-      { maxTokens: 300 }
-    );
-
     void writeAudit({ actor: req.user!.sub, businessId, action: 'ai.playground.used', entity: 'AISettings', entityId: settings?.id });
 
     return ok(res, {
-      message,
-      response: result.text,
-      agent: agent ? { id: agent.id, name: agent.name } : null,
+      reply: result.reply,
+      stage: result.conversation.stage,
+      technique_used: result.technique_used,
+      action: result.action,
+      structured: result.structured,
+      agent: agentConfig.agent?.name ? { id: settings?.agent_id ?? null, name: agentConfig.agent.name } : null,
       provider: result.provider,
       model: result.model,
       input_tokens: result.inputTokens,

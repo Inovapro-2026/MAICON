@@ -3,27 +3,32 @@ import { createLogger } from '@prospector/logger';
 import { ChatMessage, GenerateOptions, LLMProvider } from './types';
 import { GroqProvider } from './providers/groq';
 import { OpenRouterProvider } from './providers/openrouter';
+import { NvidiaProvider } from './providers/nvidia';
 
 const logger = createLogger('ai.provider-manager');
 
 export interface ProviderManagerOptions {
   /** Força o uso de um provedor específico (ex: testes). */
-  forceProvider?: 'groq' | 'openrouter';
+  forceProvider?: 'groq' | 'openrouter' | 'nvidia';
   timeoutMs?: number;
 }
 
 /**
  * Gerencia os provedores de IA: tenta Groq primeiro; em caso de falha
- * (timeout, erro HTTP, rate limit, indisponibilidade) faz fallback para OpenRouter.
- * Registra cada tentativa para auditoria.
+ * (timeout, erro HTTP, rate limit, indisponibilidade) faz fallback para NVIDIA
+ * (NIM gratuito) e depois OpenRouter. Registra cada tentativa para auditoria.
  */
 export class AIProviderManager {
   private readonly providers: LLMProvider[];
   private readonly timeoutMs: number;
-  private readonly forceProvider?: 'groq' | 'openrouter';
+  private readonly forceProvider?: 'groq' | 'openrouter' | 'nvidia';
 
   constructor(options: ProviderManagerOptions = {}) {
-    this.providers = [new GroqProvider(), new OpenRouterProvider()];
+    this.providers = [
+      new GroqProvider(),
+      new NvidiaProvider(),
+      new OpenRouterProvider(),
+    ];
     this.timeoutMs = options.timeoutMs ?? 30000;
     this.forceProvider = options.forceProvider;
   }

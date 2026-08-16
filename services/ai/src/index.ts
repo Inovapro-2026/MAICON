@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./providers/provider";
 export * from "./providers/groq";
 export * from "./providers/openrouter";
+export * from "./providers/nvidia";
 export * from "./provider-manager";
 export * from "./prompts";
 export * from "./prompt-assembler";

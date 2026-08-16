@@ -20,7 +20,7 @@ export interface ProviderResult {
 }
 
 export interface LLMProvider {
-  readonly name: "groq" | "openrouter";
+  readonly name: "groq" | "openrouter" | "nvidia";
   isConfigured(): boolean;
   generate(
     messages: ChatMessage[],
