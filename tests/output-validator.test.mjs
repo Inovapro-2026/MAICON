@@ -22,12 +22,13 @@ function analysis(overrides = {}) {
   return {
     intent: "greeting",
     stage: "NEW",
-    known: { name: false, business_type: false, need: false },
+    known: { name: null, segment: null, need: null, acquisition_channel: null },
     goal: "start_rapport",
     next_action: "BUILD_RAPPORT",
     customer: { name: null, segment: null, interest: null },
     technique_used: "tactical_empathy",
     action: "CONTINUE_CONVERSATION",
+    summary: "",
     ...overrides,
   };
 }

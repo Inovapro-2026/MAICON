@@ -26,8 +26,9 @@ import {
   CommercialTechnique,
   ConversationGoal,
   deterministicCommercialAnalysis,
+  DecisionMemory,
   GENERATOR_CONDUCT,
-  KnownContext,
+  KnownFacts,
   NextAction,
   normalizeCommercialAnalysis,
 } from "./commercial-engine";
@@ -49,8 +50,10 @@ export interface CommercialTurnResult {
   action: CommercialAction;
   /** Intenção do cliente na última mensagem (decisão orientada a intenção). */
   intent: CommercialIntent;
-  /** Contexto já conhecido sobre o cliente (para nunca perguntar de novo). */
-  known: KnownContext;
+  /** Fatos conhecidos sobre o cliente (valor + origem + confiança). */
+  known: KnownFacts;
+  /** Resumo curto e atualizado da conversa (memória persistente). */
+  summary: string;
   /** Objetivo deste turno. */
   goal: ConversationGoal;
   /** Próximo passo comercial natural. */
@@ -67,6 +70,8 @@ export interface CommercialTurnResult {
 export interface CommercialTurnOptions {
   timeoutMs?: number;
   maxTokens?: number;
+  /** Memória persistida da conversa (contexto do turno anterior). */
+  memory?: DecisionMemory | null;
 }
 
 /**
@@ -77,12 +82,30 @@ export interface CommercialTurnOptions {
 export function buildCommercialAnalysisMessages(
   agentConfig: AgentSystemPromptInput,
   context: AgentContext,
+  memory?: DecisionMemory | null,
 ): ChatMessage[] {
+  const memParts: string[] = [];
+  if (memory?.summary) memParts.push(`Resumo da conversa: ${memory.summary}`);
+  if (memory?.last_question) memParts.push(`Última pergunta que você fez: "${memory.last_question}"`);
+  if (memory?.known) {
+    const facts = memory.known;
+    const f: string[] = [];
+    if (facts.name) f.push(`nome=${facts.name.value}`);
+    if (facts.segment) f.push(`segmento=${facts.segment.value}`);
+    if (facts.need) f.push(`necessidade=${facts.need.value}`);
+    if (facts.acquisition_channel) f.push(`canal=${facts.acquisition_channel.value}`);
+    if (f.length) memParts.push(`Dados conhecidos do cliente: ${f.join(", ")}`);
+  }
+
   return [
     {
       role: "system",
-      content:
+      content: [
         "Você é o analisador comercial do SAVYRON. Sua única tarefa é classificar a conversa comercial em intenção, contexto conhecido, objetivo e próximo passo — você NUNCA gera respostas para o cliente.",
+        memParts.join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
     },
     ...context.history.map((m) => ({ role: m.role, content: m.content })),
     {
@@ -223,6 +246,7 @@ export async function generateCommercialTurn(
     known: analysis.known,
     goal: analysis.goal,
     next_action: analysis.next_action,
+    summary: analysis.summary,
     provider: replyResult.provider,
     model: replyResult.model,
     inputTokens: analysis.inputTokens + replyResult.inputTokens,
@@ -305,7 +329,7 @@ async function analyzeConversation(
   const started = Date.now();
   try {
     const result: AICompletionResult = await providerManager.generate(
-      buildCommercialAnalysisMessages(agentConfig, context),
+      buildCommercialAnalysisMessages(agentConfig, context, options.memory),
       {
         maxTokens: 400,
         timeoutMs: Math.min(options.timeoutMs ?? 20000, 20000),
@@ -331,6 +355,7 @@ async function analyzeConversation(
       history: context.history,
       leadName: context.leadName,
       contactType: context.contactType,
+      memory: options.memory,
     });
     return {
       ...fallback,

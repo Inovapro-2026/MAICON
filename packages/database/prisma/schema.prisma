@@ -794,3 +794,21 @@ model AIKnowledge {
   @@index([business_id])
   @@index([business_id, active])
 }
+
+model ConversationMemory {
+  id           String   @id @default(cuid())
+  business_id  String
+  /** "conversation:{id}" (WhatsApp) ou "session:{id}" (playground). */
+  key          String
+  summary      String   @default("")
+  current_goal String   @default("start_rapport")
+  next_action  String   @default("BUILD_RAPPORT")
+  last_question String  @default("")
+  sales_stage  String   @default("NEW")
+  known_json   Json?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@unique([business_id, key])
+  @@index([business_id])
+}

@@ -9,6 +9,10 @@ import {
   loadAIConfiguration,
   validateGeneratedReply,
   MessageConfig,
+  loadConversationMemory,
+  saveConversationMemory,
+  buildMemoryFromResult,
+  memoryKeyConversation,
 } from "@prospector/ai";
 import { getWorkerQueue } from "../queues";
 import {
@@ -216,12 +220,17 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
   const agentConfig = await loadAIConfiguration(prisma, resolvedBusinessId);
   const messageConfig = (agentConfig.settings?.messageConfig ?? {}) as Record<string, unknown>;
 
+  // CONVERSATION MEMORY: carrega o estado persistido do turno anterior para
+  // interpretar fragmentos ("redes sociais", "como") no contexto certo.
+  const memKey = memoryKeyConversation(conversationId);
+  const memory = await loadConversationMemory(prisma, resolvedBusinessId, memKey);
+
   let result;
   try {
-    // MOTOR COMERCIAL: a IA avalia a conversa e decide técnica + estágio + ação,
-    // devolvendo saída ESTRUTURADA (reply, customer, conversation, technique_used,
-    // commercial_engine_version, action) — a IA é dinâmica, sem roteiro fixo.
-    result = await generateCommercialTurn(context, { agentConfig });
+    // MOTOR COMERCIAL: a IA avalia a conversa e decide intenção + objetivo +
+    // próximo passo, devolvendo saída ESTRUTURADA — a IA é dinâmica, sem
+    // roteiro fixo, e usa a memória persistida como contexto.
+    result = await generateCommercialTurn(context, { agentConfig, memory });
   } catch (error) {
     logger.error("Falha ao gerar resposta IA", { lead_id: leadId, error });
     await prisma.lead.update({
@@ -248,7 +257,7 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
       issues: validation.issues,
     });
     try {
-      const regenerated = await generateCommercialTurn(context, { agentConfig });
+      const regenerated = await generateCommercialTurn(context, { agentConfig, memory });
       const revalidation = validateGeneratedReply(regenerated.reply, messageConfig as MessageConfig);
       if (revalidation.valid) {
         reply = regenerated.reply;
@@ -270,6 +279,22 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
       issues: validation.issues,
     });
     reply = validation.sanitized ?? reply;
+  }
+
+  // CONVERSATION MEMORY: persiste o estado ATUALIZADO antes da próxima
+  // resposta — a próxima mensagem já encontra o contexto pronto.
+  try {
+    await saveConversationMemory(
+      prisma,
+      resolvedBusinessId,
+      memKey,
+      buildMemoryFromResult(result),
+    );
+  } catch (error) {
+    logger.warn("Falha ao persistir memória da conversa", {
+      conversation_id: conversationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Registra geração de IA (auditoria) + rastreabilidade do Motor Comercial.

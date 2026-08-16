@@ -11,6 +11,10 @@ import {
   loadAIConfiguration,
   COMMERCIAL_STAGES,
   CommercialStageValue,
+  loadConversationMemory,
+  saveConversationMemory,
+  buildMemoryFromResult,
+  memoryKeySession,
 } from '@prospector/ai';
 
 const logger = createLogger('api.ai');
@@ -263,6 +267,13 @@ aiRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
 
+    // Sessão do playground: o front guarda em localStorage e envia em cada
+    // turno — a memória persiste entre requisições/reloads da mesma conversa.
+    const sessionId =
+      typeof req.body?.session_id === 'string' && req.body.session_id.trim()
+        ? req.body.session_id.trim().slice(0, 64)
+        : null;
+
     // Histórico da conversa (mais antigo → mais novo), com a última sempre "user".
     const raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
     const messages = raw
@@ -293,17 +304,33 @@ aiRouter.post(
       conversationStage: stage ?? null,
     };
 
+    // CONVERSATION MEMORY: carrega o estado persistido da sessão.
+    const memKey = sessionId ? memoryKeySession(sessionId) : null;
+    const memory = memKey ? await loadConversationMemory(prisma, businessId, memKey) : null;
+
     const result = await generateCommercialTurn(context, {
       agentConfig,
       maxTokens: 600,
       timeoutMs: 30000,
+      memory,
     });
+
+    // Persiste a memória atualizada para o próximo turno da sessão.
+    if (memKey) {
+      await saveConversationMemory(
+        prisma,
+        businessId,
+        memKey,
+        buildMemoryFromResult(result),
+      );
+    }
 
     const settings = await prisma.aISettings.findUnique({ where: { business_id: businessId } });
     void writeAudit({ actor: req.user!.sub, businessId, action: 'ai.playground.used', entity: 'AISettings', entityId: settings?.id });
 
     return ok(res, {
       reply: result.reply,
+      session_id: sessionId,
       stage: result.conversation.stage,
       technique_used: result.technique_used,
       action: result.action,
@@ -311,6 +338,7 @@ aiRouter.post(
       known: result.known,
       goal: result.goal,
       next_action: result.next_action,
+      summary: result.summary,
       structured: result.structured,
       agent: agentConfig.agent?.name ? { id: settings?.agent_id ?? null, name: agentConfig.agent.name } : null,
       provider: result.provider,

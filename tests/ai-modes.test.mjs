@@ -78,10 +78,13 @@ test("worker: calcula contactType por dados reais (status/histórico)", () => {
   assert.match(processor, /contactType,/);
 });
 
-test("worker: usa buildAgentMessages (contexto do cliente chega ao modelo)", () => {
-  assert.match(processor, /generateCommercialTurn\(context, \{ agentConfig \}\)/);
+test("worker: usa generateCommercialTurn com memória (contexto do cliente chega ao modelo)", () => {
+  assert.match(processor, /generateCommercialTurn\(context, \{ agentConfig, memory \}\)/);
   assert.ok(!/generateAgentReply/.test(processor));
   assert.match(processor, /buildCommercialTurnMessages/);
+  assert.match(processor, /loadConversationMemory/);
+  assert.match(processor, /saveConversationMemory/);
+  assert.match(processor, /buildMemoryFromResult/);
 });
 
 test("worker: detecta pergunta repetida (indicador de qualidade)", () => {

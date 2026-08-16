@@ -114,6 +114,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+const SESSION_KEY = 'savvyron-playground-session';
+
+function getOrCreateSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  const existing = window.localStorage.getItem(SESSION_KEY);
+  if (existing) return existing;
+  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(SESSION_KEY, id);
+  return id;
+}
+
 export default function AIPlaygroundPage() {
   const status = useApi<PlaygroundStatus>(['ai-playground-status'], 'ai/playground/status');
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
@@ -140,7 +151,7 @@ export default function AIPlaygroundPage() {
     try {
       const res = await request<PlaygroundReply>('ai/playground', {
         method: 'POST',
-        body: { messages: nextMessages, stage },
+        body: { messages: nextMessages, stage, session_id: getOrCreateSessionId() },
       });
       setStage(res.stage);
       setLastReply(res);
