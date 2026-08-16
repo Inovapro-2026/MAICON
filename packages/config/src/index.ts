@@ -44,13 +44,11 @@ export const config = {
   ai: {
     groqApiKey: optional("GROQ_API_KEY"),
     openrouterApiKey: optional("OPENROUTER_API_KEY"),
-    nvidiaApiKey: optional("NVIDIA_API_KEY"),
     groqModel: optional("GROQ_MODEL", "openai/gpt-oss-120b"),
     openrouterModel: optional(
       "OPENROUTER_MODEL",
-      "meta-llama/llama-3.1-8b-instruct",
+      "nvidia/nemotron-3-nano-30b-a3b:free",
     ),
-    nvidiaModel: optional("NVIDIA_MODEL", "deepseek-ai/deepseek-v4-flash-0731"),
     timeoutMs: int("AI_TIMEOUT_MS", 30000),
     maxMessageLength: int("AI_MAX_MESSAGE_LENGTH", 600),
   },

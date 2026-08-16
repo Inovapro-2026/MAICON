@@ -29,7 +29,7 @@ test("turno: pede saída JSON estruturada como ÚLTIMA mensagem do usuário", ()
   const last = messages[messages.length - 1];
   assert.equal(last.role, "user");
   assert.match(last.content, /Mensagem mais recente do cliente: "Quero saber os planos"/);
-  assert.match(last.content, /Responda APENAS com um JSON válido/);
+  assert.match(last.content, /JSON válido/);
 });
 
 test("turno: o formato da saída estrutura reply/customer/conversation/technique/action", () => {

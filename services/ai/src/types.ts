@@ -9,6 +9,11 @@ export interface GenerateOptions {
   timeoutMs?: number;
   /** Solicita resposta em JSON estruturado (response_format json_object). */
   jsonMode?: boolean;
+  /**
+   * Provedor preferido para esta chamada (análise → groq; geração → nvidia).
+   * Se não configurado ou falhar, o gerenciador cai para os demais provedores.
+   */
+  provider?: "groq" | "openrouter";
 }
 
 export interface ProviderResult {
@@ -20,7 +25,7 @@ export interface ProviderResult {
 }
 
 export interface LLMProvider {
-  readonly name: "groq" | "openrouter" | "nvidia";
+  readonly name: "groq" | "openrouter";
   isConfigured(): boolean;
   generate(
     messages: ChatMessage[],

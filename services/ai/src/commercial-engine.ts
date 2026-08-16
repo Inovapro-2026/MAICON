@@ -140,18 +140,36 @@ Regras da saída:
 - "action": CONTINUE_CONVERSATION para seguir; TRANSFER_TO_HUMAN quando o cliente pedir pessoa ou a situação exigir atendimento humano; CLOSE_CONVERSATION quando o cliente reafirmar que não tem interesse (encerramento respeitoso) ou quando a venda foi concluída.`;
 }
 
-/** Normaliza os campos de saída do motor comercial para valores seguros. */
-export function normalizeCommercialOutput(
+/**
+ * Instrução da FASE DE ANÁLISE (Groq): a IA analisa a conversa e decide
+ * estágio, técnica e ação — SEM gerar a resposta. A resposta é gerada depois
+ * (NVIDIA) seguindo essa análise.
+ */
+export function buildCommercialAnalysisInstruction(): string {
+  return `Analise a conversa comercial e responda APENAS com um JSON válido (sem texto antes ou depois) no formato exato:
+{
+  "customer": { "name": "nome identificado ou null", "segment": "segmento conhecido ou null", "interest": true | false | null },
+  "conversation": { "stage": "NEW | QUALIFYING | DISCOVERY | EVALUATION | NEGOTIATION | CLOSED_WON | CLOSED_LOST" },
+  "technique_used": "tactical_empathy | mirroring | emotional_labeling | calibrated_questions | no_oriented | understanding_confirmation | objection_handling | conversion_lead | respectful_close",
+  "commercial_engine_version": "v1",
+  "action": "CONTINUE_CONVERSATION | TRANSFER_TO_HUMAN | CLOSE_CONVERSATION"
+}
+Regras da análise:
+- "customer.name": preencha quando o cliente revelar o nome; "interest": true se houver intenção de compra clara, false se recusou, null se ainda não dá para saber.
+- "conversation.stage": o estágio comercial mais coerente com a conversa até agora.
+- "technique_used": a técnica de comunicação mais adequada para a próxima resposta.
+- "action": CONTINUE_CONVERSATION para seguir; TRANSFER_TO_HUMAN quando o cliente pedir pessoa ou a situação exigir atendimento humano; CLOSE_CONVERSATION quando o cliente reafirmar que não tem interesse (encerramento respeitoso) ou quando a venda foi concluída.`;
+}
+
+/** Normaliza a análise do motor comercial para valores seguros. */
+export function normalizeCommercialAnalysis(
   raw: Record<string, unknown>,
 ): {
-  reply: string;
   customer: { name: string | null; segment: string | null; interest: boolean | null };
   stage: CommercialStageValue;
   technique_used: CommercialTechnique;
   action: CommercialAction;
 } {
-  const reply = typeof raw.reply === "string" && raw.reply.trim() ? raw.reply.trim() : "";
-
   const customerRaw = (raw.customer ?? {}) as Record<string, unknown>;
   const customer = {
     name: typeof customerRaw.name === "string" && customerRaw.name.trim() ? customerRaw.name.trim().slice(0, 120) : null,
@@ -177,5 +195,19 @@ export function normalizeCommercialOutput(
     ? (raw.action as CommercialAction)
     : "CONTINUE_CONVERSATION";
 
-  return { reply, customer, stage, technique_used: technique, action };
+  return { customer, stage, technique_used: technique, action };
+}
+
+/** Normaliza os campos de saída do motor comercial para valores seguros. */
+export function normalizeCommercialOutput(
+  raw: Record<string, unknown>,
+): {
+  reply: string;
+  customer: { name: string | null; segment: string | null; interest: boolean | null };
+  stage: CommercialStageValue;
+  technique_used: CommercialTechnique;
+  action: CommercialAction;
+} {
+  const reply = typeof raw.reply === "string" && raw.reply.trim() ? raw.reply.trim() : "";
+  return { reply, ...normalizeCommercialAnalysis(raw) };
 }

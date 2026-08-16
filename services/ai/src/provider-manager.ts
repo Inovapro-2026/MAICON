@@ -3,32 +3,27 @@ import { createLogger } from '@prospector/logger';
 import { ChatMessage, GenerateOptions, LLMProvider } from './types';
 import { GroqProvider } from './providers/groq';
 import { OpenRouterProvider } from './providers/openrouter';
-import { NvidiaProvider } from './providers/nvidia';
 
 const logger = createLogger('ai.provider-manager');
 
 export interface ProviderManagerOptions {
   /** Força o uso de um provedor específico (ex: testes). */
-  forceProvider?: 'groq' | 'openrouter' | 'nvidia';
+  forceProvider?: 'groq' | 'openrouter';
   timeoutMs?: number;
 }
 
 /**
- * Gerencia os provedores de IA: tenta Groq primeiro; em caso de falha
- * (timeout, erro HTTP, rate limit, indisponibilidade) faz fallback para NVIDIA
- * (NIM gratuito) e depois OpenRouter. Registra cada tentativa para auditoria.
+ * Gerencia os provedores de IA: tenta Groq primeiro (análise); em caso de falha
+ * (timeout, erro HTTP, rate limit, indisponibilidade) faz fallback para OpenRouter
+ * (geração). Registra cada tentativa para auditoria.
  */
 export class AIProviderManager {
   private readonly providers: LLMProvider[];
   private readonly timeoutMs: number;
-  private readonly forceProvider?: 'groq' | 'openrouter' | 'nvidia';
+  private readonly forceProvider?: 'groq' | 'openrouter';
 
   constructor(options: ProviderManagerOptions = {}) {
-    this.providers = [
-      new GroqProvider(),
-      new NvidiaProvider(),
-      new OpenRouterProvider(),
-    ];
+    this.providers = [new GroqProvider(), new OpenRouterProvider()];
     this.timeoutMs = options.timeoutMs ?? 30000;
     this.forceProvider = options.forceProvider;
   }
@@ -53,10 +48,12 @@ export class AIProviderManager {
 
   /**
    * Gera uma resposta com fallback automático.
+   * Se `options.provider` for informado, esse provedor é tentado primeiro
+   * (ex: groq para análise, openrouter para geração); os demais seguem como fallback.
    * Se todos falharem, lança o erro do primeiro provedor.
    */
   async generate(messages: ChatMessage[], options: GenerateOptions = {}): Promise<AICompletionResult> {
-    const ordered = this.orderProviders();
+    const ordered = this.orderProviders(options.provider);
     const attempts: Array<{ provider: string; error: string }> = [];
     const timeoutMs = options.timeoutMs ?? this.timeoutMs;
 
@@ -96,10 +93,16 @@ export class AIProviderManager {
     throw new Error(`Todos os provedores de IA falharam: ${primaryError}`);
   }
 
-  private orderProviders(): LLMProvider[] {
+  private orderProviders(preferred?: GenerateOptions['provider']): LLMProvider[] {
     if (this.forceProvider) {
       const forced = this.providers.find((p) => p.name === this.forceProvider);
       if (forced) return [forced];
+    }
+    if (preferred) {
+      const chosen = this.providers.find((p) => p.name === preferred);
+      if (chosen) {
+        return [chosen, ...this.providers.filter((p) => p.name !== preferred)];
+      }
     }
     return this.providers;
   }
