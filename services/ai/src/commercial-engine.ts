@@ -84,6 +84,55 @@ export const TECHNIQUE_LABELS: Record<CommercialTechnique, string> = {
 };
 
 /**
+ * DECISION ENGINE → diretiva de geração.
+ *
+ * Traduz a análise estruturada (estágio/técnica/ação) em UMA diretiva curta e
+ * natural para o modelo gerador. O gerador NUNCA vê os termos técnicos internos
+ * ("technique_used", "mirroring", "Stage NEW"...), apenas a instrução de postura.
+ */
+export function buildGeneratorInstruction(analysis: {
+  stage: CommercialStageValue;
+  technique_used: CommercialTechnique;
+  action: CommercialAction;
+}): string {
+  const tech = TECHNIQUE_DIRECTIVES[analysis.technique_used];
+  const actionLine =
+    analysis.action === "TRANSFER_TO_HUMAN"
+      ? "Informe educadamente que um atendente humano vai acompanhar o assunto."
+      : analysis.action === "CLOSE_CONVERSATION"
+        ? "Encerre a conversa de forma educada e respeitosa."
+        : "";
+
+  const lines = [tech];
+  if (actionLine) lines.push(actionLine);
+  if (analysis.stage === "CLOSED_WON") {
+    lines.push("Confirme o próximo passo da contratação de forma natural.");
+  }
+  return lines.join(" ");
+}
+
+/** Tradução da técnica → postura natural para o gerador (nunca expõe o jargão). */
+const TECHNIQUE_DIRECTIVES: Record<CommercialTechnique, string> = {
+  tactical_empathy:
+    "Reconheça o ponto ou a preocupação do cliente antes de responder.",
+  mirroring: "Espelhe as palavras do cliente para ele continuar explicando.",
+  emotional_labeling:
+    "Nomeie o que parece estar acontecendo e peça confirmação.",
+  calibrated_questions:
+    "Faça uma pergunta aberta (como/o que) para entender melhor a necessidade do cliente.",
+  no_oriented:
+    "Diante da recusa, investigue com respeito, sem insistir nem pressionar.",
+  understanding_confirmation:
+    "Resuma o que entendeu e peça confirmação antes de apresentar a solução.",
+  objection_handling:
+    "Valide a preocupação do cliente e explore o que precisaria ser verdade para ele avançar.",
+  conversion_lead:
+    "Apresente o próximo passo concreto (teste, cadastro, plano) e convide o cliente.",
+  respectful_close:
+    "Encerre de forma educada, agradecendo o contato e deixando a porta aberta.",
+};
+
+/**
  * Camada SYSTEM do Motor Comercial. É global e imutável por tenant: entra no
  * prompt de sistema entre as regras globais e a configuração do agente.
  */

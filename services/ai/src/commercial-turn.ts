@@ -10,9 +10,14 @@
 import { AgentContext, AICompletionResult } from "@prospector/types";
 import { createLogger } from "@prospector/logger";
 import { providerManager } from "./provider-manager";
-import { buildAgentMessages, AgentSystemPromptInput } from "./prompt-assembler";
+import {
+  AgentSystemPromptInput,
+  TONE_DESCRIPTIONS,
+  buildAgentMessages,
+} from "./prompt-assembler";
 import {
   buildCommercialAnalysisInstruction,
+  buildGeneratorInstruction,
   COMMERCIAL_ENGINE_VERSION,
   CommercialAction,
   CommercialStageValue,
@@ -21,6 +26,10 @@ import {
 } from "./commercial-engine";
 import { extractJsonObject } from "./structured-config";
 import { ChatMessage } from "./types";
+import {
+  MessageConfig,
+  validateGeneratedReply,
+} from "./response-validation";
 
 const logger = createLogger("ai.commercial-turn");
 
@@ -68,7 +77,17 @@ export function buildCommercialAnalysisMessages(
   ];
 }
 
-/** Monta as mensagens da FASE 2 (resposta): system + histórico + direção do turno. */
+/**
+ * Monta as mensagens da FASE 2 (resposta): prompt MÍNIMO de geração.
+ *
+ * O gerador NUNCA recebe as camadas SYSTEM pesadas (regras de segurança, regras
+ * globais, Motor Comercial) — se recebesse, um modelo pequeno as ecoaria no
+ * `reply` (vazamento de raciocínio). Ele recebe somente:
+ *   1. identidade curta (nome/tom da empresa);
+ *   2. contexto do cliente;
+ *   3. histórico;
+ *   4. diretiva curta de postura (Decision Engine), sem jargão interno.
+ */
 export function buildCommercialReplyMessages(
   agentConfig: AgentSystemPromptInput,
   context: AgentContext,
@@ -78,12 +97,59 @@ export function buildCommercialReplyMessages(
     action: CommercialAction;
   },
 ): ChatMessage[] {
-  const messages = buildAgentMessages(agentConfig, context);
+  const messages: ChatMessage[] = [
+    { role: "system", content: buildGeneratorSystemPrompt(agentConfig) },
+  ];
+
+  const ctx: string[] = [];
+  if (context.leadName) ctx.push(`Nome do cliente: ${context.leadName}`);
+  if (context.businessName)
+    ctx.push(`Estabelecimento: ${context.businessName}`);
+  if (context.city && context.state)
+    ctx.push(`Cidade: ${context.city}/${context.state}`);
+  if (ctx.length) {
+    messages.push({
+      role: "system",
+      content: `Contexto do cliente:\n${ctx.join("\n")}`,
+    });
+  }
+
+  for (const m of context.history ?? []) {
+    messages.push({ role: m.role, content: m.content });
+  }
+
   messages.push({
     role: "user",
-    content: `Responda à mensagem mais recente do cliente. Contexto do turno: estágio=${analysis.stage}, técnica=${analysis.technique_used}, ação=${analysis.action}. Regras: 1 mensagem, no máximo 1 pergunta. Não descreva seu processo nem a análise — apenas escreva a resposta ao cliente.`,
+    content: `${buildGeneratorInstruction(analysis)} Escreva agora a sua resposta ao cliente, direto e natural, em uma única mensagem.`,
   });
   return messages;
+}
+
+/** Identidade curta do gerador — sem regras, sem jargão, sem camadas internas. */
+function buildGeneratorSystemPrompt(agentConfig: AgentSystemPromptInput): string {
+  const agent = agentConfig.agent ?? {};
+  const business = agentConfig.business ?? {};
+  const settings = agentConfig.settings ?? {};
+  const agentName = agent.name?.trim() || "Atendente virtual";
+
+  const lines: string[] = [
+    `Você é o assistente virtual "${agentName}" da SAVYRON, uma plataforma de prospecção e atendimento comercial com IA. Você conversa com clientes interessados na empresa que você representa.`,
+  ];
+  if (business.name?.trim()) {
+    lines.push(`Você atende pela empresa: ${business.name.trim()}.`);
+  }
+  if (business.segment?.trim()) {
+    lines.push(`Segmento da empresa: ${business.segment.trim()}.`);
+  }
+  if (business.description?.trim()) {
+    lines.push(`Sobre a empresa: ${business.description.trim()}`);
+  }
+  const tone =
+    settings.tone && TONE_DESCRIPTIONS[settings.tone]
+      ? TONE_DESCRIPTIONS[settings.tone]
+      : TONE_DESCRIPTIONS.FRIENDLY;
+  lines.push(`Tom de voz: ${tone}.`);
+  return lines.join("\n");
 }
 
 /**
@@ -112,34 +178,18 @@ export async function generateCommercialTurn(
 ): Promise<CommercialTurnResult> {
   const agentConfig = options.agentConfig ?? {};
 
-  // FASE 1 — ANÁLISE (Groq): rápida, decide como conduzir a resposta.
+  // FASE 1 — ANÁLISE (Groq): JSON estruturado, decide como conduzir a resposta.
   const analysis = await analyzeConversation(context, agentConfig, options);
 
-  // FASE 2 — RESPOSTA (OpenRouter): texto que o cliente verá.
-  const replyStart = Date.now();
-  let replyResult: AICompletionResult;
-  try {
-    replyResult = await providerManager.generate(
-      buildCommercialReplyMessages(agentConfig, context, analysis),
-      {
-        maxTokens: options.maxTokens ?? 600,
-        timeoutMs: options.timeoutMs ?? 45000,
-        temperature: 0.6,
-        provider: "openrouter",
-      },
-    );
-  } catch (error) {
-    logger.error("Falha ao gerar a resposta do turno comercial", {
-      error: error instanceof Error ? error.message : String(error),
-      provider: "openrouter",
-    });
-    throw error;
-  }
-
-  const reply = replyResult.text.trim();
-  if (!reply) {
-    throw new Error("resposta vazia do provedor");
-  }
+  // FASE 2 — RESPOSTA (OpenRouter) → OUTPUT VALIDATOR → (regen se necessário).
+  const messageConfig = ((agentConfig.settings?.messageConfig ?? {}) as MessageConfig) ?? {};
+  const { reply, replyResult } = await generateValidatedReply(
+    agentConfig,
+    context,
+    analysis,
+    messageConfig,
+    options,
+  );
 
   logger.info("Turno comercial gerado", {
     stage: analysis.stage,
@@ -162,9 +212,70 @@ export async function generateCommercialTurn(
     model: replyResult.model,
     inputTokens: analysis.inputTokens + replyResult.inputTokens,
     outputTokens: analysis.outputTokens + replyResult.outputTokens,
-    latencyMs: analysis.latencyMs + (Date.now() - replyStart),
+    latencyMs: analysis.latencyMs + replyResult.latencyMs,
     structured: analysis.structured,
   };
+}
+
+/**
+ * FASE 3 — OUTPUT VALIDATOR.
+ * Gera a resposta e valida antes de devolver: se houver raciocínio interno
+ * vazado ou violação de limites, regenera UMA vez. Se o vazamento persistir,
+ * lança erro — o texto NUNCA chega ao cliente/playground como `reply`.
+ */
+async function generateValidatedReply(
+  agentConfig: AgentSystemPromptInput,
+  context: AgentContext,
+  analysis: {
+    stage: CommercialStageValue;
+    technique_used: CommercialTechnique;
+    action: CommercialAction;
+  },
+  messageConfig: MessageConfig,
+  options: CommercialTurnOptions,
+): Promise<{ reply: string; replyResult: AICompletionResult }> {
+  const runOnce = async (): Promise<{ text: string; result: AICompletionResult }> => {
+    const result = await providerManager.generate(
+      buildCommercialReplyMessages(agentConfig, context, analysis),
+      {
+        maxTokens: options.maxTokens ?? 600,
+        timeoutMs: options.timeoutMs ?? 45000,
+        temperature: 0.6,
+        provider: "openrouter",
+      },
+    );
+    const text = result.text.trim();
+    if (!text) throw new Error("resposta vazia do provedor");
+    return { text, result };
+  };
+
+  let { text, result } = await runOnce();
+  let validation = validateGeneratedReply(text, messageConfig);
+
+  // Rejeição por vazamento de raciocínio: regenera (nunca sanitiza o lixo).
+  if (!validation.valid && validation.issues.includes("raciocínio interno vazado na resposta")) {
+    logger.warn("Resposta com raciocínio vazado; regenerando", {
+      provider: result.provider,
+      excerpt: text.slice(0, 120),
+    });
+    const retry = await runOnce();
+    text = retry.text;
+    result = retry.result;
+    validation = validateGeneratedReply(text, messageConfig);
+    if (validation.issues.includes("raciocínio interno vazado na resposta")) {
+      logger.error("Resposta continua com raciocínio vazado; abortando envio", {
+        provider: result.provider,
+      });
+      throw new Error("saída do gerador inválida (raciocínio interno vazado)");
+    }
+  }
+
+  // Violações sanitizáveis (perguntas em excesso, comprimento, frases, emojis).
+  if (!validation.valid && validation.sanitized) {
+    text = validation.sanitized;
+  }
+
+  return { reply: text, replyResult: result };
 }
 
 /** Fase de análise da conversa: Groq decide estágio/técnica/ação (JSON). */

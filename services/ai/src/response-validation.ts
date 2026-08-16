@@ -20,6 +20,56 @@ export interface MessageConfig {
   use_emojis?: boolean;
 }
 
+/**
+ * OUTPUT VALIDATOR — limites rígidos da plataforma (baseline de segurança).
+ * O cliente só pode apertar esses limites, nunca relaxá-los.
+ */
+export const PLATFORM_POLICY = {
+  max_length: 400,
+  max_sentences: 4,
+  max_questions: 1,
+  max_emojis: 0,
+} as const;
+
+/**
+ * Marcadores de vazamento de raciocínio interno no `reply`. Se o modelo
+ * devolveu o plano/instruções em vez da resposta, a mensagem é REJEITADA e a
+ * geração é refeita. Nunca chega ao cliente.
+ */
+const REASONING_LEAK_PATTERNS = [
+  /we need to respond/i,
+  /we need to reply/i,
+  /the client said/i,
+  /the customer said/i,
+  /must send/i,
+  /max (1|one) message/i,
+  /max (1|one) question/i,
+  /max emojis/i,
+  /resposta antes de perguntar/i,
+  /responda antes de perguntar/i,
+  /stage[:=\s]/i,
+  /technique[:=\s]/i,
+  /action[:=\s]/i,
+  /intent[:=\s]/i,
+  /commercial_engine/i,
+  /base de conhecimento/i,
+  /regras globais/i,
+  /seguranca da plataforma/i,
+  /instrucoes adicionais/i,
+  /gerando/gi,
+  /vou gerar/i,
+  /minha resposta sera/i,
+  /reasoning/i,
+  /analysis[:=\s]/i,
+  /configura[çc][ãa]o do agente/i,
+  /gerei uma resposta/i,
+];
+
+/** True se o texto parece conter raciocínio/instruções internas vazadas. */
+export function hasReasoningLeak(text: string): boolean {
+  return REASONING_LEAK_PATTERNS.some((re) => re.test(String(text ?? "")));
+}
+
 export interface ValidationResult {
   valid: boolean;
   issues: string[];
@@ -63,23 +113,39 @@ export function keepFirstQuestion(text: string): string {
 export function sanitizeReply(text: string, config: MessageConfig = {}): string {
   let out = String(text ?? '').trim();
 
-  const emojiLimit = config.max_emojis ?? (config.use_emojis === false ? 0 : undefined);
+  const emojiLimit = effectiveEmojiLimit(config);
   if (emojiLimit !== undefined && emojiLimit === 0) {
     out = stripEmojis(out);
   }
 
-  if (config.max_length !== undefined && out.length > config.max_length) {
-    out = out.slice(0, Math.max(0, config.max_length)).trimEnd();
+  if (effectiveMaxLength(config) !== undefined && out.length > effectiveMaxLength(config)) {
+    out = out.slice(0, Math.max(0, effectiveMaxLength(config))).trimEnd();
   }
 
-  if (config.max_sentences !== undefined) {
+  if (effectiveMaxSentences(config) !== undefined) {
     const parts = out.split(/(?<=[.!?])\s+/).filter(Boolean);
-    if (parts.length > config.max_sentences) {
-      out = parts.slice(0, config.max_sentences).join(' ');
+    if (parts.length > effectiveMaxSentences(config)) {
+      out = parts.slice(0, effectiveMaxSentences(config)).join(' ');
     }
   }
 
   return out.trim();
+}
+
+/** Limites efetivos: o mais restritivo entre a política da plataforma e a config do cliente. */
+function effectiveMaxLength(config: MessageConfig): number {
+  const configured = config.max_length;
+  return configured !== undefined ? Math.min(configured, PLATFORM_POLICY.max_length) : PLATFORM_POLICY.max_length;
+}
+
+function effectiveMaxSentences(config: MessageConfig): number {
+  const configured = config.max_sentences;
+  return configured !== undefined ? Math.min(configured, PLATFORM_POLICY.max_sentences) : PLATFORM_POLICY.max_sentences;
+}
+
+function effectiveEmojiLimit(config: MessageConfig): number {
+  const configured = config.max_emojis ?? (config.use_emojis === false ? 0 : undefined);
+  return configured !== undefined ? Math.min(configured, PLATFORM_POLICY.max_emojis) : PLATFORM_POLICY.max_emojis;
 }
 
 /** Valida a saída do LLM contra as regras da plataforma e a config do cliente. */
@@ -91,29 +157,37 @@ export function validateGeneratedReply(text: string, config: MessageConfig = {})
     return { valid: false, issues: ['resposta vazia'], sanitized: null };
   }
 
-  if (countQuestions(raw) > 1) {
+  if (hasReasoningLeak(raw)) {
+    issues.push('raciocínio interno vazado na resposta');
+  }
+
+  if (countQuestions(raw) > PLATFORM_POLICY.max_questions) {
     issues.push('múltiplas perguntas na mesma resposta');
   }
 
-  if (config.max_length !== undefined && raw.length > config.max_length) {
-    issues.push(`comprimento acima do limite (${raw.length} > ${config.max_length})`);
+  if (raw.length > effectiveMaxLength(config)) {
+    issues.push(`comprimento acima do limite (${raw.length} > ${effectiveMaxLength(config)})`);
   }
 
-  if (config.max_sentences !== undefined && countSentences(raw) > config.max_sentences) {
-    issues.push(`frases acima do limite (${countSentences(raw)} > ${config.max_sentences})`);
+  if (countSentences(raw) > effectiveMaxSentences(config)) {
+    issues.push(`frases acima do limite (${countSentences(raw)} > ${effectiveMaxSentences(config)})`);
   }
 
-  const emojiLimit = config.max_emojis ?? (config.use_emojis === false ? 0 : undefined);
-  if (emojiLimit !== undefined && countEmojis(raw) > emojiLimit) {
-    issues.push(`emojis acima do limite (${countEmojis(raw)} > ${emojiLimit})`);
+  if (countEmojis(raw) > effectiveEmojiLimit(config)) {
+    issues.push(`emojis acima do limite (${countEmojis(raw)} > ${effectiveEmojiLimit(config)})`);
   }
 
   if (issues.length === 0) {
     return { valid: true, issues: [], sanitized: null };
   }
 
+  // Raciocínio vazado NÃO é sanitizável — precisa ser regenerado pelo caller.
+  if (issues.includes('raciocínio interno vazado na resposta')) {
+    return { valid: false, issues, sanitized: null };
+  }
+
   let sanitized = raw;
-  if (countQuestions(sanitized) > 1) {
+  if (countQuestions(sanitized) > PLATFORM_POLICY.max_questions) {
     sanitized = keepFirstQuestion(sanitized);
   }
   sanitized = sanitizeReply(sanitized, config);

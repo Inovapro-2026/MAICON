@@ -81,13 +81,28 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
         }
 
         const data = (await res.json()) as {
-          choices?: { message?: { content?: string } }[];
+          choices?: {
+            message?: {
+              content?: string | null;
+              reasoning?: string | null;
+              reasoning_content?: string | null;
+            };
+          }[];
           usage?: { prompt_tokens?: number; completion_tokens?: number };
         };
 
-        const text = data.choices?.[0]?.message?.content?.trim() ?? "";
+        const message = data.choices?.[0]?.message;
+        const text = message?.content?.trim() ?? "";
+
+        // O campo `reply` SÓ pode vir do conteúdo final destinado ao usuário.
+        // reasoning / reasoning_content / analysis são internos e NUNCA são usados.
         if (!text) {
-          throw new Error(`${this.name}: resposta vazia do provedor`);
+          const hasOnlyReasoning = Boolean(
+            message?.reasoning || message?.reasoning_content,
+          );
+          throw new Error(
+            `${this.name}: resposta vazia do provedor${hasOnlyReasoning ? " (apenas raciocínio interno; descartado)" : ""}`,
+          );
         }
 
         return {
