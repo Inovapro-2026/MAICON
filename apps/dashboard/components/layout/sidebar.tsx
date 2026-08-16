@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -7,14 +8,15 @@ import {
   Search,
   Megaphone,
   MessageSquare,
+  Users,
   Mail,
   BarChart3,
-  Settings,
   ShieldCheck,
-  Building2,
   Bot,
   BookOpen,
   FlaskConical,
+  Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useSession } from "@/hooks/use-session";
@@ -24,19 +26,21 @@ const NAV = [
   { href: "/prospect", label: "Prospecção", icon: Search },
   { href: "/campaigns", label: "Campanhas", icon: Megaphone },
   { href: "/inbox", label: "Mensagens", icon: MessageSquare },
+  { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/emails", label: "E-mails enviados", icon: Mail },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
 ];
 
-const BUSINESS_NAV = [
-  { href: "/settings", label: "Configurações", icon: Settings },
-  { href: "/settings/business", label: "Meu negócio", icon: Building2 },
-];
+// Configuração unificada "Empresa + IA" (substitui Meu negócio + Configurar IA).
+const EMPRESA_NAV = [{ href: "/settings/empresa-ia", label: "Configuração da IA", icon: Bot }];
 
-const AI_NAV = [
-  { href: "/ai/settings", label: "Configurar IA", icon: Bot },
+// Opções avançadas mantidas acessíveis — "Guia de prompts" permanece como
+// opção avançada (decisão de produto). "Meu negócio"/"Configurar IA" foram
+// fundidos na tela unificada "/settings/empresa-ia" (não aparecem mais aqui).
+const ADVANCED_NAV = [
   { href: "/ai/knowledge", label: "Base de conhecimento", icon: BookOpen },
   { href: "/ai/playground", label: "Testar IA", icon: FlaskConical },
+  { href: "/ai/prompt-guide", label: "Guia de prompts", icon: Sparkles },
 ];
 
 const ADMIN_LINK = { href: "/admin", label: "Admin", icon: ShieldCheck };
@@ -69,6 +73,36 @@ function NavItem({
   );
 }
 
+function AdvancedNav({
+  items,
+  pathname,
+}: {
+  items: { href: string; label: string; icon: typeof LayoutDashboard }[];
+  pathname: string;
+}) {
+  const [open, setOpen] = useState(() => items.some((item) => pathname.startsWith(item.href)));
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground"
+      >
+        Avançado
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open ? (
+        <div className="mt-1 space-y-1 pl-3">
+          {items.map((item) => (
+            <NavItem key={item.href} {...item} pathname={pathname} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useSession();
@@ -92,16 +126,10 @@ export function Sidebar() {
         <div className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
           Empresa
         </div>
-        {BUSINESS_NAV.map((item) => (
+        {EMPRESA_NAV.map((item) => (
           <NavItem key={item.href} {...item} pathname={pathname} />
         ))}
-        <div className="divider-fluorescent mx-1 mt-4 pt-4" />
-        <div className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">
-          IA
-        </div>
-        {AI_NAV.map((item) => (
-          <NavItem key={item.href} {...item} pathname={pathname} />
-        ))}
+        <AdvancedNav items={ADVANCED_NAV} pathname={pathname} />
         {canSeeAdmin ? (
           <>
             <div className="divider-fluorescent mx-1 mt-4 pt-4" />

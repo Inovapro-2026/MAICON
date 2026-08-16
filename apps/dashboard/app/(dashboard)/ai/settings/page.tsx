@@ -230,7 +230,7 @@ export default function AISettingsPage() {
               className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
             />
             <p className="mt-2 text-[11px] text-zinc-500">
-              Regras de segurança, privacidade e limites da plataforma têm prioridade e não podem ser alteradas por este campo. A sequência de abertura (apresentação → empresa → pergunta do nome) é fixa.
+              Regras de segurança, privacidade e limites da plataforma têm prioridade e não podem ser alteradas por este campo.
             </p>
             <p className="mt-1 text-right text-[11px] text-zinc-400">
               {customPrompt.length} / 20000

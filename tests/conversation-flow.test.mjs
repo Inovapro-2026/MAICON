@@ -1,83 +1,112 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+/**
+ * FASE C/D — Turno comercial estruturado (Motor Comercial).
+ * A IA devolve saída estruturada { reply, customer, conversation, technique_used,
+ * commercial_engine_version, action } — o backend valida e persiste. O JSON
+ * nunca é exibido ao cliente. Substitui a antiga máquina de estados de onboarding.
+ */
+import test from "node:test";
+import assert from "node:assert/strict";
 
 import {
-  decideConversationTurn,
-  buildOpeningMessages,
-  buildNameConfirmedMessage,
-} from '@prospector/ai';
+  buildCommercialTurnMessages,
+  buildCommercialOutputInstruction,
+  normalizeCommercialOutput,
+  COMMERCIAL_ENGINE_VERSION,
+  COMMERCIAL_ACTIONS,
+  COMMERCIAL_STAGES,
+  COMMERCIAL_TECHNIQUES,
+} from "@prospector/ai";
 
 // ---------------------------------------------------------------------------
-// Máquina de estados de onboarding — critérios de aceite (TESTES 1 a 5)
+// Construção do turno
 // ---------------------------------------------------------------------------
 
-test('TESTE 1 — "Oi" em NOT_STARTED resulta em UMA única mensagem (SEND_GREETING) e avança para GREETED', () => {
-  const decision = decideConversationTurn({ stage: 'NOT_STARTED', content: 'Oi' });
-  assert.equal(decision.action, 'SEND_GREETING');
-  assert.equal(decision.nextStage, 'GREETED');
-
-  // A mensagem enviada é UMA só (a saudação), com no máximo 1 pergunta.
-  const msgs = buildOpeningMessages({ agentName: 'SAVYRON IA', businessName: 'SAVYRON' });
-  assert.equal(countQuestions(msgs.greeting), 1);
-  assert.ok(!/[?].*[?]/.test(msgs.greeting));
+test("turno: pede saída JSON estruturada como ÚLTIMA mensagem do usuário", () => {
+  const messages = buildCommercialTurnMessages(
+    {},
+    { history: [{ role: "user", content: "Quero saber os planos" }] },
+  );
+  const last = messages[messages.length - 1];
+  assert.equal(last.role, "user");
+  assert.match(last.content, /Mensagem mais recente do cliente: "Quero saber os planos"/);
+  assert.match(last.content, /Responda APENAS com um JSON válido/);
 });
 
-test('TESTE 2 — resposta afirmativa em GREETED avança para AWAITING_NAME com UMA pergunta', () => {
-  for (const reply of ['Sim', 'Claro', 'Pode', 'Quero', 'Sim, quero conhecer']) {
-    const decision = decideConversationTurn({ stage: 'GREETED', content: reply });
-    assert.equal(decision.action, 'SEND_ASK_NAME', `"${reply}" → SEND_ASK_NAME`);
-    assert.equal(decision.nextStage, 'AWAITING_NAME');
+test("turno: o formato da saída estrutura reply/customer/conversation/technique/action", () => {
+  const instruction = buildCommercialOutputInstruction();
+  for (const key of ["reply", "customer", "conversation", "technique_used", "commercial_engine_version", "action"]) {
+    assert.ok(instruction.includes(`"${key}"`), `saída deve conter "${key}"`);
   }
-  const msgs = buildOpeningMessages({});
-  assert.equal(msgs.askName, 'Perfeito! Como posso te chamar?');
-  assert.equal(countQuestions(msgs.askName), 1);
+  assert.match(instruction, /CONTINUE_CONVERSATION/);
+  assert.match(instruction, /TRANSFER_TO_HUMAN/);
+  assert.match(instruction, /CLOSE_CONVERSATION/);
 });
 
-test('TESTE 3 — "Boa noite" em AWAITING_NAME não vira nome; mantém o estágio', () => {
-  const decision = decideConversationTurn({
-    stage: 'AWAITING_NAME',
-    content: 'Boa noite',
-    nameValidation: { valid: false },
+// ---------------------------------------------------------------------------
+// Normalização da saída (backend valida valores arbitrários do modelo)
+// ---------------------------------------------------------------------------
+
+test("normaliza: campos válidos são preservados", () => {
+  const out = normalizeCommercialOutput({
+    reply: "Claro! Nossos planos começam em R$ 97.",
+    customer: { name: "Maicon", segment: "Barbearia", interest: true },
+    conversation: { stage: "EVALUATION" },
+    technique_used: "conversion_lead",
+    action: "CONTINUE_CONVERSATION",
   });
-  assert.equal(decision.action, 'SEND_ASK_NAME_AGAIN');
-  assert.equal(decision.nextStage, undefined, 'estágio não avança');
+  assert.equal(out.reply, "Claro! Nossos planos começam em R$ 97.");
+  assert.equal(out.customer.name, "Maicon");
+  assert.equal(out.customer.interest, true);
+  assert.equal(out.stage, "EVALUATION");
+  assert.equal(out.technique_used, "conversion_lead");
+  assert.equal(out.action, "CONTINUE_CONVERSATION");
+});
 
-  const alsoGreeting = decideConversationTurn({
-    stage: 'AWAITING_NAME',
-    content: 'oi',
-    nameValidation: { valid: false },
+test("normaliza: valores inválidos caem para defaults seguros (nunca quebram o turno)", () => {
+  const out = normalizeCommercialOutput({
+    reply: "   ",
+    customer: { name: 123, interest: "sim" },
+    conversation: { stage: "ROTEIRO_INEXISTENTE" },
+    technique_used: "hack",
+    action: "EXPLODE",
   });
-  assert.equal(alsoGreeting.action, 'SEND_ASK_NAME_AGAIN');
+  assert.equal(out.reply, "");
+  assert.equal(out.customer.name, null);
+  assert.equal(out.customer.interest, null);
+  assert.equal(out.stage, "NEW");
+  assert.equal(out.technique_used, "calibrated_questions");
+  assert.equal(out.action, "CONTINUE_CONVERSATION");
 });
 
-test('TESTE 4 — nome válido em AWAITING_NAME captura nome, confirma e avança para NAME_CAPTURED', () => {
-  const decision = decideConversationTurn({
-    stage: 'AWAITING_NAME',
-    content: 'Maicon',
-    nameValidation: { valid: true, name: 'Maicon' },
+test("normaliza: tolera 'stage' no topo (atalho) e valida técnicas/estágios", () => {
+  const out = normalizeCommercialOutput({
+    reply: "ok",
+    stage: "NEGOTIATION",
+    technique_used: "respectful_close",
+    action: "CLOSE_CONVERSATION",
   });
-  assert.equal(decision.action, 'SEND_NAME_CONFIRMED');
-  assert.equal(decision.nextStage, 'NAME_CAPTURED');
-  assert.equal(buildNameConfirmedMessage('Maicon'), 'Prazer, Maicon! 😊');
+  assert.equal(out.stage, "NEGOTIATION");
+  assert.equal(out.technique_used, "respectful_close");
+  assert.equal(out.action, "CLOSE_CONVERSATION");
 });
 
-test('TESTE 5 — NAME_CAPTURED libera a IA (PROCEED_TO_AI)', () => {
-  const decision = decideConversationTurn({ stage: 'NAME_CAPTURED', content: 'Quero conhecer o plano' });
-  assert.equal(decision.action, 'PROCEED_TO_AI');
+// ---------------------------------------------------------------------------
+// Contrato do Motor Comercial (valores exportados)
+// ---------------------------------------------------------------------------
 
-  // Conversa legada sem estágio também segue para a IA (não refaz onboarding).
-  const legacy = decideConversationTurn({ stage: null, content: 'Olá' });
-  assert.equal(legacy.action, 'PROCEED_TO_AI');
+test("motor: versão atual é v1", () => {
+  assert.equal(COMMERCIAL_ENGINE_VERSION, "v1");
 });
 
-test('GREETED sem resposta afirmativa não avança e não envia (WAIT)', () => {
-  for (const reply of ['Oi', 'Boa noite', 'kkkk', 'Tudo bem?', 'Quanto custa?']) {
-    const decision = decideConversationTurn({ stage: 'GREETED', content: reply });
-    assert.equal(decision.action, 'WAIT', `"${reply}" → WAIT`);
-    assert.equal(decision.nextStage, undefined);
-  }
+test("motor: estágios comerciais substituem o onboarding (CLOSED_* presente)", () => {
+  assert.ok(COMMERCIAL_STAGES.includes("NEW"));
+  assert.ok(COMMERCIAL_STAGES.includes("QUALIFYING"));
+  assert.ok(COMMERCIAL_STAGES.includes("DISCOVERY"));
+  assert.ok(COMMERCIAL_STAGES.includes("EVALUATION"));
+  assert.ok(COMMERCIAL_STAGES.includes("NEGOTIATION"));
+  assert.ok(COMMERCIAL_STAGES.includes("CLOSED_WON"));
+  assert.ok(COMMERCIAL_STAGES.includes("CLOSED_LOST"));
+  assert.ok(COMMERCIAL_ACTIONS.includes("TRANSFER_TO_HUMAN"));
+  assert.ok(COMMERCIAL_ACTIONS.includes("CLOSE_CONVERSATION"));
+  assert.ok(COMMERCIAL_TECHNIQUES.includes("respectful_close"));
 });
-
-function countQuestions(text) {
-  return (text.match(/\?/g) ?? []).length;
-}

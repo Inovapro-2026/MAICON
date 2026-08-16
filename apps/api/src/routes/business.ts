@@ -1,12 +1,16 @@
-import { Router, Request, Response } from 'express';
-import { prisma } from '@prospector/database';
-import { createLogger } from '@prospector/logger';
-import { asyncHandler, ok, ApiError } from '../lib/http';
-import { requireAuth, requireBusiness, requireRole } from '../middleware/auth';
-import { getBusinessSettings, setBusinessSettings } from '../services/settings';
-import { writeAudit } from '../services/audit';
+import { Router, Request, Response } from "express";
+import { prisma } from "@prospector/database";
+import { createLogger } from "@prospector/logger";
+import { asyncHandler, ok, ApiError } from "../lib/http";
+import { requireAuth, requireBusiness, requireRole } from "../middleware/auth";
+import { getBusinessSettings, setBusinessSettings } from "../services/settings";
+import { writeAudit } from "../services/audit";
+import {
+  applyAIConfiguration,
+  getAIConfigurationStatus,
+} from "../services/ai-config";
 
-const logger = createLogger('api.business');
+const logger = createLogger("api.business");
 
 export const businessRouter = Router();
 
@@ -17,7 +21,7 @@ businessRouter.use(requireAuth, requireBusiness);
  * businessId derivado do token; leitura permitida a qualquer membro autenticado.
  */
 businessRouter.get(
-  '/settings',
+  "/settings",
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
     const [business, settings, subscription] = await Promise.all([
@@ -28,7 +32,7 @@ businessRouter.get(
         select: { plan: { include: { features: true } } },
       }),
     ]);
-    if (!business) throw ApiError.notFound('Empresa não encontrada');
+    if (!business) throw ApiError.notFound("Empresa não encontrada");
 
     const plan = subscription?.plan ?? null;
 
@@ -45,7 +49,7 @@ businessRouter.get(
       website: settings?.website ?? null,
       instagram: settings?.instagram ?? null,
       opening_hours: settings?.opening_hours ?? null,
-      timezone: settings?.timezone ?? 'America/Sao_Paulo',
+      timezone: settings?.timezone ?? "America/Sao_Paulo",
       logo_url: settings?.logo_url ?? null,
       additional_info: settings?.additional_info ?? null,
       limits: {
@@ -65,7 +69,7 @@ businessRouter.get(
           }
         : null,
     });
-  })
+  }),
 );
 
 /**
@@ -73,44 +77,148 @@ businessRouter.get(
  * Apenas OWNER/BUSINESS_ADMIN. businessId SEMPRE do token (nunca do payload).
  */
 businessRouter.patch(
-  '/settings',
-  requireRole(['OWNER', 'BUSINESS_ADMIN']),
+  "/settings",
+  requireRole(["OWNER", "BUSINESS_ADMIN"]),
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
     const body = req.body ?? {};
 
     // Campos do Business
     const businessData: Record<string, unknown> = {};
-    const businessFields = ['name', 'legal_name', 'trade_name', 'cnpj', 'segment', 'description', 'email', 'phone'] as const;
+    const businessFields = [
+      "name",
+      "legal_name",
+      "trade_name",
+      "cnpj",
+      "segment",
+      "description",
+      "email",
+      "phone",
+    ] as const;
     for (const field of businessFields) {
       if (body[field] !== undefined) businessData[field] = body[field];
     }
     if (Object.keys(businessData).length > 0) {
-      await prisma.business.update({ where: { id: businessId }, data: businessData });
+      await prisma.business.update({
+        where: { id: businessId },
+        data: businessData,
+      });
     }
 
     // Campos do BusinessSettings
     await setBusinessSettings(businessId, {
       ...(body.address !== undefined ? { address: body.address || null } : {}),
       ...(body.website !== undefined ? { website: body.website || null } : {}),
-      ...(body.instagram !== undefined ? { instagram: body.instagram || null } : {}),
-      ...(body.opening_hours !== undefined ? { opening_hours: body.opening_hours || null } : {}),
-      ...(body.timezone !== undefined ? { timezone: String(body.timezone || 'America/Sao_Paulo') } : {}),
-      ...(body.logo_url !== undefined ? { logo_url: body.logo_url || null } : {}),
-      ...(body.additional_info !== undefined ? { additional_info: body.additional_info || null } : {}),
+      ...(body.instagram !== undefined
+        ? { instagram: body.instagram || null }
+        : {}),
+      ...(body.opening_hours !== undefined
+        ? { opening_hours: body.opening_hours || null }
+        : {}),
+      ...(body.timezone !== undefined
+        ? { timezone: String(body.timezone || "America/Sao_Paulo") }
+        : {}),
+      ...(body.logo_url !== undefined
+        ? { logo_url: body.logo_url || null }
+        : {}),
+      ...(body.additional_info !== undefined
+        ? { additional_info: body.additional_info || null }
+        : {}),
     });
 
     void writeAudit({
       actor: req.user!.sub,
       businessId,
-      action: 'business.settings.updated',
-      entity: 'Business',
+      action: "business.settings.updated",
+      entity: "Business",
       entityId: businessId,
-      metadata: { fields: [...Object.keys(businessData), 'address', 'website', 'instagram', 'opening_hours', 'timezone', 'logo_url', 'additional_info'].filter((f) => body[f] !== undefined) },
+      metadata: {
+        fields: [
+          ...Object.keys(businessData),
+          "address",
+          "website",
+          "instagram",
+          "opening_hours",
+          "timezone",
+          "logo_url",
+          "additional_info",
+        ].filter((f) => body[f] !== undefined),
+      },
     });
 
-    logger.info('Configurações da empresa atualizadas', { businessId });
+    logger.info("Configurações da empresa atualizadas", { businessId });
 
-    return ok(res, { message: 'Configurações atualizadas' });
-  })
+    return ok(res, { message: "Configurações atualizadas" });
+  }),
+);
+
+/**
+ * GET /business/ai-config-status — status da configuração automática na IA.
+ * Indica se a configuração estruturada já foi aplicada e quando.
+ */
+businessRouter.get(
+  "/ai-config-status",
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const status = await getAIConfigurationStatus(businessId);
+    return ok(res, status);
+  }),
+);
+
+/**
+ * POST /business/apply-ai-config — aplica os dados da empresa na IA.
+ * O backend envia os dados para o provider de IA (Groq), que devolve uma
+ * configuração ESTRUTURADA (JSON). O JSON NUNCA é retornado ao usuário — apenas
+ * a confirmação + timestamp. Reaplicar atualiza a configuração existente.
+ */
+businessRouter.post(
+  "/apply-ai-config",
+  requireRole(["OWNER", "BUSINESS_ADMIN"]),
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const body = req.body ?? {};
+
+    const name = String(body.name ?? "")
+      .trim()
+      .slice(0, 200);
+    const segment = String(body.segment ?? "")
+      .trim()
+      .slice(0, 120);
+    if (!name) throw ApiError.badRequest("Informe o nome da empresa");
+    if (!segment) throw ApiError.badRequest("Selecione o segmento da empresa");
+
+    const result = await applyAIConfiguration(businessId, {
+      name,
+      segment,
+      email: body.email ? String(body.email).slice(0, 200) : undefined,
+      phone: body.phone ? String(body.phone).slice(0, 40) : undefined,
+      description: body.description
+        ? String(body.description).slice(0, 4000)
+        : undefined,
+      website: body.site ? String(body.site).slice(0, 200) : undefined,
+      instagram: body.instagram
+        ? String(body.instagram).slice(0, 200)
+        : undefined,
+      openingHours: body.horario
+        ? String(body.horario).slice(0, 300)
+        : undefined,
+      location: body.localizacao
+        ? String(body.localizacao).slice(0, 300)
+        : undefined,
+    });
+
+    void writeAudit({
+      actor: req.user!.sub,
+      businessId,
+      action: "business.ai-config.applied",
+      entity: "AISettings",
+      entityId: businessId,
+      metadata: { applied: true },
+    });
+
+    return ok(res, {
+      applied: result.applied,
+      lastAppliedAt: result.lastAppliedAt,
+    });
+  }),
 );

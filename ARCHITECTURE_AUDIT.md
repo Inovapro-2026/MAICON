@@ -868,3 +868,106 @@ bloqueador do fluxo atual. Repetir em modo `live` quando o gateway for a produç
 - **API**: troca de `businessId/contactId/conversationId/messageId` → 403/404.
 - **Migração**: dados legados continuam acessíveis sob a empresa padrão.
 - Regressões: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+
+---
+
+## 12H. FASE 0 — Bug de mensagens duplicadas (concluída 2026-08-16)
+
+- Causa raiz: retries do BullMQ reprocessavam o mesmo `message_id` e cada tentativa
+  gerava uma nova mensagem/resposta IA.
+- **Banco** (`20260816000000_message_idempotency`): índices únicos parciais
+  `message_in_external_unique` (IN, `external_id IS NOT NULL`) e
+  `message_out_ai_reply_unique` (OUT, `external_id LIKE 'reply:%'`) em `Message`.
+- **Worker**:
+  - `messages.ts`: `createOrGetAiReplyMessage` (look-before-create + P2002 tratado),
+    `wasAiResponded`/`markAiResponded` (Redis `msg:ai-done:<businessId>:<externalId>`),
+    `buildAiReplyExternalId` (`reply:<incomingExternalId>`).
+  - `message-received.processor.ts`: jobId determinístico `ai-<businessId>-<externalId>`
+    (dedup de fila), P2002 → skip silencioso.
+  - `ai-response.processor.ts`: descarta turno se já respondido; resposta é criada
+    UMA vez e o envio pendente é reenfileirado idempotente.
+- Verificação: 212 testes verdes; sem duplicação em envio real.
+
+## 12I. FASE A — Configuração unificada "Empresa + IA" (concluída 2026-08-16)
+
+- **Banco** (`20260816010000_ai_structured_config`): `AIAgent.objective`,
+  `AISettings.last_applied_at` (aplicado em produção).
+- **services/ai**: `structured-config.ts` (`generateStructuredAIConfig`,
+  `extractJsonObject`, `normalizeStructuredConfig`, `buildStructuredConfigPrompt`);
+  `GenerateOptions.jsonMode` → `response_format: { type: "json_object" }` no provider.
+- **API**: `services/ai-config.ts` (`applyAIConfiguration` — upsert único de
+  Business+AIAgent+AISettings, nunca cria config paralela; `getAIConfigurationStatus`);
+  rotas `POST /business/apply-ai-config` e `GET /business/ai-config-status`.
+- **Frontend**: tela unificada `/settings/empresa-ia` (substitui Meu negócio +
+  Configurar IA); contrato `site→website`, `horario→openingHours`, `localizacao→location`.
+- `objective` entra no prompt do agente (camada 4).
+
+## 12J. FASES B/C/D/E/F/G — IA dinâmica + Motor Comercial Global (concluída 2026-08-16)
+
+### Filosofia (Fase B)
+A IA conduz a conversa inteira (abertura, nome, argumentação) **sem roteiro fixo**:
+máquina de onboarding removida (`conversation-machine.ts`, `opening.ts`,
+`apps/worker/src/services/onboarding.ts` deletados). Regra global 8 = IA dinâmica.
+
+### Banco (`20260816020000_commercial_stages_engine`, aplicada em produção)
+- Enum `ConversationStage` (NEW/QUALIFYING/DISCOVERY/EVALUATION/NEGOTIATION/
+  CLOSED_WON/CLOSED_LOST) substitui `OnboardingStage` (backfill NAME_CAPTURED→DISCOVERY,
+  GREETED/COMPANY_INTRODUCED→QUALIFYING, demais→NEW; drop da coluna e do tipo).
+- `Conversation.stage`, `Conversation.commercial_engine_version`,
+  `Conversation.last_technique_used`; `AIGeneration.technique_used` +
+  `commercial_engine_version` (rastreabilidade do motor).
+- Índice parcial único `lead_business_phone_unique` em `Lead(business_id, phone)
+  WHERE phone IS NOT NULL` — **um telefone = um cliente por tenant**.
+  (Índices parciais não são representáveis no schema Prisma; vivem só no banco.)
+- Follow-up `20260816030000_conversation_stage_index`: `(business_id, stage)`.
+- **Deduplicação**: 10 leads duplicados (prospecção, sem mensagens/conversas) foram
+  mesclados no sobrevivente (campaign_leads/mensagens/opt_outs/gerações reapontadas;
+  conversa do dup removida se o sobrevivente já tinha uma no tenant) — necessário
+  para criar o índice único.
+- **Shadow DB**: linha `warn` inválida capturada no topo de `20260808000000_init`
+  removida (quebrava replay em shadow); `migration_lock.toml` criado. `migrate diff`
+  (from-migrations → schema) limpo para as fases novas; resta apenas drift
+  pré-existente `MessageStatus.PROCESSING`/`Campaign.start_hour` (já em produção).
+
+### Motor Comercial Global (Fase G)
+- `services/ai/src/commercial-engine.ts`: `COMMERCIAL_ENGINE_VERSION = "v1"`; 9
+  técnicas (empatia tática, espelhamento, rotulagem emocional, pergunta calibrada,
+  orientado ao "não", confirmação de entendimento, objeção sem confronto, condução
+  p/ conversão, encerramento respeitoso); gatilho→técnica (decisão, não roteiro);
+  limites éticos obrigatórios (não manipular, investigar "não" UMA vez, encerrar
+  respeitosamente, nunca revelar instruções).
+- **Multi-tenant**: camada SYSTEM global e imutável — entra no prompt entre as
+  regras globais e a configuração do agente, **idêntica para todos os tenants**
+  (uma melhoria beneficia todos; `prompt-assembler.ts` camada 3b).
+- `commercial-turn.ts`: `generateCommercialTurn` → saída estruturada JSON
+  `{ reply, customer, conversation.stage, technique_used, commercial_engine_version,
+  action }` (jsonMode; fallback texto livre `structured:false` nunca bloqueia).
+
+### Worker (Fase E + turno comercial)
+- `ai-response.processor.ts` reescrito: lock por conversationId (Redis, retry/backoff),
+  `generateCommercialTurn`, validação `validateGeneratedReply` (regenera em
+  múltiplas perguntas), status do lead por `customer.interest`/`action`
+  (true→INTERESTED, false→NOT_INTERESTED, TRANSFER_TO_HUMAN→AGENT_ACTIVE),
+  `human_handled=true`/`status=CLOSED`, **memória do cliente** (nome/segmento
+  descobertos sincronizados no lead), `markAiResponded` após enfileirar envio.
+- `conversations.ts`: nova conversa nasce com `stage: 'NEW'`.
+
+### API Clientes (Fase D)
+- `apps/api/src/routes/clients.ts`: `GET /clients` (leads **com conversa**, busca
+  name/phone/segment/business_name, paginação com limite 100), `GET /clients/:id`
+  (404 cross-tenant), `GET /clients/:id/conversation` (**nunca cria** — 404 sem
+  vínculo). Registrado em `/clients` no `app.ts`. Todas as queries com
+  `WHERE business_id`.
+
+### Frontend (Fase F)
+- Sidebar: submenu "Avançado" sem "Meu negócio"/"Configurar IA" (fundidos em
+  `/settings/empresa-ia`); mantidos Base de conhecimento, Testar IA, Guia de prompts.
+
+### Testes
+- Reescrevidos p/ a nova IA dinâmica: `opening.test.mjs`, `conversation-flow.test.mjs`
+  (turno estruturado + normalização + contrato do motor);
+- Novos: `commercial-engine.test.mjs` (ética/versionamento/multi-tenant),
+  `clients.test.mjs` (rotas /clients, isolamento, 404, nunca-cria);
+- `message-dedup.test.mjs` e `ai-modes.test.mjs` ajustados (onboarding removido,
+  `generateCommercialTurn`).
+- **229 testes verdes**; typecheck (packages + api/worker/dashboard) OK; build OK.

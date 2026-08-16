@@ -25,69 +25,6 @@ export function firstContactMessage(businessName: string | null): string {
  * O FLUXO de onboarding é controlado pelo código; esta função decide APENAS se
  * o cliente concordou em continuar — nunca gera mensagens por conta própria.
  */
-const AFFIRMATIVE_RESPONSES: ReadonlyArray<string> = [
-  'sim',
-  'sim sim',
-  'sim quero',
-  'sim, quero',
-  'sim quero sim',
-  'claro',
-  'claro que sim',
-  'pode',
-  'pode sim',
-  'pode ser',
-  'pode me mostrar',
-  'quero',
-  'quero sim',
-  'quero conhecer',
-  'quero saber',
-  'gostaria',
-  'gostaria sim',
-  'gostaria de conhecer',
-  'adoraria',
-  'vamos',
-  'vamos ver',
-  'vamos la',
-  'vamos lá',
-  'me mostra',
-  'me mostre',
-  'me fala mais',
-  'me conte mais',
-  'me conta mais',
-  'ok',
-  'okay',
-  'beleza',
-  'bora',
-  'topo',
-  'aceito',
-  'pode falar',
-  'estou interessado',
-  'estou interessada',
-  'tenho interesse',
-  'tudo bem, pode ser',
-];
-
-/** Normaliza para comparação de frases afirmativas (minúsculas, sem acentos). */
-function normalizeAffirmative(text: string): string {
-  return String(text ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/** true quando a mensagem do cliente aceita o convite de continuar a conversa. */
-export function isAffirmativeResponse(message: string): boolean {
-  const normalized = normalizeAffirmative(message);
-  if (!normalized) return false;
-  if (AFFIRMATIVE_RESPONSES.includes(normalized)) return true;
-  // Casamento por prefixo: "sim quero conhecer" começa com "sim ".
-  // O espaço à direita evita falsos positivos ("simplesmente" ≠ "sim ").
-  const sorted = [...AFFIRMATIVE_RESPONSES].sort((a, b) => b.length - a.length);
-  return sorted.some((phrase) => normalized.startsWith(`${phrase} `));
-}
 
 export const CLASSIFICATION_SYSTEM_PROMPT = `Você é um classificador de intenção para mensagens recebidas em conversas comerciais de atendimento ao cliente.
 Analise a última mensagem do cliente e o histórico e classifique em uma das intenções:

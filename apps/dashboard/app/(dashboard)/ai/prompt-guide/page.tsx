@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Check, Copy, FileText } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
+import { useApi } from '@/hooks/use-api';
 
 const TEMPLATE_PROMPT = `Crie um prompt profissional para configurar um agente de atendimento e vendas com inteligência artificial para o seguinte negócio:
 
@@ -79,10 +80,28 @@ const CHECKLIST = [
 export default function PromptGuidePage() {
   const { success } = useToast();
   const [copied, setCopied] = useState(false);
+  const [useBusinessData, setUseBusinessData] = useState(true);
+
+  // Pré-preenchimento (opcional): usa os dados reais da empresa para já
+  // deixar o prompt pronto para copiar, sem precisar editar manualmente.
+  const business = useApi<{
+    name: string | null;
+    segment: string | null;
+  }>(["business-settings"], "business/settings");
+
+  const displayTemplate = useMemo(() => {
+    if (!useBusinessData) return TEMPLATE_PROMPT;
+    const name = business.data?.name?.trim();
+    const segment = business.data?.segment?.trim();
+    if (!name && !segment) return TEMPLATE_PROMPT;
+    return TEMPLATE_PROMPT
+      .replace("NOME DO NEGÓCIO: [COLOQUE O NOME DO NEGÓCIO]", `NOME DO NEGÓCIO: ${name || "[COLOQUE O NOME DO NEGÓCIO]"}`)
+      .replace("SEGMENTO: [COLOQUE O SEGMENTO]", `SEGMENTO: ${segment || "[COLOQUE O SEGMENTO]"}`);
+  }, [business.data, useBusinessData]);
 
   const copyTemplate = async () => {
     try {
-      await navigator.clipboard.writeText(TEMPLATE_PROMPT);
+      await navigator.clipboard.writeText(displayTemplate);
       setCopied(true);
       success('Prompt-modelo copiado');
       setTimeout(() => setCopied(false), 2000);
@@ -95,9 +114,9 @@ export default function PromptGuidePage() {
     <DashboardShell title="Guia de prompts">
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <Link href="/ai/settings" className="mb-2 inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700">
+          <Link href="/settings/empresa-ia" className="mb-2 inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700">
             <ArrowLeft className="h-4 w-4" />
-            Voltar para Configurar IA
+            Voltar para Configuração da IA
           </Link>
           <h1 className="heading-strong text-xl">Guia de prompts de IA</h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -142,25 +161,38 @@ export default function PromptGuidePage() {
         </Card>
 
         <Card className="border-emerald-500/30">
-          <div className="flex items-start justify-between gap-3 px-5 pt-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-emerald-600" />
               <h3 className="font-bold text-foreground">Prompt pronto para gerar seu agente</h3>
             </div>
-            <button
-              type="button"
-              onClick={() => void copyTemplate()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? 'Copiado!' : 'Copiar prompt'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[11px] text-zinc-600">
+                <input
+                  type="checkbox"
+                  checked={useBusinessData}
+                  onChange={(e) => setUseBusinessData(e.target.checked)}
+                  className="accent-emerald-500"
+                />
+                Usar dados do meu negócio
+              </label>
+              <button
+                type="button"
+                onClick={() => void copyTemplate()}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? 'Copiado!' : 'Copiar prompt'}
+              </button>
+            </div>
           </div>
           <p className="px-5 pt-1 text-xs text-zinc-500">
-            Copie o bloco abaixo para o ChatGPT. Você só precisa alterar os dois campos destacados.
+            {useBusinessData && (business.data?.name?.trim() || business.data?.segment?.trim())
+              ? "Os campos NOME DO NEGÓCIO e SEGMENTO já vêm preenchidos com os dados do seu negócio. Desmarque para ver o modelo original."
+              : "Copie o bloco abaixo para o ChatGPT. Você só precisa alterar os dois campos destacados."}
           </p>
           <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-5 text-xs leading-relaxed text-zinc-700">
-            {TEMPLATE_PROMPT}
+            {displayTemplate}
           </pre>
         </Card>
 

@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 const SECRET = () => new TextEncoder().encode(process.env.SESSION_SECRET || 'dev-secret');
 const SESSION_COOKIE = 'acp_token';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/lead-import', '/prospect', '/campaigns', '/inbox', '/reports', '/settings', '/change-password', '/payment', '/admin', '/ai'];
+const PROTECTED_PREFIXES = ['/dashboard', '/lead-import', '/prospect', '/campaigns', '/inbox', '/clientes', '/reports', '/settings', '/change-password', '/payment', '/admin', '/ai'];
 const PUBLIC_PATHS = ['/login', '/signup'];
 
 export async function middleware(req: NextRequest) {

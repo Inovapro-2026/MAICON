@@ -17,6 +17,18 @@ const nextConfig = {
         destination: '/prospect?tab=import',
         permanent: false,
       },
+      // Fase F: rotas órfãs da configuração antiga redirecionam para a tela
+      // unificada "Empresa + IA" (substitui Meu negócio + Configurar IA).
+      {
+        source: '/ai/settings',
+        destination: '/settings/empresa-ia',
+        permanent: true,
+      },
+      {
+        source: '/settings/business',
+        destination: '/settings/empresa-ia',
+        permanent: true,
+      },
     ];
   },
 };

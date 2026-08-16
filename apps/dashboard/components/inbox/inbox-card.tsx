@@ -10,6 +10,7 @@ export interface Conversation {
   lead_name: string | null;
   lead_phone: string | null;
   business_name: string | null;
+  lead_segment?: string | null;
   lead_status: string;
   human_handled: boolean;
   last_message_at: string | null;
@@ -128,7 +129,13 @@ export function InboxCard({ conversation: c, onOpen, onDelete, highlighted = fal
           )}
         </div>
         <div className="flex items-center gap-1 text-xs text-zinc-500">
-          {c.business_name ? <span className="truncate">{c.business_name}</span> : <MessageSquare className="h-3 w-3 shrink-0" />}
+          {c.lead_segment || c.business_name ? (
+            <span className="truncate">
+              {[c.lead_segment, c.business_name].filter(Boolean).join(" · ")}
+            </span>
+          ) : (
+            <MessageSquare className="h-3 w-3 shrink-0" />
+          )}
         </div>
       </div>
     </div>

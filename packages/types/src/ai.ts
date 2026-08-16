@@ -35,6 +35,19 @@ export interface AgentContext {
   history: { role: 'assistant' | 'user'; content: string }[];
   /** Metadados de classificação já detectados (opcional). */
   intent?: string | null;
+  /**
+   * Perfil do contato, derivado de dados reais (status do lead e histórico) —
+   * determina o modo da IA:
+   * 'novo' = lead em prospecção (postura de venda consultiva);
+   * 'conhecido' = já interagiu/recebeu link/é cliente (postura de suporte).
+   */
+  contactType?: 'novo' | 'conhecido';
+  /**
+   * Estágio comercial atual da conversa (Motor Comercial):
+   * NEW | QUALIFYING | DISCOVERY | EVALUATION | NEGOTIATION | CLOSED_WON | CLOSED_LOST.
+   * A IA usa para avançar dinamicamente pelo funil — não é um roteiro fixo.
+   */
+  conversationStage?: string | null;
 }
 
 /** Resultado da classificação da resposta do lead. */

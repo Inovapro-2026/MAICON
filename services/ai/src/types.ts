@@ -1,5 +1,5 @@
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -7,6 +7,8 @@ export interface GenerateOptions {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  /** Solicita resposta em JSON estruturado (response_format json_object). */
+  jsonMode?: boolean;
 }
 
 export interface ProviderResult {
@@ -18,9 +20,12 @@ export interface ProviderResult {
 }
 
 export interface LLMProvider {
-  readonly name: 'groq' | 'openrouter';
+  readonly name: "groq" | "openrouter";
   isConfigured(): boolean;
-  generate(messages: ChatMessage[], options?: GenerateOptions): Promise<ProviderResult>;
+  generate(
+    messages: ChatMessage[],
+    options?: GenerateOptions,
+  ): Promise<ProviderResult>;
 }
 
 /** Erro tipado que o provider-manager usa para decidir o fallback. */
@@ -29,9 +34,13 @@ export class ProviderError extends Error {
   readonly retryable: boolean;
   readonly status: number | null;
 
-  constructor(provider: string, message: string, options?: { retryable?: boolean; status?: number }) {
+  constructor(
+    provider: string,
+    message: string,
+    options?: { retryable?: boolean; status?: number },
+  ) {
     super(message);
-    this.name = 'ProviderError';
+    this.name = "ProviderError";
     this.provider = provider;
     this.retryable = options?.retryable ?? true;
     this.status = options?.status ?? null;

@@ -39,6 +39,10 @@ export interface RealtimeEventMessage {
     direction?: "IN" | "OUT";
     lead_status?: string;
     human_handled?: boolean;
+    /** Estágio comercial atual da conversa (ex.: "DISCOVERY"). */
+    conversation_stage?: string;
+    /** Técnica comercial usada pelo Motor Comercial na última resposta. */
+    technique_used?: string;
   };
 }
 

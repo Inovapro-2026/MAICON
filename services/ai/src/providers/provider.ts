@@ -1,11 +1,16 @@
-import { ChatMessage, GenerateOptions, LLMProvider, ProviderResult } from '../types';
+import {
+  ChatMessage,
+  GenerateOptions,
+  LLMProvider,
+  ProviderResult,
+} from "../types";
 
 /**
  * Base comum para provedores compatíveis com a API OpenAI
  * (Groq e OpenRouter). Implementa chamada HTTP com fetch nativo.
  */
 export abstract class OpenAICompatibleProvider implements LLMProvider {
-  abstract readonly name: 'groq' | 'openrouter';
+  abstract readonly name: "groq" | "openrouter";
   protected abstract readonly baseUrl: string;
   protected abstract readonly model: string;
   protected abstract readonly apiKey: string | undefined;
@@ -14,7 +19,10 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
     return Boolean(this.apiKey);
   }
 
-  async generate(messages: ChatMessage[], options: GenerateOptions = {}): Promise<ProviderResult> {
+  async generate(
+    messages: ChatMessage[],
+    options: GenerateOptions = {},
+  ): Promise<ProviderResult> {
     if (!this.isConfigured()) {
       throw new Error(`${this.name}: chave de API não configurada`);
     }
@@ -27,14 +35,16 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
 
     try {
       const res = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${this.apiKey}`,
-          ...(this.name === 'openrouter'
+          ...(this.name === "openrouter"
             ? {
-                'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://crm.inovapro.cloud',
-                'X-Title': 'SAVYRON',
+                "HTTP-Referer":
+                  process.env.NEXT_PUBLIC_APP_URL ||
+                  "https://crm.inovapro.cloud",
+                "X-Title": "SAVYRON",
               }
             : {}),
         },
@@ -43,16 +53,19 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
           messages,
           max_tokens: options.maxTokens ?? 500,
           temperature: options.temperature ?? 0.7,
+          ...(options.jsonMode
+            ? { response_format: { type: "json_object" } }
+            : {}),
         }),
         signal: controller.signal,
       });
 
       if (!res.ok) {
-        const body = await res.text().catch(() => '');
+        const body = await res.text().catch(() => "");
         // 429 rate limit -> retryable; 5xx -> retryable; 4xx -> não retryable
         const retryable = res.status === 429 || res.status >= 500;
         throw new Error(
-          `${this.name}: HTTP ${res.status} ${body.slice(0, 300)}`
+          `${this.name}: HTTP ${res.status} ${body.slice(0, 300)}`,
         );
       }
 
@@ -61,7 +74,7 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
 
-      const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+      const text = data.choices?.[0]?.message?.content?.trim() ?? "";
       if (!text) {
         throw new Error(`${this.name}: resposta vazia do provedor`);
       }
@@ -74,9 +87,9 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
         latencyMs: Date.now() - started,
       };
     } catch (error) {
-      const isAbort = error instanceof Error && error.name === 'AbortError';
+      const isAbort = error instanceof Error && error.name === "AbortError";
       throw new Error(
-        `${this.name}: ${isAbort ? `timeout após ${timeoutMs}ms` : String(error instanceof Error ? error.message : error)}`
+        `${this.name}: ${isAbort ? `timeout após ${timeoutMs}ms` : String(error instanceof Error ? error.message : error)}`,
       );
     } finally {
       clearTimeout(timer);

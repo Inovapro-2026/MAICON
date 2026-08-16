@@ -9,7 +9,7 @@
  * Todas as consultas são filtradas por `businessId` (multi-tenant).
  */
 
-import { AgentSystemPromptInput } from './prompt-assembler';
+import { AgentSystemPromptInput } from "./prompt-assembler";
 
 /**
  * Subconjunto estrutural do Prisma Client usado por este loader. Duck typing:
@@ -17,10 +17,18 @@ import { AgentSystemPromptInput } from './prompt-assembler';
  */
 export interface AIConfigDataSource {
   business: {
-    findUnique(args: { where: { id: string } }): Promise<{ name: string | null; segment: string | null; description: string | null } | null>;
+    findUnique(args: {
+      where: { id: string };
+    }): Promise<{
+      name: string | null;
+      segment: string | null;
+      description: string | null;
+    } | null>;
   };
   businessSettings: {
-    findUnique(args: { where: { business_id: string } }): Promise<{ additional_info: string | null } | null>;
+    findUnique(args: {
+      where: { business_id: string };
+    }): Promise<{ additional_info: string | null } | null>;
   };
   aISettings: {
     findUnique(args: { where: { business_id: string } }): Promise<{
@@ -32,11 +40,31 @@ export interface AIConfigDataSource {
     } | null>;
   };
   aIAgent: {
-    findUnique(args: { where: { id: string } }): Promise<{ id: string; name: string; role: string | null; description: string | null } | null>;
-    findFirst(args: { where: { business_id: string; active: boolean }; orderBy: { created_at: 'asc' } }): Promise<{ id: string; name: string; role: string | null; description: string | null } | null>;
+    findUnique(args: {
+      where: { id: string };
+    }): Promise<{
+      id: string;
+      name: string;
+      role: string | null;
+      description: string | null;
+      objective: string | null;
+    } | null>;
+    findFirst(args: {
+      where: { business_id: string; active: boolean };
+      orderBy: { created_at: "asc" };
+    }): Promise<{
+      id: string;
+      name: string;
+      role: string | null;
+      description: string | null;
+      objective: string | null;
+    } | null>;
   };
   aIKnowledge: {
-    findMany(args: { where: { business_id: string; active: boolean }; orderBy: { created_at: 'asc' } }): Promise<{ title: string; content: string }[]>;
+    findMany(args: {
+      where: { business_id: string; active: boolean };
+      orderBy: { created_at: "asc" };
+    }): Promise<{ title: string; content: string }[]>;
   };
 }
 
@@ -45,20 +73,36 @@ export interface AIConfigDataSource {
  * prompt em camadas (Business > BusinessSettings > AISettings > AIAgent >
  * AIKnowledge), sempre respeitando o `businessId`.
  */
-export async function loadAIConfiguration(db: AIConfigDataSource, businessId: string): Promise<AgentSystemPromptInput> {
+export async function loadAIConfiguration(
+  db: AIConfigDataSource,
+  businessId: string,
+): Promise<AgentSystemPromptInput> {
   const [business, businessSettings, settings, knowledge] = await Promise.all([
     db.business.findUnique({ where: { id: businessId } }),
     db.businessSettings.findUnique({ where: { business_id: businessId } }),
     db.aISettings.findUnique({ where: { business_id: businessId } }),
-    db.aIKnowledge.findMany({ where: { business_id: businessId, active: true }, orderBy: { created_at: 'asc' } }),
+    db.aIKnowledge.findMany({
+      where: { business_id: businessId, active: true },
+      orderBy: { created_at: "asc" },
+    }),
   ]);
 
   const agent = settings?.agent_id
     ? await db.aIAgent.findUnique({ where: { id: settings.agent_id } })
-    : await db.aIAgent.findFirst({ where: { business_id: businessId, active: true }, orderBy: { created_at: 'asc' } });
+    : await db.aIAgent.findFirst({
+        where: { business_id: businessId, active: true },
+        orderBy: { created_at: "asc" },
+      });
 
   return {
-    agent: agent ? { name: agent.name, role: agent.role, description: agent.description } : undefined,
+    agent: agent
+      ? {
+          name: agent.name,
+          role: agent.role,
+          description: agent.description,
+          objective: agent.objective,
+        }
+      : undefined,
     business: {
       name: business?.name,
       segment: business?.segment,
@@ -68,8 +112,10 @@ export async function loadAIConfiguration(db: AIConfigDataSource, businessId: st
     settings: settings
       ? {
           tone: settings.tone,
-          behaviors: (settings.behaviors as Record<string, boolean>) ?? undefined,
-          messageConfig: (settings.message_config as Record<string, unknown>) ?? undefined,
+          behaviors:
+            (settings.behaviors as Record<string, boolean>) ?? undefined,
+          messageConfig:
+            (settings.message_config as Record<string, unknown>) ?? undefined,
           customPrompt: settings.custom_prompt,
         }
       : undefined,

@@ -11,7 +11,7 @@ export async function ensureConversation(leadId: string, businessId: string): Pr
   if (existing) return existing.id;
 
   const conversation = await prisma.conversation.create({
-    data: { business_id: businessId, lead_id: leadId, status: 'OPEN', onboarding_stage: 'NOT_STARTED' },
+    data: { business_id: businessId, lead_id: leadId, status: 'OPEN', stage: 'NEW' },
   });
   logger.debug('Conversa criada', { conversation_id: conversation.id, lead_id: leadId, business_id: businessId });
   return conversation.id;

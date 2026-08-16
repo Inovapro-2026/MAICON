@@ -51,13 +51,19 @@ enum ConversationStatus {
   CLOSED
 }
 
-/** Estágio de onboarding/captura do nome da conversa (IA). */
-enum OnboardingStage {
-  NOT_STARTED
-  GREETED
-  COMPANY_INTRODUCED
-  AWAITING_NAME
-  NAME_CAPTURED
+/**
+ * Estágio comercial da conversa — decidido dinamicamente pela IA (Motor
+ * Comercial). Substitui o OnboardingStage fixo: a IA avalia o que já sabe e
+ * avança a conversa pelo funil (descoberta → avaliação → negociação → fechado).
+ */
+enum ConversationStage {
+  NEW
+  QUALIFYING
+  DISCOVERY
+  EVALUATION
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
 }
 
 enum LeadSource {
@@ -419,7 +425,12 @@ model Conversation {
   status          ConversationStatus @default(OPEN)
   ai_provider     String?
   human_handled   Boolean            @default(false)
-  onboarding_stage OnboardingStage?
+  /** Estágio comercial atual, decidido dinamicamente pela IA. */
+  stage           ConversationStage  @default(NEW)
+  /** Versão do Motor Comercial usada na última resposta (rollout/rollback). */
+  commercial_engine_version String?
+  /** Técnica comercial usada na última resposta (ex.: tactical_empathy). */
+  last_technique_used String?
   last_message_at DateTime?
   created_at      DateTime           @default(now())
   updated_at      DateTime           @updatedAt
@@ -430,6 +441,7 @@ model Conversation {
 
   @@unique([business_id, lead_id])
   @@index([business_id, last_message_at])
+  @@index([business_id, stage])
 }
 
 // ============================= IA =============================
@@ -442,6 +454,10 @@ model AIGeneration {
   provider         String
   model            String
   prompt_version   String
+  /** Técnica comercial usada nesta geração (Motor Comercial). */
+  technique_used   String?
+  /** Versão do Motor Comercial (v1, ...) para análise de conversão/resolução. */
+  commercial_engine_version String?
   prompt           String?
   completion       String?
   input_tokens     Int     @default(0)
@@ -730,6 +746,8 @@ model AIAgent {
   name        String
   role        String?
   description String?
+  /** Objetivo do agente, gerado automaticamente pela configuração estruturada. */
+  objective   String?
   active      Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -749,6 +767,8 @@ model AISettings {
   behaviors      Json     @default("{}")
   message_config Json     @default("{}")
   custom_prompt  String?
+  /** Última aplicação automática da configuração estruturada ("Aplicar na IA"). */
+  last_applied_at DateTime?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 

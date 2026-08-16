@@ -17,6 +17,7 @@ import { adminRouter } from "./routes/admin";
 import { businessRouter } from "./routes/business";
 import { aiRouter } from "./routes/ai";
 import { emailsRouter } from "./routes/emails";
+import { clientsRouter } from "./routes/clients";
 import { errorHandler } from "./middleware/error-handler";
 import { rateLimit } from "./middleware/rate-limit";
 import { initQueues } from "./services/queues";
@@ -78,6 +79,7 @@ export function createApp(): Express {
   app.use("/business", businessRouter);
   app.use("/ai", aiRouter);
   app.use("/emails", emailsRouter);
+  app.use("/clients", clientsRouter);
 
   app.use((_req, res) => {
     res.status(404).json({
