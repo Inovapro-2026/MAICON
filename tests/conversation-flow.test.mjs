@@ -74,7 +74,7 @@ test("normaliza: valores inválidos caem para defaults seguros (nunca quebram o 
   assert.equal(out.customer.name, null);
   assert.equal(out.customer.interest, null);
   assert.equal(out.stage, "NEW");
-  assert.equal(out.technique_used, "calibrated_questions");
+  assert.equal(out.technique_used, "tactical_empathy");
   assert.equal(out.action, "CONTINUE_CONVERSATION");
 });
 

@@ -20,8 +20,15 @@ import {
   buildGeneratorInstruction,
   COMMERCIAL_ENGINE_VERSION,
   CommercialAction,
+  CommercialAnalysis,
+  CommercialIntent,
   CommercialStageValue,
   CommercialTechnique,
+  ConversationGoal,
+  deterministicCommercialAnalysis,
+  GENERATOR_CONDUCT,
+  KnownContext,
+  NextAction,
   normalizeCommercialAnalysis,
 } from "./commercial-engine";
 import { extractJsonObject } from "./structured-config";
@@ -40,6 +47,14 @@ export interface CommercialTurnResult {
   technique_used: CommercialTechnique;
   commercial_engine_version: string;
   action: CommercialAction;
+  /** Intenção do cliente na última mensagem (decisão orientada a intenção). */
+  intent: CommercialIntent;
+  /** Contexto já conhecido sobre o cliente (para nunca perguntar de novo). */
+  known: KnownContext;
+  /** Objetivo deste turno. */
+  goal: ConversationGoal;
+  /** Próximo passo comercial natural. */
+  next_action: NextAction;
   provider: AICompletionResult["provider"];
   model: string;
   inputTokens: number;
@@ -67,7 +82,7 @@ export function buildCommercialAnalysisMessages(
     {
       role: "system",
       content:
-        "Você é o analisador comercial do SAVYRON. Sua única tarefa é classificar a conversa comercial em estágio, técnica e ação — você NUNCA gera respostas para o cliente.",
+        "Você é o analisador comercial do SAVYRON. Sua única tarefa é classificar a conversa comercial em intenção, contexto conhecido, objetivo e próximo passo — você NUNCA gera respostas para o cliente.",
     },
     ...context.history.map((m) => ({ role: m.role, content: m.content })),
     {
@@ -91,11 +106,7 @@ export function buildCommercialAnalysisMessages(
 export function buildCommercialReplyMessages(
   agentConfig: AgentSystemPromptInput,
   context: AgentContext,
-  analysis: {
-    stage: CommercialStageValue;
-    technique_used: CommercialTechnique;
-    action: CommercialAction;
-  },
+  analysis: CommercialAnalysis,
 ): ChatMessage[] {
   const messages: ChatMessage[] = [
     { role: "system", content: buildGeneratorSystemPrompt(agentConfig) },
@@ -120,7 +131,7 @@ export function buildCommercialReplyMessages(
 
   messages.push({
     role: "user",
-    content: `${buildGeneratorInstruction(analysis)} Escreva agora a sua resposta ao cliente, direto e natural, em uma única mensagem.`,
+    content: `${buildGeneratorInstruction(analysis)} ${GENERATOR_CONDUCT} Escreva agora a sua resposta ao cliente, direto e natural, em uma única mensagem.`,
   });
   return messages;
 }
@@ -208,6 +219,10 @@ export async function generateCommercialTurn(
     technique_used: analysis.technique_used,
     commercial_engine_version: COMMERCIAL_ENGINE_VERSION,
     action: analysis.action,
+    intent: analysis.intent,
+    known: analysis.known,
+    goal: analysis.goal,
+    next_action: analysis.next_action,
     provider: replyResult.provider,
     model: replyResult.model,
     inputTokens: analysis.inputTokens + replyResult.inputTokens,
@@ -226,11 +241,7 @@ export async function generateCommercialTurn(
 async function generateValidatedReply(
   agentConfig: AgentSystemPromptInput,
   context: AgentContext,
-  analysis: {
-    stage: CommercialStageValue;
-    technique_used: CommercialTechnique;
-    action: CommercialAction;
-  },
+  analysis: CommercialAnalysis,
   messageConfig: MessageConfig,
   options: CommercialTurnOptions,
 ): Promise<{ reply: string; replyResult: AICompletionResult }> {
@@ -278,17 +289,13 @@ async function generateValidatedReply(
   return { reply: text, replyResult: result };
 }
 
-/** Fase de análise da conversa: Groq decide estágio/técnica/ação (JSON). */
+/** Fase de análise da conversa: Groq decide intenção/objetivo/próximo passo (JSON). */
 async function analyzeConversation(
   context: AgentContext,
   agentConfig: AgentSystemPromptInput,
   options: CommercialTurnOptions,
 ): Promise<
-  {
-    customer: { name: string | null; segment: string | null; interest: boolean | null };
-    stage: CommercialStageValue;
-    technique_used: CommercialTechnique;
-    action: CommercialAction;
+  CommercialAnalysis & {
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
@@ -317,14 +324,16 @@ async function analyzeConversation(
       structured: true,
     };
   } catch (error) {
-    logger.warn("Análise comercial via IA falhou; usando análise padrão", {
+    logger.warn("Análise comercial via IA falhou; usando Decision Engine determinístico", {
       error: error instanceof Error ? error.message : String(error),
     });
+    const fallback = deterministicCommercialAnalysis({
+      history: context.history,
+      leadName: context.leadName,
+      contactType: context.contactType,
+    });
     return {
-      customer: { name: null, segment: null, interest: null },
-      stage: "NEW",
-      technique_used: "calibrated_questions",
-      action: "CONTINUE_CONVERSATION",
+      ...fallback,
       inputTokens: 0,
       outputTokens: 0,
       latencyMs: 0,

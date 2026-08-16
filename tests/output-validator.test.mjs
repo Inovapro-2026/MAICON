@@ -14,8 +14,23 @@ import {
   hasReasoningLeak,
   buildGeneratorInstruction,
   buildCommercialReplyMessages,
-  COMMERCIAL_TECHNIQUES,
+  NEXT_ACTIONS,
 } from "@prospector/ai";
+
+/** Análise mínima válida para os testes de geração. */
+function analysis(overrides = {}) {
+  return {
+    intent: "greeting",
+    stage: "NEW",
+    known: { name: false, business_type: false, need: false },
+    goal: "start_rapport",
+    next_action: "BUILD_RAPPORT",
+    customer: { name: null, segment: null, interest: null },
+    technique_used: "tactical_empathy",
+    action: "CONTINUE_CONVERSATION",
+    ...overrides,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // 1. Detecção de vazamento de raciocínio interno
@@ -92,18 +107,14 @@ test("validator: aplica limites rígidos da plataforma", () => {
 // ---------------------------------------------------------------------------
 
 test("generator: diretiva de postura NÃO expõe jargão interno ao modelo", () => {
-  for (const technique of COMMERCIAL_TECHNIQUES) {
-    const directive = buildGeneratorInstruction({
-      stage: "NEW",
-      technique_used: technique,
-      action: "CONTINUE_CONVERSATION",
-    });
+  for (const nextAction of NEXT_ACTIONS) {
+    const directive = buildGeneratorInstruction(analysis({ next_action: nextAction }));
     assert.ok(directive.length > 0, "diretiva não pode ser vazia");
     assert.ok(
-      !/technique_used|Stage|stage[:=\s]|action[:=\s]|mirroring|calibrated_questions|respectful_close/i.test(
+      !/technique_used|Stage|stage[:=\s]|action[:=\s]|next_action|mirroring|calibrated_questions|respectful_close/i.test(
         directive,
       ),
-      `diretiva não deve conter jargão interno: ${technique} → ${directive}`,
+      `diretiva não deve conter jargão interno: ${nextAction} → ${directive}`,
     );
   }
 });
@@ -115,11 +126,7 @@ test("generator: mensagens de resposta não contêm camadas de regras internas",
       business: { name: "Barbearia X", segment: "Estética" },
     },
     { leadName: "Maicon", history: [{ role: "user", content: "oi" }] },
-    {
-      stage: "NEW",
-      technique_used: "calibrated_questions",
-      action: "CONTINUE_CONVERSATION",
-    },
+    analysis(),
   );
 
   const full = messages.map((m) => m.content).join("\n");
@@ -146,11 +153,7 @@ test("generator: a última mensagem pede só a resposta ao cliente", () => {
   const messages = buildCommercialReplyMessages(
     {},
     { history: [{ role: "user", content: "oi" }] },
-    {
-      stage: "NEW",
-      technique_used: "tactical_empathy",
-      action: "CONTINUE_CONVERSATION",
-    },
+    analysis(),
   );
   const last = messages[messages.length - 1];
   assert.equal(last.role, "user");

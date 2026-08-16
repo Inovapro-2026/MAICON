@@ -20,8 +20,9 @@ interface ChatMessage {
 interface PlaygroundReply {
   reply: string;
   stage: string;
-  technique_used: string;
-  action: string;
+  intent: string;
+  goal: string;
+  next_action: string;
   structured: boolean;
   agent: { id: string | null; name: string } | null;
   provider: string;
@@ -41,22 +42,43 @@ const STAGE_LABELS: Record<string, string> = {
   CLOSED_LOST: 'Fechada (perdida)',
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  CONTINUE_CONVERSATION: 'Continuar conversa',
-  TRANSFER_TO_HUMAN: 'Transferir para humano',
-  CLOSE_CONVERSATION: 'Encerrar conversa',
+const INTENT_LABELS: Record<string, string> = {
+  greeting: 'Cumprimento',
+  question: 'Pergunta',
+  positive_response: 'Resposta positiva',
+  negative_response: 'Resposta negativa',
+  objection: 'Objeção',
+  info_sharing: 'Compartilhou contexto',
+  opt_out: 'Opt-out',
+  unknown: 'Indefinida',
 };
 
-const TECHNIQUE_LABELS: Record<string, string> = {
-  tactical_empathy: 'Empatia tática',
-  mirroring: 'Espelhamento',
-  emotional_labeling: 'Rotulagem emocional',
-  calibrated_questions: 'Pergunta calibrada',
-  no_oriented: 'Orientado ao "não"',
-  understanding_confirmation: 'Confirmação de entendimento',
-  objection_handling: 'Tratamento de objeção',
-  conversion_lead: 'Condução para conversão',
-  respectful_close: 'Encerramento respeitoso',
+const GOAL_LABELS: Record<string, string> = {
+  start_rapport: 'Quebrar o gelo',
+  answer_question: 'Responder pergunta',
+  discover_business: 'Descobrir o negócio',
+  understand_pain: 'Entender a dor',
+  present_solution: 'Apresentar solução',
+  handle_objection: 'Tratar objeção',
+  qualify_interest: 'Qualificar interesse',
+  propose_next_step: 'Propor próximo passo',
+  transfer_to_human: 'Transferir para humano',
+  close_conversation: 'Encerrar conversa',
+};
+
+const NEXT_ACTION_LABELS: Record<string, string> = {
+  BUILD_RAPPORT: 'Criar rapport',
+  ASK_BUSINESS_TYPE: 'Perguntar tipo de negócio',
+  ASK_CURRENT_ACQUISITION: 'Perguntar como capta clientes',
+  ASK_CURRENT_PROCESS: 'Perguntar processo atual',
+  UNDERSTAND_PAIN: 'Entender a dificuldade',
+  ANSWER_QUESTION: 'Responder à pergunta',
+  EXPLAIN_RELEVANT_SOLUTION: 'Explicar solução relevante',
+  HANDLE_OBJECTION: 'Tratar objeção',
+  QUALIFY_INTEREST: 'Qualificar interesse',
+  PROPOSE_NEXT_STEP: 'Propor próximo passo',
+  TRANSFER_TO_HUMAN: 'Transferir para humano',
+  CLOSE_CONVERSATION: 'Encerrar conversa',
 };
 
 const WELCOME: ChatMessage = {
@@ -212,14 +234,19 @@ export default function AIPlaygroundPage() {
               Estágio: {STAGE_LABELS[lastReply.stage] ?? lastReply.stage}
             </span>
           ) : null}
-          {lastReply.technique_used ? (
+          {lastReply.intent ? (
             <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-zinc-600">
-              Técnica: {TECHNIQUE_LABELS[lastReply.technique_used] ?? lastReply.technique_used}
+              Intenção: {INTENT_LABELS[lastReply.intent] ?? lastReply.intent}
             </span>
           ) : null}
-          {lastReply.action ? (
+          {lastReply.goal ? (
             <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-zinc-600">
-              Ação: {ACTION_LABELS[lastReply.action] ?? lastReply.action}
+              Objetivo: {GOAL_LABELS[lastReply.goal] ?? lastReply.goal}
+            </span>
+          ) : null}
+          {lastReply.next_action ? (
+            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-emerald-600">
+              Próximo passo: {NEXT_ACTION_LABELS[lastReply.next_action] ?? lastReply.next_action}
             </span>
           ) : null}
         </div>
