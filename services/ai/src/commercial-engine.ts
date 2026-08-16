@@ -462,7 +462,8 @@ const NEED_RE =
 const ACQUISITION_CHANNEL_RE =
   /(redes sociais|instagram|facebook|tiktok|linkedin|indicacao|indicacoes|indicaram|indicam|boca a boca|boca a boca|anuncio|anuncios|google|marca|marca propria|whatsapp|site|loja online|youtube|panfleto|panfletos|outdoor|radio|radio|insta)/i;
 
-const NAME_RE = /(meu nome [ée]|me chamo|sou (o |a )?)([a-zà-ÿ]+)/i;
+// O input é normalizado (NFD + remoção de acentos) antes do match: "é" vira "e".
+const NAME_RE = /(meu nome e|me chamo|sou (o|a)?)\s+([a-zà-ÿ]+)/i;
 
 /** Palavras curtas que nunca são nome (fragmentos genéricos). */
 const NOT_A_NAME_RE = /^(oi|ola|sim|nao|ok|obrigado|obrigada|claro|pode|viu|ta|blz|nice|show|legal|haha|kkk|como|e|a|o|de|do|da)$/i;
@@ -535,7 +536,9 @@ export function extractCustomerName(history: string): string | null {
   const normalized = history.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const m = normalized.match(NAME_RE);
   if (!m) return null;
-  return m[4].charAt(0).toUpperCase() + m[4].slice(1);
+  const name = m[m.length - 1]; // o nome é a ÚLTIMA captura do regex
+  if (!name) return null;
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 /** Monta um resumo curto e atualizado da conversa. */

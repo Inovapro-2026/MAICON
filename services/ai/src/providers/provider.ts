@@ -33,15 +33,16 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    // Free-tier upstreams (ex: OpenRouter :free) rate-limit com frequência;
-    // 429/5xx são transitórios e merecem retry com pequeno backoff.
-    const MAX_RETRIES = 2;
+    // Rate limit (429) e 5xx são transitórios: retry com backoff e respeito ao
+    // header Retry-After (a janela de TPM do free-tier se recupera em segundos).
+    const MAX_RETRIES = 3;
 
     try {
       let lastError: Error | null = null;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         if (attempt > 0) {
-          await new Promise((r) => setTimeout(r, 2000 * attempt));
+          const delayMs = 1500 * attempt;
+          await new Promise((r) => setTimeout(r, delayMs));
         }
         const res = await fetch(`${this.baseUrl}/chat/completions`, {
           method: "POST",
@@ -68,7 +69,15 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
           lastError = new Error(
             `${this.name}: HTTP ${res.status} ${body.slice(0, 300)}`,
           );
-          if (retryable && attempt < MAX_RETRIES) continue;
+          if (retryable && attempt < MAX_RETRIES) {
+            // Se o upstream mandou Retry-After, aguarda o tempo indicado (cap 8s).
+            const retryAfter = res.headers.get("retry-after");
+            const secs = retryAfter ? Number.parseInt(retryAfter, 10) : 0;
+            if (Number.isFinite(secs) && secs > 0 && secs <= 8) {
+              await new Promise((r) => setTimeout(r, secs * 1000));
+            }
+            continue;
+          }
           break;
         }
 
