@@ -10,11 +10,16 @@ import { createLogger } from "@prospector/logger";
 import { QUEUE_NAMES } from "@prospector/queues";
 import { asyncHandler, ok, ApiError } from "../lib/http";
 import { requireAuth, requireBusiness } from "../middleware/auth";
+import { requireActiveSubscription } from "../middleware/active-subscription";
 import { getQueue } from "../services/queues";
 import { writeAudit } from "../services/audit";
 import { checkFeatureAccess } from "../services/billing";
 
 const logger = createLogger("api.prospecting");
+
+/** Fontes Apify disponíveis (Google Maps / Instagram) — validação no backend. */
+const APIFY_SOURCES = ["google_maps", "instagram"] as const;
+type ApifySource = (typeof APIFY_SOURCES)[number];
 
 export const prospectingRouter = Router();
 
@@ -28,10 +33,11 @@ prospectingRouter.use(requireBusiness);
  */
 prospectingRouter.post(
   "/prospect",
+  requireActiveSubscription,
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
 
-    const { campaignId, segment, country, state, city, targetQuantity } =
+    const { campaignId, segment, country, state, city, targetQuantity, sources } =
       req.body ?? {};
 
     // Validação mínima: precisa de um alvo (segmento OU localização).
@@ -45,6 +51,20 @@ prospectingRouter.post(
       throw ApiError.badRequest(
         "Informe o segmento (ex: barbearia) ou a localização alvo.",
       );
+    }
+
+    // Fontes Apify (Google Maps / Instagram) — cada uma tem custo próprio.
+    // O usuário escolhe conscientemente; nenhuma é ativada sem seleção.
+    let apifySources: ApifySource[] = [];
+    if (Array.isArray(sources) && sources.length > 0) {
+      apifySources = (sources as string[]).filter(
+        (s): s is ApifySource => (APIFY_SOURCES as readonly string[]).includes(s),
+      );
+      if (apifySources.length === 0) {
+        throw ApiError.badRequest(
+          "Fontes inválidas. Use apenas: google_maps, instagram.",
+        );
+      }
     }
 
     const target = Number(targetQuantity ?? 20);
@@ -120,6 +140,7 @@ prospectingRouter.post(
         city: city?.trim() || null,
         target_quantity: clampedTarget,
         status: "PENDING",
+        sources: apifySources.length ? apifySources : undefined,
       },
     });
 
@@ -136,6 +157,8 @@ prospectingRouter.post(
         state: state?.trim() || undefined,
         city: city?.trim() || undefined,
         targetQuantity: clampedTarget,
+        provider: apifySources.length ? "apify" : undefined,
+        sources: apifySources.length ? apifySources : undefined,
       },
       {
         jobId: `prospect-${run.id}`,

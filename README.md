@@ -195,7 +195,13 @@ histórico de prospecções continua visível mesmo após downgrade.
 
 ### `/inbox` — Mensagens (inbox)
 
-- **Filtros** (pílulas): `Enviado`, `Respondido`, `Manual`, `Encerradas`.
+- **Filtros** (pílulas): `Respondido` (**padrão** — conversas abertas por IA cujo
+  lead já tem nome real coletado), `Em atendimento` (conversas abertas por IA em
+  que o lead ainda não tem nome real — exibido como *"Novo contato"*),
+  `Manual`, `Encerradas`.
+- Um lead que ganha nome real (captura da IA) migra automaticamente de
+  *Em atendimento* para *Respondido* na próxima atualização da lista
+  (polling 15s + tempo real).
 - Contador de conversas + botão **Limpar tudo** (só
   `OWNER`/`BUSINESS_ADMIN`; exige digitar `EXCLUIR`).
 - **Grid de cards** de conversa (`InboxCard`): nome do lead, empresa, prévia e

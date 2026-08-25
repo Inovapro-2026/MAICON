@@ -142,36 +142,36 @@ export default function ConversationDetailPage() {
   const humanMode = Boolean(data && data.human_handled && data.status === 'OPEN');
 
   return (
-    <>
+    <div className="dashboard-wrapper">
       <Sidebar />
-      {/* Direita: chat em altura total (a sidebar fixa fica à esquerda no desktop) */}
+      {/* Direita: chat em altura total */}
       <div className="lg:pl-64">
-        <div className="flex h-dvh flex-col bg-zinc-50">
+        <div className="flex h-dvh flex-col bg-[#F5F7FA]">
           {/* Header fixo */}
-          <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur">
-            <div className="flex items-center gap-2 px-2 py-2.5 sm:px-3">
+          <header className="sticky top-0 z-10 border-b border-[#E6E8F0] bg-white/95 backdrop-blur-md">
+            <div className="flex items-center gap-2 px-3 py-3 sm:px-6">
               <Link
                 href="/inbox"
                 aria-label="Voltar às mensagens"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-100 active:scale-95"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E6E8F0] bg-white text-[#475569] transition-colors hover:bg-slate-50 hover:text-[#0F172A] active:scale-95 shadow-xs"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4.5 w-4.5" />
               </Link>
 
               {conversation.isLoading ? (
-                <div className="flex h-10 items-center">
+                <div className="flex h-9 items-center pl-2">
                   <Spinner />
                 </div>
               ) : data ? (
                 <>
                   {/* Identidade */}
-                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-bold text-zinc-700">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#6366F1] to-[#8B5CF6] text-sm font-bold text-white shadow-xs">
                       {(data.lead.name?.[0] ?? '?').toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="truncate font-semibold text-zinc-900">{data.lead.name ?? 'Contato'}</span>
+                        <span className="truncate font-bold text-[#0F172A]">{data.lead.name ?? 'Contato'}</span>
                         <Badge tone={data.human_handled ? 'blue' : 'violet'} className="px-2 py-0.5">
                           {data.human_handled ? <User className="mr-1 inline h-2.5 w-2.5" /> : <Bot className="mr-1 inline h-2.5 w-2.5" />}
                           {data.human_handled ? 'Manual' : `IA (${data.ai_provider ?? '—'})`}
@@ -180,7 +180,7 @@ export default function ConversationDetailPage() {
                           {data.status === 'OPEN' ? 'Aberta' : 'Encerrada'}
                         </Badge>
                       </div>
-                      <div className="truncate text-xs text-zinc-500">
+                      <div className="truncate text-xs text-[#64748B]">
                         {data.lead.business_name ? `${data.lead.business_name} · ` : ''}
                         {data.lead.phone ?? data.lead.email ?? ''}
                         {data.lead.city ? ` · ${data.lead.city}/${data.lead.state ?? ''}` : ''}
@@ -189,14 +189,14 @@ export default function ConversationDetailPage() {
                   </div>
 
                   {/* Ações */}
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-2">
                     {!data.human_handled ? (
                       <Button size="sm" onClick={() => void takeover()}>
-                        <User className="h-4 w-4" /> Assumir
+                        <User className="h-4 w-4 mr-1.5" /> Assumir
                       </Button>
                     ) : (
                       <Button size="sm" variant="outline" onClick={() => void release()}>
-                        <Bot className="h-4 w-4" /> IA
+                        <Bot className="h-4 w-4 mr-1.5" /> IA
                       </Button>
                     )}
                     <Button size="sm" variant="ghost" onClick={() => void close()}>
@@ -210,13 +210,13 @@ export default function ConversationDetailPage() {
 
           {/* Lista de mensagens (scroll própria) */}
           <main className="chat-scroll flex-1 overflow-y-auto" ref={scrollRef} aria-live="polite">
-            <div className="mx-auto w-full max-w-3xl space-y-3 px-3 py-4 sm:px-4">
+            <div className="mx-auto w-full max-w-3xl space-y-3 px-3 py-6 sm:px-4">
               {conversation.isLoading ? (
                 <div className="flex justify-center py-16">
                   <Spinner />
                 </div>
               ) : data && data.messages.length === 0 ? (
-                <div className="py-16 text-center text-sm text-zinc-500">Nenhuma mensagem ainda.</div>
+                <div className="py-16 text-center text-sm text-[#64748B]">Nenhuma mensagem ainda.</div>
               ) : (
                 data?.messages.map((m) => <MessageBubble key={m.id} message={m} />)
               )}
@@ -226,10 +226,10 @@ export default function ConversationDetailPage() {
           </main>
 
           {/* Composer fixo no rodapé */}
-          <footer className="sticky bottom-0 z-10 border-t border-zinc-200 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 backdrop-blur sm:px-4">
+          <footer className="sticky bottom-0 z-10 border-t border-[#E6E8F0] bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-md sm:px-6">
             <div className="mx-auto w-full max-w-3xl">
               {data && !humanMode && (
-                <p className="mb-1.5 text-center text-[11px] text-zinc-500">
+                <p className="mb-2 text-center text-[11px] text-[#64748B]">
                   {data.status === 'OPEN' ? 'A IA está de prontidão. Assuma a conversa para responder manualmente.' : 'Conversa encerrada.'}
                 </p>
               )}
@@ -251,10 +251,10 @@ export default function ConversationDetailPage() {
                     }}
                     placeholder={humanMode ? 'Digite sua resposta manual…' : 'Modo manual: assuma a conversa para responder'}
                     rows={1}
-                    className="min-h-[44px] w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-600 focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-500"
+                    className="min-h-[44px] w-full resize-none rounded-2xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 focus:outline-none disabled:cursor-not-allowed disabled:border-[#E2E8F0] disabled:bg-slate-50 disabled:text-[#94A3B8]"
                   />
                 </div>
-                <Button onClick={() => void send()} loading={sending} disabled={!humanMode || !draft.trim()} className="h-[44px] w-[44px] shrink-0 rounded-full !p-0" aria-label="Enviar mensagem">
+                <Button onClick={() => void send()} loading={sending} disabled={!humanMode || !draft.trim()} className="h-[44px] w-[44px] shrink-0 rounded-2xl !p-0 flex items-center justify-center shadow-xs" aria-label="Enviar mensagem">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -262,6 +262,6 @@ export default function ConversationDetailPage() {
           </footer>
         </div>
       </div>
-    </>
+    </div>
   );
 }

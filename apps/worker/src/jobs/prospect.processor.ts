@@ -7,6 +7,7 @@
 import { config } from "@prospector/config";
 import { prisma } from "@prospector/database";
 import { createLogger } from "@prospector/logger";
+import { normalizePhone } from "@prospector/utils";
 import { QUEUE_NAMES } from "@prospector/queues";
 import {
   buildDiscoveryProvider,
@@ -21,6 +22,8 @@ import {
 } from "@prospector/prospector";
 import { publishRealtime, buildProspectingEvent } from "../services/realtime";
 import { getWorkerQueue } from "../queues";
+import { isUniqueConstraintError } from "../services/messages";
+import { processApifyProspection, ApifyProspectJobData } from "./prospect-apify.processor";
 
 const logger = createLogger("worker.prospect");
 
@@ -33,6 +36,9 @@ interface ProspectJobData {
   state?: string;
   city?: string;
   targetQuantity: number;
+  /** provider === "apify" desvia para a prospecção multi-plataforma via Apify. */
+  provider?: "apify";
+  sources?: ApifyProspectJobData["sources"];
 }
 
 /** Implementa o repositório sobre o Prisma (Neon). */
@@ -46,7 +52,7 @@ function createProspectionRepository(
       const [phonesRows, emailsRows, domainsRows] = await Promise.all([
         prisma.lead.findMany({
           where: { business_id: businessId, phone: { not: null } },
-          select: { phone: true },
+          select: { phone: true, fingerprint_phone: true },
           take: LIMIT,
         }),
         prisma.lead.findMany({
@@ -61,10 +67,22 @@ function createProspectionRepository(
         }),
       ]);
 
+      // Telefones NORMALIZADOS (E.164) — comparação justa com o candidato,
+      // que também chega normalizado. Sem isso, "+5511..." (candidato) nunca
+      // casava com "5511..." (raw no banco) e um duplicado derrubava a run
+      // na constraint `(business_id, phone)`.
+      const phones = new Set<string>();
+      for (const r of phonesRows) {
+        const fp = r.fingerprint_phone;
+        if (fp) phones.add(fp);
+        if (r.phone) {
+          const norm = normalizePhone(r.phone);
+          if (norm) phones.add(norm);
+        }
+      }
+
       return {
-        phones: new Set(
-          phonesRows.map((r) => r.phone).filter((v): v is string => Boolean(v)),
-        ),
+        phones,
         emails: new Set(
           emailsRows
             .map((r) => r.email?.toLowerCase())
@@ -108,6 +126,7 @@ function createProspectionRepository(
       let errors = 0;
       let phones = 0;
       let emails = 0;
+      let duplicates = 0;
 
       for (const lead of leads) {
         if (lead.phone) phones += 1;
@@ -118,30 +137,63 @@ function createProspectionRepository(
       try {
         await prisma.$transaction(async (tx) => {
           for (const lead of leads) {
-            const row = await tx.lead.create({
-              data: {
-                business_id: businessId,
+            // Fingerprints normalizados para o dedup futuro funcionar por
+            // telefone/e-mail/domínio (a constraint `(business_id, phone)` usa
+            // o valor RAW — por isso gravamos também o fingerprint).
+            const phoneFp = lead.phone
+              ? (normalizePhone(lead.phone) ?? null)
+              : null;
+            const emailFp = lead.email?.toLowerCase().trim() || null;
+
+            try {
+              const row = await tx.lead.create({
+                data: {
+                  business_id: businessId,
+                  name: lead.name,
+                  phone: lead.phone,
+                  email: lead.email,
+                  instagram: lead.instagram,
+                  website: lead.website,
+                  city: lead.city,
+                  state: lead.state,
+                  country: lead.country,
+                  segment: lead.segment,
+                  address: lead.address,
+                  lead_score: lead.leadScore,
+                  source_url: lead.sourceUrl,
+                  source_type: "WEB",
+                  source: "WEB",
+                  collected_at: new Date(),
+                  prospection_run_id: runId,
+                  fingerprint_domain: lead.fingerprintDomain,
+                  fingerprint_namecity: lead.fingerprintNameCity,
+                  fingerprint_phone: phoneFp,
+                  fingerprint_email: emailFp,
+                },
+              });
+              created.push(row.id);
+              saved += 1;
+            } catch (error) {
+              // Duplicata real (telefone/e-mail/etc. já existe) NÃO derruba a
+              // run — conta como duplicado e segue. Antes, um único telefone
+              // repetido falhava o lote inteiro (constraint business_id,phone).
+              if (isUniqueConstraintError(error)) {
+                duplicates += 1;
+                logger.info("LEAD_SKIPPED_DUPLICATE", {
+                  businessId,
+                  prospectionRunId: runId,
+                  name: lead.name,
+                });
+                continue;
+              }
+              errors += 1;
+              logger.warn("Falha ao persistir lead individual", {
+                businessId,
+                prospectionRunId: runId,
                 name: lead.name,
-                phone: lead.phone,
-                email: lead.email,
-                instagram: lead.instagram,
-                website: lead.website,
-                city: lead.city,
-                state: lead.state,
-                country: lead.country,
-                segment: lead.segment,
-                address: lead.address,
-                lead_score: lead.leadScore,
-                source_url: lead.sourceUrl,
-                source_type: "WEB",
-                source: "WEB",
-                collected_at: new Date(),
-                prospection_run_id: runId,
-                fingerprint_domain: lead.fingerprintDomain,
-                fingerprint_namecity: lead.fingerprintNameCity,
-              },
-            });
-            created.push(row.id);
+                error: (error as Error).message,
+              });
+            }
           }
           if (campaignId && created.length > 0) {
             await tx.campaignLead.createMany({
@@ -153,7 +205,6 @@ function createProspectionRepository(
             });
           }
         });
-        saved = leads.length;
       } catch (error) {
         errors = leads.length;
         logger.error("Falha ao persistir lote de prospecção", {
@@ -162,6 +213,14 @@ function createProspectionRepository(
           error: (error as Error).message,
         });
         throw error;
+      }
+
+      if (duplicates > 0) {
+        logger.info("PROSPECTION_DUPLICATES_SKIPPED", {
+          businessId,
+          prospectionRunId: runId,
+          duplicates,
+        });
       }
 
       // Enriquecimento assíncrono (serviço Scrapy): enfileira apenas leads com
@@ -228,6 +287,12 @@ export async function processProspection(job: {
   const { runId, businessId } = job.data;
   const jobId = String(job.id ?? "");
   const started = Date.now();
+
+  // PROSPECÇÃO MULTI-PLATAFORMA VIA APIFY (Google Maps + Instagram).
+  // Desvia para o processador Apify quando o job foi criado com provider="apify".
+  if (job.data.provider === "apify") {
+    return processApifyProspection(job as { id?: string; data: ApifyProspectJobData });
+  }
 
   prospectorMetrics.record({ type: "start", jobId });
 

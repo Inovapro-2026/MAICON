@@ -73,11 +73,11 @@ test("golden: BUILD_RAPPORT sempre pergunta o nome (direção da abertura)", () 
 // Interesse → descoberta gradual (uma pergunta por vez)
 // ---------------------------------------------------------------------------
 
-test("golden: 'quero saber mais' sem contexto → pergunta o tipo de negócio", () => {
+test("golden: 'quero saber mais' sem contexto → pergunta o nome (descoberta gradual)", () => {
   const a = analyze(["oi", "quero saber mais"]);
   assert.equal(a.intent, "positive_response");
   assert.equal(a.goal, "discover_business");
-  assert.equal(a.next_action, "ASK_BUSINESS_TYPE");
+  assert.equal(a.next_action, "ASK_NAME");
 });
 
 test("golden: depois de saber o negócio, não pergunta de novo — avança", () => {
@@ -88,10 +88,10 @@ test("golden: depois de saber o negócio, não pergunta de novo — avança", ()
   assert.equal(a.known.need, null);
 });
 
-test("golden: 'quero saber mais' + já disse o negócio → pergunta como capta clientes", () => {
+test("golden: 'quero saber mais' + já disse o negócio → pergunta o nome (ainda não informado)", () => {
   const a = analyze(["oi", "quero saber mais", "tenho uma clínica"]);
   assert.equal(a.known.segment?.value, "Clínica");
-  assert.equal(a.next_action, "ASK_CURRENT_ACQUISITION");
+  assert.equal(a.next_action, "ASK_NAME");
 });
 
 test("golden: aproveita segmento+necessidade na mesma mensagem", () => {
@@ -99,7 +99,7 @@ test("golden: aproveita segmento+necessidade na mesma mensagem", () => {
     "oi",
     "tenho uma clínica e quero automatizar meu WhatsApp",
   ]);
-  assert.equal(a.intent, "info_sharing");
+  assert.equal(a.intent, "positive_response");
   assert.equal(a.known.segment?.value, "Clínica");
   assert.equal(a.known.need?.value, "Automatizar");
   assert.notEqual(a.next_action, "ASK_BUSINESS_TYPE");
@@ -110,16 +110,16 @@ test("golden: aproveita segmento+necessidade na mesma mensagem", () => {
 // Pergunta objetiva → responder PRIMEIRO
 // ---------------------------------------------------------------------------
 
-test("golden: 'quanto custa?' → responder a pergunta antes de qualquer coisa", () => {
+test("golden: 'quanto custa?' → intenção de compra → SEND_LINK com a vitrine", () => {
   const a = analyze(["quanto custa?"]);
-  assert.equal(a.intent, "question");
-  assert.equal(a.goal, "answer_question");
-  assert.equal(a.next_action, "ANSWER_QUESTION");
+  assert.equal(a.intent, "positive_response");
+  assert.equal(a.goal, "present_solution");
+  assert.equal(a.next_action, "SEND_LINK");
 });
 
-test("golden: 'como funciona?' → responder a pergunta", () => {
+test("golden: 'como funciona?' → intenção de compra → SEND_LINK com a vitrine", () => {
   const a = analyze(["como funciona?"]);
-  assert.equal(a.next_action, "ANSWER_QUESTION");
+  assert.equal(a.next_action, "SEND_LINK");
 });
 
 // ---------------------------------------------------------------------------
@@ -157,10 +157,10 @@ test("golden: opt-out é respeitado imediatamente", () => {
 // Conversão
 // ---------------------------------------------------------------------------
 
-test("golden: 'quero contratar' → propor próximo passo (conversão)", () => {
+test("golden: 'quero contratar' → intenção de compra → SEND_LINK (conversão)", () => {
   const a = analyze(["oi", "quero contratar"]);
   assert.equal(a.intent, "positive_response");
-  assert.equal(a.next_action, "PROPOSE_NEXT_STEP");
+  assert.equal(a.next_action, "SEND_LINK");
   assert.equal(a.customer.interest, true);
 });
 

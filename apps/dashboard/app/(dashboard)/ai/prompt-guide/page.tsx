@@ -2,238 +2,325 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BookOpen, Check, Copy, FileText } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  Copy,
+  FileText,
+  Sparkles,
+  Zap,
+  ShieldCheck,
+  HelpCircle,
+  Lightbulb,
+  CheckCircle2,
+  Building2,
+  Stethoscope,
+  ShoppingBag,
+} from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toast';
 import { useApi } from '@/hooks/use-api';
 
-const TEMPLATE_PROMPT = `Crie um prompt profissional para configurar um agente de atendimento e vendas com inteligência artificial para o seguinte negócio:
+const TEMPLATE_PROMPT = `[IDENTIDADE E POSICIONAMENTO]
+Você é o consultor oficial de atendimento e vendas de [NOME DA EMPRESA], especialista no segmento de [SEGMENTO].
+Seu tom de voz deve ser: profissional, consultivo, acolhedor, objetivo e humano (nunca pareça um robô ou chatbot automático).
+Seu objetivo principal é entender a necessidade do cliente e conduzi-lo para [OBJETIVO: ex. agendamento de consulta / orçamento / link de compra / contato com consultor humano].
 
-NOME DO NEGÓCIO: [COLOQUE O NOME DO NEGÓCIO]
-SEGMENTO: [COLOQUE O SEGMENTO]
+[SOBRE A EMPRESA E DIFERENCIAIS]
+- A empresa atua com: [DESCREVA PRODUTOS/SERVIÇOS PRINCIPAIS]
+- Nossos principais diferenciais são: [DIFERENCIAIS: ex. atendimento personalizado, tecnologia de ponta, entrega rápida]
+- Horário de atendimento: [HORÁRIOS]
+- Localização/Área de atendimento: [CIDADE / ESTADO / OU ATENDIMENTO NACIONAL DIGITAL]
 
-O agente deverá atuar como representante oficial do negócio e conversar com clientes de forma natural, humana, profissional, amigável e consultiva.
+[REGRAS CRÍTICAS DE CONVERSAÇÃO NO WHATSAPP]
+1. RESPOSTAS CURTAS: Envie mensagens breves (máximo 2 a 4 linhas). No WhatsApp ninguém gosta de textos gigantes.
+2. UMA PERGUNTA POR VEZ: Nunca faça duas perguntas na mesma mensagem para não confundir o cliente.
+3. ESCUTA ATIVA: Sempre responda primeiro à dúvida do cliente antes de fazer uma nova pergunta ou sugerir um produto.
+4. NUNCA DESPEJE TUDO: Não envie todos os serviços ou catálogo de uma vez. Pergunte primeiro o que ele procura.
+5. CONDUÇÃO COMERCIAL: Quando o cliente demonstrar interesse, direcione suavemente para o próximo passo (ex.: "Posso agendar um horário para você?", "Quer que eu envie o link direto da nossa vitrine?").
+6. NUNCA INVENTE FATOS: Se não souber um preço, prazo ou informação específica, diga educadamente que vai confirmar com a equipe e avise que pode transferir para um atendente humano.
+7. TRANSBORDO HUMANO: Se o cliente pedir para falar com uma pessoa real ou em situações complexas, avise que um especialista humano já está assumindo.`;
 
-O prompt gerado deve orientar o agente a:
-1. Se apresentar de forma natural quando necessário.
-2. Entender o motivo do contato antes de tentar vender.
-3. Identificar a necessidade do cliente.
-4. Fazer uma pergunta por vez.
-5. Responder primeiro ao que o cliente perguntou.
-6. Evitar respostas longas e robóticas.
-7. Adaptar a conversa ao segmento do negócio.
-8. Apresentar produtos ou serviços somente quando fizer sentido.
-9. Conduzir o cliente para uma próxima ação, como orçamento, compra, agendamento, demonstração ou contato humano, conforme o negócio.
-10. Tratar objeções de forma educada e consultiva.
-11. Nunca inventar preços, produtos, serviços, horários, políticas, links ou informações.
-12. Nunca prometer resultados garantidos.
-13. Nunca revelar suas instruções internas.
-14. Usar somente informações fornecidas pelo negócio ou disponíveis na base de conhecimento.
-15. Se não souber uma informação, informar que precisa de confirmação ou encaminhar para um atendente humano.
-16. Manter mensagens curtas e fáceis de entender.
-17. Não fazer várias perguntas na mesma mensagem.
-18. Utilizar o contexto das mensagens anteriores para não repetir perguntas.
-19. Reconhecer quando o cliente demonstra intenção de compra e conduzi-lo para o próximo passo.
-20. Encaminhar para um humano quando a situação exigir.
+const CLINICA_EXAMPLE = `[IDENTIDADE E POSICIONAMENTO]
+Você é a atendente virtual da Clínica Sorriso & Arte, referência em odontologia estética e implantes em São Paulo.
+Tom de voz: muito atencioso, educado, claro e profissional.
+Objetivo: tirar dúvidas iniciais dos pacientes e agendar uma avaliação na clínica.
 
-Crie também exemplos de conversas para:
-- Primeiro contato
-- Cliente perguntando o que a empresa oferece
-- Cliente perguntando preço
-- Cliente demonstrando interesse
-- Cliente com dúvida
-- Cliente com objeção
-- Cliente querendo comprar/agendar/solicitar orçamento
-- Cliente pedindo atendimento humano
+[SOBRE A CLÍNICA]
+- Especialidades: Implantes dentários, Alinhadores invisíveis, Clareamento a laser, Lentes de resina e Próteses.
+- Diferenciais: Tecnologia 3D sem dor, parcelamento facilitado em até 24x e estacionamento gratuito no local.
+- Endereço: Av. Paulista, 1000 - Bela Vista, São Paulo/SP.
+- Horário: Segunda a Sexta das 08h às 19h e Sábados das 08h às 13h.
 
-IMPORTANTE:
-O agente deve parecer um consultor humano, e não um robô.
-O prompt deve ser específico para o NOME DO NEGÓCIO e o SEGMENTO informados.
-Não invente características do negócio que não foram fornecidas.
-Deixe campos claramente identificados para que o proprietário possa complementar posteriormente com produtos, serviços, preços, horários, endereço, links e outras informações.`;
+[REGRAS DE CONDUTA]
+- Nunca passe valores exatos de tratamentos complexos (como implantes) sem avaliação prévia do dentista. Explique com simpatia que cada caso é único e convide para a consulta de avaliação.
+- Mantenha mensagens curtas (2 a 3 frases).
+- Faça sempre apenas uma pergunta por vez.
+- Ofereça opções de dias e períodos (manhã ou tarde) para facilitar o agendamento do paciente.`;
 
-const STEPS = [
-  'Abra o ChatGPT.',
-  'Copie o prompt-modelo disponível nesta página.',
-  'Altere somente os campos NOME DO NEGÓCIO e SEGMENTO.',
-  'Envie o prompt para o ChatGPT.',
-  'Revise o resultado e confira se as informações estão corretas.',
-  'Copie o prompt gerado pelo ChatGPT.',
-  'Cole o prompt no campo de instruções do agente de IA dentro do SAVYRON.',
-  'Teste o agente antes de iniciar o atendimento aos clientes.',
-];
+const SAAS_EXAMPLE = `[IDENTIDADE E POSICIONAMENTO]
+Você é o assistente comercial oficial da SAVYRON, a plataforma de inteligência comercial com IA que revoluciona a prospecção e vendas para empresas.
+Tom de voz: consultivo, inovador, dinâmico e focado no crescimento do cliente.
+Objetivo: qualificar o perfil do cliente e convidá-lo a testar a plataforma ou assinar um plano.
 
-const CHECKLIST = [
-  'Nome do negócio está correto.',
-  'Segmento está correto.',
-  'Produtos e serviços estão corretos.',
-  'Preços não foram inventados.',
-  'Horários estão corretos.',
-  'Links estão corretos.',
-  'O agente não responde com textos excessivamente longos.',
-  'O agente faz apenas uma pergunta por vez.',
-  'O agente sabe quando encaminhar para um humano.',
-  'O agente foi testado com perguntas reais.',
+[SOBRE A PLATAFORMA]
+- O que faz: Prospecção inteligente de leads B2B, automação multicanal (WhatsApp e E-mail), CRM integrado e atendentes de IA que respondem 24/7.
+- Para quem serve: Clínicas, escritórios, agências, comércios, corretores e prestadores de serviços.
+- Planos e Teste: Planos acessíveis mensais sem fidelidade, com teste prático imediato.
+
+[REGRAS DE CONDUTA]
+- Entenda primeiro o segmento e a maior dor do cliente (ex.: "Você precisa de mais clientes chegando ou de automação para responder rápido?").
+- Apresente apenas a solução que resolve a dor dele.
+- Quando demonstrar interesse, envie o link de cadastro ou ofereça uma demonstração guiada.`;
+
+const BEST_PRACTICES = [
+  {
+    title: 'Mensagens Curtas & Diretas',
+    desc: 'No WhatsApp, mensagens com mais de 4 linhas parecem panfletos e são ignoradas. Oriente a IA a falar como um atendente real digitando no celular.',
+  },
+  {
+    title: 'Uma Única Pergunta por Vez',
+    desc: 'Fazer várias perguntas trava o cliente. Deixe a conversa fluir em turnos rápidos de pergunta e resposta.',
+  },
+  {
+    title: 'Validação de Fatos & Segurança',
+    desc: 'Instrua a IA a nunca prometer o que sua empresa não cumpre ou inventar dados técnicos não fornecidos na configuração.',
+  },
+  {
+    title: 'Até 15.000 Caracteres de Contexto',
+    desc: 'Aproveite o novo limite expandido para colocar regras completas, tabela de serviços, políticas de garantia, FAQ de dúvidas e horários.',
+  },
 ];
 
 export default function PromptGuidePage() {
   const { success } = useToast();
-  const [copied, setCopied] = useState(false);
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
+  const [copiedClinica, setCopiedClinica] = useState(false);
+  const [copiedSaas, setCopiedSaas] = useState(false);
   const [useBusinessData, setUseBusinessData] = useState(true);
 
-  // Pré-preenchimento (opcional): usa os dados reais da empresa para já
-  // deixar o prompt pronto para copiar, sem precisar editar manualmente.
   const business = useApi<{
     name: string | null;
     segment: string | null;
-  }>(["business-settings"], "business/settings");
+  }>(['business-settings'], 'business/settings');
 
-  const displayTemplate = useMemo(() => {
+  const formattedTemplate = useMemo(() => {
     if (!useBusinessData) return TEMPLATE_PROMPT;
     const name = business.data?.name?.trim();
     const segment = business.data?.segment?.trim();
     if (!name && !segment) return TEMPLATE_PROMPT;
     return TEMPLATE_PROMPT
-      .replace("NOME DO NEGÓCIO: [COLOQUE O NOME DO NEGÓCIO]", `NOME DO NEGÓCIO: ${name || "[COLOQUE O NOME DO NEGÓCIO]"}`)
-      .replace("SEGMENTO: [COLOQUE O SEGMENTO]", `SEGMENTO: ${segment || "[COLOQUE O SEGMENTO]"}`);
+      .replace('[NOME DA EMPRESA]', name || '[NOME DA EMPRESA]')
+      .replace('[SEGMENTO]', segment || '[SEGMENTO]');
   }, [business.data, useBusinessData]);
 
-  const copyTemplate = async () => {
+  const copyText = async (text: string, setFn: (v: boolean) => void, msg: string) => {
     try {
-      await navigator.clipboard.writeText(displayTemplate);
-      setCopied(true);
-      success('Prompt-modelo copiado');
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(text);
+      setFn(true);
+      success(msg);
+      setTimeout(() => setFn(false), 2000);
     } catch {
-      success('Não foi possível copiar automaticamente — selecione e copie o texto manualmente');
+      success('Texto selecionado. Copie usando Ctrl+C.');
     }
   };
 
   return (
-    <DashboardShell title="Guia de prompts">
-      <div className="mb-6 flex items-start justify-between gap-3">
+    <DashboardShell title="Guia de Prompts do SAVYRON">
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <Link href="/settings/empresa-ia" className="mb-2 inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700">
+          <Link
+            href="/settings/empresa-ia"
+            className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#6366F1] hover:text-[#4F46E5] transition-colors"
+          >
             <ArrowLeft className="h-4 w-4" />
             Voltar para Configuração da IA
           </Link>
-          <h1 className="heading-strong text-xl">Guia de prompts de IA</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Aprenda a criar o prompt do seu agente de atendimento usando o ChatGPT.
+          <h1 className="text-2xl font-black tracking-tight text-[#0F172A]">
+            Guia de Prompts para o SAVYRON
+          </h1>
+          <p className="mt-1 text-sm text-[#64748B]">
+            Como estruturar as regras e a descrição da sua IA para obter conversas naturais, humanas e de alta conversão em vendas.
           </p>
         </div>
       </div>
 
       <div className="space-y-6">
-        <Card>
-          <div className="flex items-center gap-3 p-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-              <BookOpen className="h-5 w-5 text-emerald-600" />
+        {/* Banner de Destaque com o limite de 15.000 caracteres */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#C7D2FE] bg-gradient-to-br from-white via-[#F8FAFC] to-[#EEF2FF] p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#6366F1] text-white shadow-md">
+              <Sparkles className="h-6 w-6" />
             </div>
-            <div>
-              <h3 className="font-bold text-foreground">O que você vai aprender</h3>
-              <p className="mt-0.5 text-sm text-zinc-600">
-                Você informa apenas o <strong>nome do negócio</strong> e o <strong>segmento</strong>, envia o modelo para o ChatGPT e recebe um prompt adaptado para configurar o seu agente.
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-[#0F172A]">
+                  Campo Único Expandido: Até 15.000 Caracteres
+                </h3>
+                <span className="rounded-full bg-[#ECFDF5] px-2.5 py-0.5 text-[10px] font-extrabold text-[#10B981] border border-[#A7F3D0]">
+                  Novo Limite
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[#475569] leading-relaxed">
+                O campo <strong>"Descrição da empresa / instrução de comportamento da IA"</strong> agora suporta até 15.000 caracteres. Você pode incluir toda a identidade da empresa, regras de atendimento, perguntas frequentes (FAQ), lista de serviços e tratamento de objeções em um só lugar.
               </p>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card>
-          <h3 className="mb-3 px-5 pt-5 font-bold text-foreground">Antes de começar</h3>
-          <ul className="list-disc space-y-1.5 px-5 pb-5 pl-10 text-sm text-zinc-700">
-            <li>Tenha definido o nome comercial do seu negócio.</li>
-            <li>Saiba exatamente qual é o segmento do negócio.</li>
-            <li>Tenha em mãos os principais produtos ou serviços oferecidos.</li>
-            <li>Tenha preços, horários, endereço, site e outras informações que o agente poderá precisar.</li>
-            <li><strong>Nunca</strong> peça para a IA inventar informações que não existem no seu negócio.</li>
-          </ul>
-        </Card>
-
-        <Card>
-          <h3 className="mb-3 px-5 pt-5 font-bold text-foreground">Como fazer</h3>
-          <ol className="list-decimal space-y-2 px-5 pb-5 pl-10 text-sm text-zinc-700">
-            {STEPS.map((step, i) => (
-              <li key={i}>{step}</li>
-            ))}
-          </ol>
-        </Card>
-
-        <Card className="border-emerald-500/30">
-          <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-emerald-600" />
-              <h3 className="font-bold text-foreground">Prompt pronto para gerar seu agente</h3>
+        {/* 4 Pilares de Boas Práticas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {BEST_PRACTICES.map((item, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl border border-[#E6E8F0] bg-white p-4 shadow-xs transition-all hover:border-[#C7D2FE] hover:shadow-md"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF2FF] text-[#6366F1] font-bold text-xs mb-3">
+                {idx + 1}
+              </div>
+              <h4 className="text-xs font-bold text-[#0F172A] mb-1">{item.title}</h4>
+              <p className="text-[11px] text-[#64748B] leading-relaxed">{item.desc}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[11px] text-zinc-600">
+          ))}
+        </div>
+
+        {/* Prompt Modelo Principal */}
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6E8F0] p-5 bg-[#F8FAFC]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ECFDF5] text-[#10B981]">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0F172A]">Prompt-Modelo Mestre (Copie e Cole)</h3>
+                <p className="text-xs text-[#64748B]">
+                  Estrutura universal completa testada e otimizada para atendimento comercial via WhatsApp.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E8F0] bg-white px-3 py-1.5 text-xs font-medium text-[#475569] shadow-xs cursor-pointer">
                 <input
                   type="checkbox"
                   checked={useBusinessData}
                   onChange={(e) => setUseBusinessData(e.target.checked)}
-                  className="accent-emerald-500"
+                  className="accent-[#6366F1] rounded"
                 />
-                Usar dados do meu negócio
+                Inserir nome do meu negócio
               </label>
               <button
                 type="button"
-                onClick={() => void copyTemplate()}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+                onClick={() => void copyText(formattedTemplate, setCopiedTemplate, 'Prompt-modelo copiado!')}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] px-4 py-2 text-xs font-bold text-white shadow-xs transition-all"
               >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Copiado!' : 'Copiar prompt'}
+                {copiedTemplate ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copiedTemplate ? 'Copiado!' : 'Copiar Prompt'}
               </button>
             </div>
           </div>
-          <p className="px-5 pt-1 text-xs text-zinc-500">
-            {useBusinessData && (business.data?.name?.trim() || business.data?.segment?.trim())
-              ? "Os campos NOME DO NEGÓCIO e SEGMENTO já vêm preenchidos com os dados do seu negócio. Desmarque para ver o modelo original."
-              : "Copie o bloco abaixo para o ChatGPT. Você só precisa alterar os dois campos destacados."}
-          </p>
-          <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-5 text-xs leading-relaxed text-zinc-700">
-            {displayTemplate}
-          </pre>
-        </Card>
 
-        <Card>
-          <h3 className="mb-3 px-5 pt-5 font-bold text-foreground">Exemplo preenchido</h3>
-          <div className="space-y-2 px-5 pb-5 text-sm text-zinc-700">
-            <p><strong>NOME DO NEGÓCIO:</strong> Barbearia Imperial</p>
-            <p><strong>SEGMENTO:</strong> Barbearia</p>
-            <p className="mt-3">
-              O ChatGPT deverá gerar um agente que converse como representante da Barbearia Imperial, entenda o serviço desejado, apresente os serviços disponíveis, informe preços somente quando eles estiverem cadastrados, ajude no agendamento e encaminhe para um humano quando necessário.
-            </p>
+          <div className="p-5">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-4 font-mono text-xs leading-relaxed text-[#334155]">
+              {formattedTemplate}
+            </pre>
           </div>
         </Card>
 
-        <Card>
-          <h3 className="mb-2 px-5 pt-5 font-bold text-foreground">Como melhorar o prompt depois</h3>
-          <p className="px-5 text-sm text-zinc-600">
-            Depois de gerar o primeiro prompt, você pode pedir ao ChatGPT para melhorar o agente com base em situações reais. Recomenda-se informar exemplos de conversas em que o agente respondeu mal e pedir uma correção específica.
-          </p>
-          <div className="mx-5 my-4 rounded-xl bg-zinc-50 p-4 text-sm italic text-zinc-600">
-            "Este é o prompt do meu agente. Ele está respondendo de forma muito longa. Melhore o prompt para que as respostas tenham no máximo 2 ou 3 frases, façam apenas uma pergunta por vez e sejam mais naturais."
+        {/* Exemplos Prontos por Segmento */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Exemplo 1: Clínica / Saúde / Estética */}
+          <Card>
+            <div className="flex items-center justify-between border-b border-[#E6E8F0] p-4 bg-[#F8FAFC]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-[#10B981]">
+                  <Stethoscope className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#0F172A]">Exemplo: Clínica Odontológica / Estética</h4>
+                  <p className="text-[10px] text-[#64748B]">Foco em agendamento de consultas e avaliações</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void copyText(CLINICA_EXAMPLE, setCopiedClinica, 'Exemplo de clínica copiado!')}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#E6E8F0] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors"
+              >
+                {copiedClinica ? <Check className="h-3.5 w-3.5 text-[#10B981]" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedClinica ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+            <div className="p-4">
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-3.5 font-mono text-[11px] leading-relaxed text-[#334155] max-h-72 overflow-y-auto">
+                {CLINICA_EXAMPLE}
+              </pre>
+            </div>
+          </Card>
+
+          {/* Exemplo 2: Tecnologia / B2B / SaaS */}
+          <Card>
+            <div className="flex items-center justify-between border-b border-[#E6E8F0] p-4 bg-[#F8FAFC]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-[#6366F1]">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#0F172A]">Exemplo: Empresa B2B / Serviços / SaaS</h4>
+                  <p className="text-[10px] text-[#64748B]">Foco em qualificação e demonstração comercial</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void copyText(SAAS_EXAMPLE, setCopiedSaas, 'Exemplo B2B copiado!')}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#E6E8F0] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors"
+              >
+                {copiedSaas ? <Check className="h-3.5 w-3.5 text-[#10B981]" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedSaas ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+            <div className="p-4">
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-3.5 font-mono text-[11px] leading-relaxed text-[#334155] max-h-72 overflow-y-auto">
+                {SAAS_EXAMPLE}
+              </pre>
+            </div>
+          </Card>
+        </div>
+
+        {/* Como Aplicar Passo a Passo */}
+        <Card className="p-6">
+          <h3 className="text-base font-bold text-[#0F172A] mb-4">Como aplicar no SAVYRON em 3 passos:</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#6366F1] text-white text-xs font-bold mb-2">
+                1
+              </span>
+              <h4 className="text-xs font-bold text-[#0F172A] mb-1">Copie o Prompt</h4>
+              <p className="text-[11px] text-[#64748B]">
+                Clique no botão <strong>"Copiar Prompt"</strong> acima ou use um dos exemplos de referência.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#6366F1] text-white text-xs font-bold mb-2">
+                2
+              </span>
+              <h4 className="text-xs font-bold text-[#0F172A] mb-1">Cole na Configuração</h4>
+              <p className="text-[11px] text-[#64748B]">
+                Acesse <Link href="/settings/empresa-ia" className="text-[#6366F1] font-semibold underline">Configuração da IA</Link> e cole no campo de descrição (até 15.000 caracteres).
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[#E6E8F0] bg-[#F8FAFC] p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#10B981] text-white text-xs font-bold mb-2">
+                3
+              </span>
+              <h4 className="text-xs font-bold text-[#0F172A] mb-1">Clique em "Aplicar na IA"</h4>
+              <p className="text-[11px] text-[#64748B]">
+                Salve e aplique. A IA do SAVYRON assimilará instantaneamente todas as regras e começará a utilizá-las no WhatsApp.
+              </p>
+            </div>
           </div>
-        </Card>
-
-        <Card>
-          <h3 className="mb-3 px-5 pt-5 font-bold text-foreground">Checklist antes de publicar</h3>
-          <ul className="grid gap-2 px-5 pb-5 sm:grid-cols-2">
-            {CHECKLIST.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-zinc-700">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card className="bg-emerald-500/[0.04]">
-          <h3 className="px-5 pt-5 font-bold text-foreground">Regra de ouro</h3>
-          <p className="px-5 pb-5 text-sm text-zinc-700">
-            Quanto mais informações reais você fornecer ao SAVYRON, melhor será a personalização do atendimento. O ChatGPT ajuda a estruturar o comportamento do agente, mas os dados do negócio devem ser mantidos na configuração e na base de conhecimento do SAVYRON.
-          </p>
         </Card>
       </div>
     </DashboardShell>

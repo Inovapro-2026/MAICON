@@ -1,5 +1,7 @@
 import { prisma, LeadStatus } from "@prospector/database";
+import { config } from "@prospector/config";
 import { createLogger } from "@prospector/logger";
+import { hasRealLeadName } from "@prospector/utils";
 import { QUEUE_NAMES } from "@prospector/queues";
 import { AgentContext } from "@prospector/types";
 import {
@@ -8,14 +10,17 @@ import {
   buildCommercialTurnMessages,
   loadAIConfiguration,
   validateGeneratedReply,
+  splitReplyForSending,
   MessageConfig,
   loadConversationMemory,
   saveConversationMemory,
   buildMemoryFromResult,
   memoryKeyConversation,
+  questionFromNextAction,
 } from "@prospector/ai";
 import { getWorkerQueue } from "../queues";
 import {
+  createMessage,
   createOrGetAiReplyMessage,
   wasAiResponded,
   markAiResponded,
@@ -32,9 +37,16 @@ import {
 
 const logger = createLogger("worker.ai-response");
 
-const CONVERSATION_LOCK_TTL_MS = 120000;
+const CONVERSATION_LOCK_TTL_MS = 180000;
 const LOCK_RETRY_DELAY_MS = 10000;
-const MAX_LOCK_RETRIES = 3;
+const MAX_LOCK_RETRIES = 6;
+
+/** Delay natural (aleatório) entre mensagens fracionadas da IA no WhatsApp. */
+function splitMessageDelay(): number {
+  const min = config.ai.messageSplitDelayMinMs;
+  const max = config.ai.messageSplitDelayMaxMs;
+  return Math.round(min + Math.random() * Math.max(0, max - min));
+}
 
 interface AIResponseData {
   conversationId: string;
@@ -201,14 +213,25 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
   }
 
   // Perfil do contato (dado real/persistente): determina o modo vendedora vs suporte.
-  const engagedStatus = ["INTERESTED", "NOT_INTERESTED", "RESPONDED", "AGENT_ACTIVE"];
+  const engagedStatus = [
+    "INTERESTED",
+    "NOT_INTERESTED",
+    "RESPONDED",
+    "AGENT_ACTIVE",
+  ];
   const contactType: "novo" | "conhecido" =
-    (lead.status && engagedStatus.includes(lead.status)) || priorHistoryCount >= 4
+    (lead.status && engagedStatus.includes(lead.status)) ||
+    priorHistoryCount >= 4
       ? "conhecido"
       : "novo";
 
+  // Leads auto-criados (mensagem recebida de número desconhecido) recebem
+  // name "Novo contato" — não é um nome real. A IA não deve cumprimentar nem
+  // pular a sequência por causa dele.
+  const realLeadName = hasRealLeadName(lead.name) ? lead.name : null;
+
   const context: AgentContext = {
-    leadName: lead.name,
+    leadName: realLeadName,
     businessName: lead.business_name,
     city: lead.city,
     state: lead.state,
@@ -218,19 +241,30 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
   };
 
   const agentConfig = await loadAIConfiguration(prisma, resolvedBusinessId);
-  const messageConfig = (agentConfig.settings?.messageConfig ?? {}) as Record<string, unknown>;
+  const messageConfig = (agentConfig.settings?.messageConfig ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   // CONVERSATION MEMORY: carrega o estado persistido do turno anterior para
   // interpretar fragmentos ("redes sociais", "como") no contexto certo.
   const memKey = memoryKeyConversation(conversationId);
-  const memory = await loadConversationMemory(prisma, resolvedBusinessId, memKey);
+  const memory = await loadConversationMemory(
+    prisma,
+    resolvedBusinessId,
+    memKey,
+  );
 
   let result;
   try {
     // MOTOR COMERCIAL: a IA avalia a conversa e decide intenção + objetivo +
     // próximo passo, devolvendo saída ESTRUTURADA — a IA é dinâmica, sem
-    // roteiro fixo, e usa a memória persistida como contexto.
-    result = await generateCommercialTurn(context, { agentConfig, memory });
+    // roteiro fixo de abertura, e usa a memória persistida + a Descrição da
+    // empresa como contexto. Sem sequência fixa de onboarding (removida).
+    result = await generateCommercialTurn(context, {
+      agentConfig,
+      memory,
+    });
   } catch (error) {
     logger.error("Falha ao gerar resposta IA", { lead_id: leadId, error });
     await prisma.lead.update({
@@ -244,51 +278,52 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     throw error;
   }
 
-  // VALIDAÇÃO DA SAÍDA (backend): uma pergunta por mensagem + limites.
+  // VALIDAÇÃO DA SAÍDA (backend): a resposta já passou pelo OUTPUT VALIDATOR em
+  // `generateValidatedReply` (máx. 1 pergunta, limites, sem vazamento de
+  // raciocínio). Aqui apenas revalidamos para auditoria e aplicamos sanitização
+  // residual — NUNCA regeneramos o turno inteiro (evita custo/latência extras).
   let reply = result.reply;
-  const validation = validateGeneratedReply(reply, messageConfig as MessageConfig);
-  if (!validation.valid && validation.issues.includes("múltiplas perguntas na mesma resposta")) {
-    logger.warn("[AI_CONVERSATION] resposta com múltiplas perguntas; regenerando", {
-      business_id: resolvedBusinessId,
-      conversation_id: conversationId,
-      lead_id: leadId,
-      action: "REGENERATE",
-      provider: result.provider,
-      issues: validation.issues,
-    });
-    try {
-      const regenerated = await generateCommercialTurn(context, { agentConfig, memory });
-      const revalidation = validateGeneratedReply(regenerated.reply, messageConfig as MessageConfig);
-      if (revalidation.valid) {
-        reply = regenerated.reply;
-        result = regenerated;
-      } else {
-        reply = revalidation.sanitized ?? validation.sanitized ?? regenerated.reply;
-        result = regenerated;
-      }
-    } catch {
-      reply = validation.sanitized ?? reply;
-    }
-  } else if (!validation.valid) {
-    logger.warn("[AI_CONVERSATION] resposta ajustada para os limites configurados", {
-      business_id: resolvedBusinessId,
-      conversation_id: conversationId,
-      lead_id: leadId,
-      action: "SANITIZE",
-      provider: result.provider,
-      issues: validation.issues,
-    });
-    reply = validation.sanitized ?? reply;
+  const validation = validateGeneratedReply(
+    reply,
+    messageConfig as MessageConfig,
+  );
+  if (!validation.valid && validation.sanitized) {
+    logger.warn(
+      "[AI_CONVERSATION] resposta ajustada para os limites configurados",
+      {
+        business_id: resolvedBusinessId,
+        conversation_id: conversationId,
+        lead_id: leadId,
+        action: "SANITIZE",
+        provider: result.provider,
+        issues: validation.issues,
+      },
+    );
+    reply = validation.sanitized;
   }
 
   // CONVERSATION MEMORY: persiste o estado ATUALIZADO antes da próxima
-  // resposta — a próxima mensagem já encontra o contexto pronto.
+  // resposta — a próxima mensagem já encontra o contexto pronto. As perguntas
+  // já feitas acumulam (evita re-perguntar) e a última mensagem do cliente
+  // garante continuidade entre turnos.
   try {
+    const askedQuestions = Array.from(
+      new Set([
+        ...(memory?.asked_questions ?? []),
+        ...(questionFromNextAction(result.next_action)
+          ? [questionFromNextAction(result.next_action)]
+          : []),
+      ]),
+    ).slice(-12);
     await saveConversationMemory(
       prisma,
       resolvedBusinessId,
       memKey,
-      buildMemoryFromResult(result),
+      buildMemoryFromResult({
+        ...result,
+        asked_questions: askedQuestions,
+        last_customer_message: content,
+      }),
     );
   } catch (error) {
     logger.warn("Falha ao persistir memória da conversa", {
@@ -312,6 +347,7 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
       prompt_version: PROMPT_VERSION,
       technique_used: result.technique_used,
       commercial_engine_version: result.commercial_engine_version,
+      next_action: result.next_action,
       prompt: promptText,
       completion: reply,
       input_tokens: result.inputTokens,
@@ -320,12 +356,23 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     },
   });
 
+  // CONVERSATION LEARNING (assíncrono): enfileira a análise da conversa para o
+  // aprendizado por tenant. Nunca bloqueia a resposta — o enqueue falha em
+  // silêncio (observabilidade) e o worker do aprendizado consome depois.
+  await enqueueConversationLearning(resolvedBusinessId, conversationId, leadId);
+
+  // DIVISÃO INTELIGENTE: respeita o limite de caracteres configurado sem cortar
+  // no meio da palavra. Se couber em 1 mensagem, envia 1; se exceder e a config
+  // permitir mais mensagens, divide em até 2 (fronteira de frase).
+  const replyParts = splitReplyForSending(reply, messageConfig as MessageConfig);
+  const firstContent = replyParts[0] ?? reply;
+
   const { message, created } = await createOrGetAiReplyMessage({
     leadId,
     businessId: resolvedBusinessId,
     campaignId,
     channel,
-    content: reply,
+    content: firstContent,
     incomingExternalId: ctx.externalId,
   });
 
@@ -370,7 +417,10 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     if (result.action === "CLOSE_CONVERSATION") {
       conversationUpdate.status = "CLOSED";
     }
-    await prisma.conversation.update({ where: { id: conversationId }, data: conversationUpdate });
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: conversationUpdate,
+    });
 
     const nowIso = new Date().toISOString();
     publishRealtime({
@@ -380,7 +430,7 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
       businessId: resolvedBusinessId,
       timestamp: nowIso,
       payload: {
-        content: reply,
+        content: firstContent,
         direction: "OUT",
         lead_status: leadStatus,
         conversation_stage: result.conversation.stage,
@@ -402,9 +452,10 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     });
   }
 
-  // Enfileira o envio da resposta (UMA mensagem). Em reutilização da mensagem
+  // Enfileira o envio da resposta (1ª mensagem). Em reutilização da mensagem
   // (retry), reenfileira o envio pendente — idempotente no envio.
-  const queue = channel === "WHATSAPP" ? QUEUE_NAMES.WHATSAPP_SEND : QUEUE_NAMES.EMAIL_SEND;
+  const queue =
+    channel === "WHATSAPP" ? QUEUE_NAMES.WHATSAPP_SEND : QUEUE_NAMES.EMAIL_SEND;
   await getWorkerQueue(queue).add(
     "send",
     {
@@ -414,7 +465,7 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
       businessId: resolvedBusinessId,
       phone: lead.phone ?? "",
       email: lead.email ?? "",
-      message: reply,
+      message: firstContent,
       subject: "Re: seu contato",
       messageId: message.id,
       retryCount: 0,
@@ -423,6 +474,69 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     },
     { attempts: 1, removeOnComplete: true },
   );
+
+  // 2ª mensagem: (a) followUp do primeiro contato (pergunta do nome) OU (b) a
+  // resposta dividida em fronteira de frase. Nunca corta palavra. Enviada com
+  // um pequeno delay natural após a 1ª.
+  const secondPart = result.followUp ?? replyParts[1];
+  if (secondPart) {
+    const secondExternalId = ctx.externalId
+      ? `reply:${ctx.externalId}:2`
+      : undefined;
+    const existingSecond = secondExternalId
+      ? await prisma.message.findFirst({
+          where: { business_id: resolvedBusinessId, external_id: secondExternalId },
+          select: { id: true },
+        })
+      : null;
+    if (existingSecond) {
+      logger.info("[AI_CONVERSATION] 2ª parte da resposta já registrada", {
+        conversation_id: conversationId,
+        lead_id: leadId,
+        action: "SKIP_DUPLICATE_REPLY_PART2",
+        external_id: ctx.externalId,
+        message_id: existingSecond.id,
+      });
+    } else {
+      const secondMessage = await createMessage({
+        leadId,
+        businessId: resolvedBusinessId,
+        campaignId,
+        channel,
+        direction: "OUT",
+        content: secondPart,
+        status: "QUEUED",
+        provider: "ai",
+        externalId: secondExternalId,
+      });
+      await getWorkerQueue(queue).add(
+        "send",
+        {
+          campaignLeadId: undefined,
+          leadId,
+          campaignId,
+          businessId: resolvedBusinessId,
+          phone: lead.phone ?? "",
+          email: lead.email ?? "",
+          message: secondPart,
+          subject: "Re: seu contato",
+          messageId: secondMessage.id,
+          retryCount: 0,
+          aiGenerated: true,
+          remoteJid: ctx.remoteJid,
+        },
+        { attempts: 1, removeOnComplete: true, delay: splitMessageDelay() },
+      );
+      logger.info("[AI_CONVERSATION] resposta dividida em 2 mensagens", {
+        conversation_id: conversationId,
+        lead_id: leadId,
+        action: "SPLIT_REPLY",
+        first_chars: firstContent.length,
+        second_chars: secondPart.length,
+        external_id: ctx.externalId,
+      });
+    }
+  }
 
   // Marca que este message_id recebido já foi respondido (idempotência).
   // Somente após o envio estar enfileirado — assim um retry pós-criação
@@ -459,6 +573,58 @@ async function processConversationTurn(ctx: TurnContext): Promise<void> {
     structured: result.structured,
     validated: validation.valid,
   });
+}
+
+/**
+ * Enfileira a análise de aprendizado da conversa (CONVERSATION LEARNING).
+ * Assíncrono e nunca bloqueia a resposta: falha é logada e ignorada. Usa
+ * dedup em Redis (janela por conversa) para analisar a cada N mensagens e
+ * SEMPRE no fechamento/transferência — sem flood de jobs.
+ */
+async function enqueueConversationLearning(
+  businessId: string,
+  conversationId: string,
+  leadId: string,
+): Promise<void> {
+  try {
+    const analyzeEvery = Math.max(1, config.learning.analyzeEveryMessages ?? 4);
+    const windowKey = `learning:window:${businessId}:${conversationId}`;
+    const count = await redis.incr(windowKey);
+    if (count === 1) {
+      await redis.expire(windowKey, 3600);
+    }
+    if (count % analyzeEvery !== 0) return;
+
+    await getWorkerQueue(QUEUE_NAMES.CONVERSATION_LEARNING).add(
+      "analyze",
+      {
+        businessId,
+        conversationId,
+        leadId,
+        trigger: "ai_response",
+      },
+      {
+        jobId: `learning-${businessId}-${conversationId}-${count}`,
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2000 },
+        removeOnComplete: true,
+        removeOnFail: 1000,
+      },
+    );
+    logger.debug("[LEARNING] análise de conversa enfileirada", {
+      business_id: businessId,
+      conversation_id: conversationId,
+      lead_id: leadId,
+      trigger: "ai_response",
+      message_index: count,
+    });
+  } catch (error) {
+    logger.warn("[LEARNING] falha ao enfileirar análise de conversa", {
+      business_id: businessId,
+      conversation_id: conversationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 /** Normaliza texto para comparação (sem acentos/caixa/pontuação). */

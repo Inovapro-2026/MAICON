@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
+import './dashboard.css';
 
 export const dynamic = 'force-dynamic';
 

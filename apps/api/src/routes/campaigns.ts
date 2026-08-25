@@ -2,13 +2,23 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '@prospector/database';
 import { createLogger } from '@prospector/logger';
 import { QUEUE_NAMES } from '@prospector/queues';
+import { validateCampaignEmailConfig } from '@prospector/utils';
 import { asyncHandler, ok } from '../lib/http';
 import { requireAuth, requireBusiness } from '../middleware/auth';
+import { requireActiveSubscription } from '../middleware/active-subscription';
 import { getQueue } from '../services/queues';
 import { getCampaignStats } from '../services/campaign-service';
 import { redisClient, PUMP_RUN_KEY, NEXT_SEND_KEY } from '../services/redis';
 
 const logger = createLogger('api.campaigns');
+
+const CHANNEL_MODES = ['WHATSAPP', 'EMAIL', 'BOTH'] as const;
+type ChannelModeValue = (typeof CHANNEL_MODES)[number];
+
+function parseChannelMode(value: unknown): ChannelModeValue | null {
+  const normalized = String(value ?? '').toUpperCase();
+  return (CHANNEL_MODES as readonly string[]).includes(normalized) ? (normalized as ChannelModeValue) : null;
+}
 
 export const campaignsRouter = Router();
 
@@ -17,12 +27,35 @@ campaignsRouter.use(requireAuth, requireBusiness);
 /** POST /campaigns — cria campanha. */
 campaignsRouter.post(
   '/',
+  requireActiveSubscription,
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
     const { name, daily_whatsapp_limit, daily_email_limit, interval_seconds, is_test, start_hour } = req.body ?? {};
 
     if (!name || !String(name).trim()) {
       return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Informe o nome da campanha' } });
+    }
+
+    // Limite de 1 campanha por empresa (risco de ban no WhatsApp por múltiplos
+    // disparos no mesmo número). Campanha encerrada (FINISHED) ou excluída
+    // libera a criação de uma nova.
+    const liveCampaigns = await prisma.campaign.count({
+      where: { business_id: businessId, status: { in: ['ACTIVE', 'PAUSED'] } },
+    });
+    if (liveCampaigns > 0) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'BAD_REQUEST', message: 'Sua empresa já tem uma campanha ativa ou pausada. Encerre ou exclua a atual antes de criar outra.' },
+      });
+    }
+
+    let channelMode: ChannelModeValue = 'WHATSAPP';
+    if (req.body.channel_mode !== undefined && req.body.channel_mode !== null) {
+      const parsed = parseChannelMode(req.body.channel_mode);
+      if (!parsed) {
+        return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Modo de canal inválido (use WHATSAPP, EMAIL ou BOTH)' } });
+      }
+      channelMode = parsed;
     }
 
     const campaign = await prisma.campaign.create({
@@ -34,6 +67,9 @@ campaignsRouter.post(
         interval_seconds: Math.max(5, Number(interval_seconds) || 7200),
         is_test: Boolean(is_test),
         start_hour: normalizeStartHour(start_hour),
+        channel_mode: channelMode,
+        email_subject: typeof req.body.email_subject === 'string' && req.body.email_subject.trim() ? req.body.email_subject.trim() : null,
+        email_body: typeof req.body.email_body === 'string' && req.body.email_body.trim() ? req.body.email_body.trim() : null,
         status: 'PAUSED',
       },
     });
@@ -144,6 +180,19 @@ campaignsRouter.patch(
     if (req.body.daily_email_limit !== undefined) data.daily_email_limit = Math.max(1, Number(req.body.daily_email_limit));
     if (req.body.interval_seconds !== undefined) data.interval_seconds = Math.max(5, Number(req.body.interval_seconds));
     if (req.body.start_hour !== undefined) data.start_hour = normalizeStartHour(req.body.start_hour);
+    if (req.body.channel_mode !== undefined) {
+      const parsed = parseChannelMode(req.body.channel_mode);
+      if (!parsed) {
+        return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Modo de canal inválido (use WHATSAPP, EMAIL ou BOTH)' } });
+      }
+      data.channel_mode = parsed;
+    }
+    if (req.body.email_subject !== undefined) {
+      data.email_subject = typeof req.body.email_subject === 'string' && req.body.email_subject.trim() ? req.body.email_subject.trim() : null;
+    }
+    if (req.body.email_body !== undefined) {
+      data.email_body = typeof req.body.email_body === 'string' && req.body.email_body.trim() ? req.body.email_body.trim() : null;
+    }
 
     const campaign = await prisma.campaign.update({ where: { id }, data });
     logger.info('Campanha atualizada', { campaign_id: id });
@@ -154,6 +203,7 @@ campaignsRouter.patch(
 /** POST /campaigns/:id/start — inicia campanha. */
 campaignsRouter.post(
   '/:id/start',
+  requireActiveSubscription,
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
     const id = String(req.params.id);
@@ -162,8 +212,17 @@ campaignsRouter.post(
     if (campaign.status === 'FINISHED') {
       return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Campanha encerrada não pode ser reiniciada' } });
     }
+    // Canal EMAIL/BOTH exige assunto e mensagem de e-mail configurados.
+    const emailError = validateCampaignEmailConfig(campaign.channel_mode, campaign.email_subject, campaign.email_body);
+    if (emailError) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: emailError } });
+    }
 
     await prisma.campaign.update({ where: { id }, data: { status: 'ACTIVE' } });
+    // Limpa o contador de "próximo envio" de uma execução anterior: o 1º lead
+    // é enviado IMEDIATAMENTE pelo primeiro pump (sem delay); o countdown só
+    // volta a aparecer para o 2º envio, daqui a interval_seconds.
+    await redisClient.del(NEXT_SEND_KEY(id)).catch(() => undefined);
     await schedulePump(id, businessId);
 
     logger.info('Campanha iniciada', { campaign_id: id });
@@ -195,7 +254,13 @@ campaignsRouter.post(
     const campaign = await prisma.campaign.findFirst({ where: { id, business_id: businessId } });
     if (!campaign) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Campanha não encontrada' } });
     // Reabrir: permite retomar mesmo de FINISHED (volta a ficar ativa e re-agenda o pump)
+    // Canal EMAIL/BOTH exige assunto e mensagem de e-mail configurados.
+    const emailError = validateCampaignEmailConfig(campaign.channel_mode, campaign.email_subject, campaign.email_body);
+    if (emailError) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: emailError } });
+    }
     await prisma.campaign.update({ where: { id }, data: { status: 'ACTIVE' } });
+    await redisClient.del(NEXT_SEND_KEY(id)).catch(() => undefined);
     await schedulePump(id, businessId);
     logger.info('Campanha retomada/reaberta', { campaign_id: id });
     return ok(res, { message: 'Campanha reaberta' });

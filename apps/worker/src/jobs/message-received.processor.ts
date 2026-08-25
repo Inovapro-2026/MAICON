@@ -156,24 +156,67 @@ export async function processMessageReceived(job: {
     data: { status: "RESPONDED" },
   });
 
-  // 4b) Emite eventos em tempo real (novo lead respondeu + mudança de status)
+  // 4b) Cria notificação multi-tenant da resposta recebida (idempotente via message_id único)
+  const contactName = fullLead.name?.trim() || fullLead.phone || "Contato";
+  const businessName = fullLead.business_name?.trim();
+  const contactDisplay = businessName && businessName !== contactName
+    ? `${contactName} — ${businessName}`
+    : contactName;
+
+  const notifTitle = "Nova resposta de WhatsApp";
+  const notifDesc = `${contactDisplay} respondeu sua mensagem.`;
+  const notifPreview = content.length > 120 ? `${content.slice(0, 117)}...` : content;
+
+  let notificationRecord = null;
+  try {
+    notificationRecord = await prisma.notification.create({
+      data: {
+        business_id: businessId ?? fullLead.business_id,
+        type: "WHATSAPP_RESPONSE",
+        title: notifTitle,
+        description: notifDesc,
+        preview: notifPreview,
+        lead_id: leadId,
+        conversation_id: conversationId,
+        message_id: message.id,
+        read: false,
+      },
+    });
+  } catch (notifErr) {
+    logger.debug("Notificação já existente ou ignorada", { message_id: message.id, error: String(notifErr) });
+  }
+
+  // 4c) Emite eventos em tempo real (novo lead respondeu + notificação + mudança de status)
   const nowIso = new Date().toISOString();
   publishRealtime({
     type: "new_message_received",
     conversationId,
     leadId,
-    businessId,
+    businessId: businessId ?? fullLead.business_id,
     timestamp: nowIso,
-    payload: { content, direction: "IN", lead_status: "RESPONDED" },
+    payload: {
+      content,
+      direction: "IN",
+      lead_status: "RESPONDED",
+      notification: notificationRecord ? {
+        id: notificationRecord.id,
+        title: notificationRecord.title,
+        description: notificationRecord.description,
+        preview: notificationRecord.preview,
+        conversation_id: conversationId,
+        created_at: notificationRecord.created_at.toISOString(),
+      } : undefined,
+    },
   });
   publishRealtime({
     type: "status_changed",
     conversationId,
     leadId,
-    businessId,
+    businessId: businessId ?? fullLead.business_id,
     timestamp: nowIso,
     payload: { lead_status: "RESPONDED" },
   });
+
 
   logger.info("Mensagem recebida processada", {
     lead_id: leadId,

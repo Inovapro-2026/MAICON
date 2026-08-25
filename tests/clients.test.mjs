@@ -64,3 +64,47 @@ test("worker: cria conversa com stage NEW por padrão", () => {
   const conversations = read("apps/worker/src/services/conversations.ts");
   assert.match(conversations, /stage: ["']NEW["']/);
 });
+
+test("rotas: GET /clients/metrics existe antes de /:id (métricas de atendimento)", () => {
+  const metricsIdx = routes.indexOf('"/metrics"');
+  const idIdx = routes.indexOf('"/:id"');
+  assert.ok(metricsIdx >= 0, "rota /metrics deve existir");
+  assert.ok(metricsIdx < idIdx, "/metrics deve ser registrada ANTES de /:id (senão 'metrics' vira :id)");
+});
+
+test("rotas: métricas usam janela de 30 dias e computam resposta/pico", () => {
+  assert.match(routes, /METRICS_WINDOW_DAYS = 30/);
+  assert.match(routes, /gte: cutoff/);
+  assert.match(routes, /direction === "IN"/);
+  assert.match(routes, /totalSent\+\+/);
+  assert.match(routes, /bucket\.lastIn/);
+  assert.match(routes, /averageResponseTime/);
+  assert.match(routes, /peakDay/);
+  assert.match(routes, /peakHour/);
+  assert.match(routes, /charts/);
+});
+
+test("rotas: métricas respeitam o fuso da empresa (America/Sao_Paulo)", () => {
+  assert.match(routes, /timezone/);
+  assert.match(routes, /America\/Sao_Paulo/);
+  assert.match(routes, /Intl\.DateTimeFormat/);
+});
+
+test("rotas: lista inclui contador de mensagens por cliente", () => {
+  assert.match(routes, /_count: \{ select: \{ messages: true \} \}/);
+  assert.match(routes, /message_count: l\._count\.messages/);
+  assert.match(routes, /last_activity/);
+});
+
+test("frontend: aba Clientes usa lista + métricas + recharts (não mais só cards)", () => {
+  const page = read("apps/dashboard/app/(dashboard)/clientes/page.tsx");
+  assert.match(page, /clients\/metrics/);
+  assert.match(page, /Total de clientes/);
+  assert.match(page, /Respostas recebidas/);
+  assert.match(page, /Mensagens enviadas/);
+  assert.match(page, /Tempo médio de resposta/);
+  assert.match(page, /Análise de demanda/);
+  assert.match(page, /recharts/);
+  assert.match(page, /BarChart/);
+  assert.match(page, /message_count/);
+});

@@ -27,6 +27,12 @@ enum CampaignStatus {
   FINISHED
 }
 
+enum ChannelMode {
+  WHATSAPP
+  EMAIL
+  BOTH
+}
+
 enum MessageChannel {
   WHATSAPP
   EMAIL
@@ -189,9 +195,13 @@ model Business {
   ai_settings AISettings[]
   ai_knowledge AIKnowledge[]
   email_logs EmailLog[]
+  sales_conversation_insights SalesConversationInsight[]
+  commercial_strategies CommercialStrategy[]
+  notifications Notification[]
 
   @@index([status])
 }
+
 
 model BusinessSettings {
   business_id           String @id
@@ -206,6 +216,19 @@ model BusinessSettings {
   timezone              String @default("America/Sao_Paulo")
   logo_url              String?
   additional_info       String?
+  /**
+   * CONTEXTO DA EMPRESA para a IA — dados factuais estruturados usados pelo
+   * agente (identidade, público, problemas, diferenciais, posicionamento,
+   * canais, instruções). A Base de conhecimento segue sendo a fonte detalhada
+   * de produtos/preços/políticas; estes campos são a visão geral da empresa.
+   */
+  target_audience       String?
+  problems_solved       String?
+  differentials         String?
+  positioning           String?
+  service_area          String?
+  business_objectives   String?
+  additional_instructions String?
   updated_at            DateTime @updatedAt
   created_at            DateTime @default(now())
 
@@ -319,6 +342,10 @@ model Campaign {
   interval_seconds     Int            @default(7200)
   is_test              Boolean        @default(false)
   start_hour           Int?
+  channel_mode         ChannelMode    @default(WHATSAPP)
+  /** Mensagem de e-mail configurada pelo usuário (canais EMAIL e BOTH). */
+  email_subject        String?
+  email_body           String?
   created_at           DateTime       @default(now())
   updated_at           DateTime       @updatedAt
 
@@ -367,6 +394,11 @@ model ProspectionRun {
   city             String?
   target_quantity  Int               @default(100)
   status           ProspectionStatus @default(PENDING)
+  /**
+   * Fontes de prospecção ativas nesta run: ["google_maps"], ["instagram"] ou
+   * ambos. Vazio = fonte web padrão (Overpass/Firecrawl). Auditável por run.
+   */
+  sources          Json?
   found_count      Int               @default(0)
   saved_count      Int               @default(0)
   duplicate_count  Int               @default(0)
@@ -458,6 +490,9 @@ model AIGeneration {
   technique_used   String?
   /** Versão do Motor Comercial (v1, ...) para análise de conversão/resolução. */
   commercial_engine_version String?
+  /** Próximo passo comercial decidido (Strategy/Decision Engine) — alimenta o
+   *  aprendizado por tenant (qual pergunta foi feita em cada turno). */
+  next_action String?
   prompt           String?
   completion       String?
   input_tokens     Int     @default(0)
@@ -613,12 +648,18 @@ enum AITone {
 enum AIKnowledgeCategory {
   PRODUCTS
   SERVICES
+  PLANS
   PRICES
+  PROMOTIONS
   HOURS
-  POLICIES
-  FAQ
-  ADDRESS
+  DAYS
   PAYMENT
+  ADDRESS
+  FAQ
+  POLICIES
+  BENEFITS
+  COMMERCIAL_RULES
+  LINKS
   INTERNAL_RULES
 }
 
@@ -767,6 +808,12 @@ model AISettings {
   behaviors      Json     @default("{}")
   message_config Json     @default("{}")
   custom_prompt  String?
+  /**
+   * MODO DO AGENTE ("Objetivo do agente"): sales | support | sales_support.
+   * O mesmo agente com estratégia comportamental adaptável — nunca cria
+   * agentes separados.
+   */
+  agent_mode     String   @default("sales_support")
   /** Última aplicação automática da configuração estruturada ("Aplicar na IA"). */
   last_applied_at DateTime?
   created_at     DateTime @default(now())
@@ -785,6 +832,11 @@ model AIKnowledge {
   title       String
   content     String
   category    AIKnowledgeCategory @default(FAQ)
+  /**
+   * Palavras-chave (separadas por vírgula) que melhoram a recuperação do
+   * conhecimento ("preço, valor, quanto custa"). Opcional.
+   */
+  keywords    String?
   active      Boolean             @default(true)
   created_at  DateTime            @default(now())
   updated_at  DateTime            @updatedAt
@@ -806,9 +858,145 @@ model ConversationMemory {
   last_question String  @default("")
   sales_stage  String   @default("NEW")
   known_json   Json?
+  /**
+   * Perguntas já feitas pelo agente nesta conversa — evita repetir perguntas
+   * ("Oi" horas depois não reinicia nem re-pergunta). Array de strings.
+   */
+  asked_questions Json?
+  /** Última mensagem recebida do cliente (contexto para continuidade). */
+  last_customer_message String?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
   @@unique([business_id, key])
   @@index([business_id])
 }
+
+// ============================= APRENDIZADO COMERCIAL (INTELIGÊNCIA DO TENANT) =============================
+
+enum InsightOutcome {
+  CONVERTED
+  ABANDONED
+  LOST
+  ONGOING
+}
+
+enum StrategyStatus {
+  LEARNING
+  ACTIVE
+  DISCARDED
+}
+
+/**
+ * Insight extraído de uma conversa encerrada/análise — o "evento" bruto do
+ * Conversation Learning Engine. PERTENCE A UM ÚNICO TENANT (business_id).
+ * A agregação destes insights vira `CommercialStrategy` (padrões do tenant).
+ * NUNCA consultar/inserir sem `business_id`.
+ */
+model SalesConversationInsight {
+  id                   String         @id @default(cuid())
+  business_id          String
+  conversation_id      String         @unique
+  lead_id              String
+  segment              String?
+  acquisition_channel  String?
+  /** Estágio comercial no encerramento/última análise (ConversationStage). */
+  stage_at_close       String?
+  /** Resultado comercial: convertido, abandonou, perdeu ou em andamento. */
+  outcome              InsightOutcome @default(ONGOING)
+  message_count        Int            @default(0)
+  agent_question_count Int            @default(0)
+  customer_message_count Int          @default(0)
+  /** Nº de mensagens até pedir preço / demonstrar interesse de compra. */
+  messages_to_price    Int?
+  messages_to_conversion Int?
+  last_agent_question  String?
+  last_customer_message String?
+  /** Dores recorrentes (array de strings). */
+  pains                Json?
+  /** Objeções frequentes (array de strings). */
+  objections           Json?
+  /** Necessidades reveladas (array de strings). */
+  needs                Json?
+  /** Perguntas feitas pelo agente: { text, response_length, continuity }. */
+  questions            Json?
+  /** Técnicas comerciais usadas ao longo da conversa (array). */
+  techniques           Json?
+  strategy_used        String?
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, outcome])
+  @@index([business_id, created_at])
+  @@index([business_id, segment])
+  @@index([business_id, lead_id])
+}
+
+/**
+ * Estratégia comercial APRENDIDA de um tenant — a inteligência comercial da
+ * empresa. Sempre isolada por `business_id`: Tenant A nunca lê/encontra
+ * estratégias do Tenant B. Versionada; só é usada automaticamente pelo Decision
+ * Engine quando `status = ACTIVE` e `sample_count`/`confidence` atingem os
+ * limites configurados.
+ */
+model CommercialStrategy {
+  id            String         @id @default(cuid())
+  business_id   String
+  /** Identificador semântico ("ask_before_present", "explore_pain"...). */
+  strategy_id   String
+  version       Int            @default(1)
+  name          String
+  description   String?
+  /** Perfil de aplicação (opcional): segmento/canal a que a estratégia se aplica. */
+  segment       String?
+  acquisition_channel String?
+  /** Fato que a estratégia endereça (name|segment|acquisition_channel|need|pain|objective|budget|objection|tools). */
+  missing_fact  String?
+  /** Próxima ação recomendada (NextAction: ASK_*, UNDERSTAND_PAIN, EXPLAIN_RELEVANT_SOLUTION...). */
+  recommended_next_action String
+  sample_count  Int            @default(0)
+  confidence    Float          @default(0)
+  success_rate  Float          @default(0)
+  continuity_rate Float        @default(0)
+  response_rate Float          @default(0)
+  interest_rate Float          @default(0)
+  conversion_rate Float        @default(0)
+  last_success_at DateTime?
+  status        StrategyStatus @default(LEARNING)
+  /** Metadados de aprendizado (contadores internos). */
+  meta          Json?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, strategy_id, version])
+  @@index([business_id, status])
+  @@index([business_id, segment])
+  @@index([business_id, recommended_next_action])
+}
+
+// ============================= NOTIFICAÇÕES (MULTI-TENANT) =============================
+
+model Notification {
+  id              String    @id @default(cuid())
+  business_id     String
+  type            String    @default("WHATSAPP_RESPONSE")
+  title           String
+  description     String
+  preview         String?
+  lead_id         String?
+  conversation_id String?
+  message_id      String?   @unique
+  read            Boolean   @default(false)
+  read_at         DateTime?
+  created_at      DateTime  @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, read])
+  @@index([business_id, created_at])
+}
+

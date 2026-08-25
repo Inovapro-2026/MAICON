@@ -41,7 +41,7 @@ export function Logo({
       width={LOGO_WIDTH}
       height={LOGO_HEIGHT}
       priority={priority}
-      className={className}
+      className={`logo-savyron-animated transition-all duration-300 ${className}`}
       style={{
         height: renderedHeight,
         width: "auto",
@@ -50,3 +50,4 @@ export function Logo({
     />
   );
 }
+

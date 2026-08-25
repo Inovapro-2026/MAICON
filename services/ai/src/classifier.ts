@@ -44,7 +44,7 @@ export async function classifyIntent(params: {
         maxTokens: 100,
         temperature: 0,
         timeoutMs: params.timeoutMs ?? 15000,
-        provider: 'groq',
+        provider: 'openai',
       });
       const json = extractJson(result.text);
       if (json) {

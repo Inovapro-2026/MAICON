@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Bot, BookOpen } from 'lucide-react';
+import { Bot, ShoppingCart, Headset, Handshake } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,8 +18,33 @@ interface AISettingsData {
   behaviors: Record<string, boolean>;
   message_config: Record<string, unknown>;
   custom_prompt: string | null;
+  agent_mode: string;
   agent: { id: string; name: string; role: string | null; description: string | null; active: boolean } | null;
 }
+
+const AGENT_MODES = [
+  {
+    value: 'sales',
+    label: 'Vendas',
+    icon: ShoppingCart,
+    title: 'Especialista em vendas',
+    desc: 'Encontra oportunidades, apresenta soluções, trata objeções e conduz clientes até a conversão.',
+  },
+  {
+    value: 'support',
+    label: 'Suporte',
+    icon: Headset,
+    title: 'Especialista em atendimento',
+    desc: 'Resolve dúvidas e problemas, orienta clientes e encaminha casos quando necessário.',
+  },
+  {
+    value: 'sales_support',
+    label: 'Vendas + Suporte',
+    icon: Handshake,
+    title: 'Atendimento completo',
+    desc: 'Identifica automaticamente se o cliente precisa de suporte ou está pronto para comprar.',
+  },
+];
 
 const TONES = [
   { value: 'PROFESSIONAL', label: 'Profissional' },
@@ -56,11 +80,11 @@ export default function AISettingsPage() {
   const [agentId, setAgentId] = useState<string | null>(null);
   const [tone, setTone] = useState('FRIENDLY');
   const [behaviors, setBehaviors] = useState<Record<string, boolean>>({});
-  const [customPrompt, setCustomPrompt] = useState('');
   const [msgLength, setMsgLength] = useState('');
   const [msgSentences, setMsgSentences] = useState('');
   const [msgPerReply, setMsgPerReply] = useState('');
   const [maxEmojis, setMaxEmojis] = useState('');
+  const [agentMode, setAgentMode] = useState('sales_support');
 
   useEffect(() => {
     if (!settings) return;
@@ -70,11 +94,11 @@ export default function AISettingsPage() {
     setAgentDesc(settings.agent?.description ?? '');
     setTone(settings.tone);
     setBehaviors(settings.behaviors ?? {});
-    setCustomPrompt(settings.custom_prompt ?? '');
     setMsgLength(String((settings.message_config as any)?.max_length ?? ''));
     setMsgSentences(String((settings.message_config as any)?.max_sentences ?? ''));
     setMsgPerReply(String((settings.message_config as any)?.max_messages_per_reply ?? ''));
     setMaxEmojis(String((settings.message_config as any)?.max_emojis ?? ''));
+    setAgentMode(settings.agent_mode ?? 'sales_support');
   }, [settings]);
 
   const saveMutation = useApiMutationMethod({
@@ -100,7 +124,7 @@ export default function AISettingsPage() {
       tone,
       behaviors,
       message_config,
-      custom_prompt: customPrompt,
+      agent_mode: agentMode,
     });
 
     // Atualiza/cria o agente de identidade e o vincula às configurações
@@ -185,6 +209,36 @@ export default function AISettingsPage() {
         </Card>
 
         <Card>
+          <CardHeader title="Objetivo do agente" subtitle="Defina como a IA deve atuar durante as conversas com seus clientes" />
+          <div className="p-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {AGENT_MODES.map((m) => {
+                const Icon = m.icon;
+                const active = agentMode === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setAgentMode(m.value)}
+                    aria-pressed={active}
+                    className={`flex flex-col items-start gap-2 rounded-2xl border-2 p-4 text-left transition-all ${
+                      active
+                        ? 'border-emerald-500 bg-emerald-500/10 shadow-sm'
+                        : 'border-zinc-200 hover:border-zinc-300'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${active ? 'text-emerald-600' : 'text-zinc-500'}`} />
+                    <span className={`text-sm font-bold ${active ? 'text-emerald-700' : 'text-zinc-800'}`}>{m.label}</span>
+                    <span className="text-xs font-medium text-zinc-600">{m.title}</span>
+                    <span className="text-[11px] leading-relaxed text-zinc-500">{m.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
           <CardHeader title="Comportamento" subtitle="Como o agente deve se portar nas conversas" />
           <div className="grid gap-2 p-5 sm:grid-cols-2">
             {BEHAVIORS.map((b) => (
@@ -203,38 +257,6 @@ export default function AISettingsPage() {
             <Input label="Máximo de frases por mensagem" type="number" value={msgSentences} onChange={(e) => setMsgSentences(e.target.value)} placeholder="ex.: 3" />
             <Input label="Mensagens por resposta" type="number" value={msgPerReply} onChange={(e) => setMsgPerReply(e.target.value)} placeholder="ex.: 1" />
             <Input label="Máximo de emojis por mensagem" type="number" value={maxEmojis} onChange={(e) => setMaxEmojis(e.target.value)} placeholder="ex.: 1" />
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title="Prompt personalizado"
-            subtitle="Instruções adicionais para o agente (não sobrescrevem as regras de segurança da plataforma)"
-            action={
-              <Link
-                href="/ai/prompt-guide"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Guia de prompts
-              </Link>
-            }
-          />
-          <div className="p-5">
-            <label className="mb-1.5 block text-sm font-medium text-zinc-700">Instruções adicionais para o agente...</label>
-            <textarea
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value.slice(0, 20000))}
-              rows={5}
-              placeholder="Ex.: Sempre ofereça o horário das 9h às 11h como preferencial..."
-              className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
-            />
-            <p className="mt-2 text-[11px] text-zinc-500">
-              Regras de segurança, privacidade e limites da plataforma têm prioridade e não podem ser alteradas por este campo.
-            </p>
-            <p className="mt-1 text-right text-[11px] text-zinc-400">
-              {customPrompt.length} / 20000
-            </p>
           </div>
         </Card>
 

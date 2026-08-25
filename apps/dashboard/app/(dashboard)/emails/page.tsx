@@ -101,27 +101,27 @@ export default function EmailsPage() {
           </div>
         ) : list.length > 0 ? (
           <>
-            <p className="text-xs text-zinc-500">{emails.data?.total ?? list.length} e-mail{list.length === 1 ? '' : 's'}</p>
-            <div className="overflow-hidden rounded-xl border border-zinc-200">
+            <p className="text-xs font-medium text-[#64748B]">{emails.data?.total ?? list.length} e-mail{list.length === 1 ? '' : 's'}</p>
+            <div className="overflow-hidden rounded-2xl border border-[#E6E8F0] bg-white shadow-xs">
               <table className="w-full text-left text-sm">
-                <thead className="bg-white text-[11px] uppercase tracking-wider text-zinc-500">
+                <thead className="bg-[#F8FAFC] text-[11px] font-bold uppercase tracking-wider text-[#64748B] border-b border-[#E6E8F0]">
                   <tr>
-                    <th className="px-4 py-3">Destinatário</th>
-                    <th className="hidden px-4 py-3 sm:table-cell">Assunto</th>
-                    <th className="px-4 py-3">Data/hora</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3.5">Destinatário</th>
+                    <th className="hidden px-4 py-3.5 sm:table-cell">Assunto</th>
+                    <th className="px-4 py-3.5">Data/hora</th>
+                    <th className="px-4 py-3.5">Status</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#E6E8F0] bg-white">
                   {list.map((e) => (
-                    <tr key={e.id} className="border-t border-zinc-200 hover:bg-zinc-100">
-                      <td className="max-w-[220px] truncate px-4 py-2.5 text-zinc-900">{e.to}</td>
-                      <td className="hidden max-w-[320px] truncate px-4 py-2.5 text-zinc-700 sm:table-cell" title={e.error ?? ''}>
+                    <tr key={e.id} className="transition-colors hover:bg-slate-50">
+                      <td className="max-w-[220px] truncate px-4 py-3 font-semibold text-[#0F172A]">{e.to}</td>
+                      <td className="hidden max-w-[320px] truncate px-4 py-3 text-[#475569] sm:table-cell" title={e.error ?? ''}>
                         {e.subject}
-                        {e.error ? <span className="ml-1 text-[11px] text-red-600">({e.error})</span> : null}
+                        {e.error ? <span className="ml-1 text-[11px] font-medium text-red-600">({e.error})</span> : null}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-zinc-500">{formatDateTime(e.sent_at)}</td>
-                      <td className="px-4 py-2.5">
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-[#64748B]">{formatDateTime(e.sent_at)}</td>
+                      <td className="px-4 py-3">
                         <Badge tone={STATUS_BADGE[e.status]?.tone ?? 'zinc'}>{STATUS_BADGE[e.status]?.label ?? e.status}</Badge>
                       </td>
                     </tr>
@@ -132,11 +132,12 @@ export default function EmailsPage() {
           </>
         ) : (
           <Card className="py-16 text-center">
-            <Inbox className="mx-auto mb-3 h-10 w-10 text-zinc-700" />
-            <div className="text-sm text-zinc-500">Nenhum e-mail enviado no período.</div>
+            <Inbox className="mx-auto mb-3 h-10 w-10 text-[#94A3B8]" />
+            <div className="text-sm font-medium text-[#64748B]">Nenhum e-mail enviado no período.</div>
           </Card>
         )}
       </div>
     </DashboardShell>
   );
 }
+

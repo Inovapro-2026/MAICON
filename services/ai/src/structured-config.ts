@@ -25,6 +25,13 @@ export interface StructuredConfigInput {
   instagram?: string;
   openingHours?: string;
   location?: string;
+  targetAudience?: string;
+  problemsSolved?: string;
+  differentials?: string;
+  positioning?: string;
+  serviceArea?: string;
+  businessObjectives?: string;
+  additionalInstructions?: string;
 }
 
 export interface StructuredAIConfig {
@@ -174,7 +181,7 @@ export async function generateStructuredAIConfig(
           content: "Gere o JSON estruturado de configuração do agente.",
         },
       ],
-      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'groq' },
+      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'openai' },
     );
     const parsed = extractJsonObject(result.text);
     const config = normalizeStructuredConfig(parsed, input);

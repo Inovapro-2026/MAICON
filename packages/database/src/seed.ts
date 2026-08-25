@@ -85,6 +85,10 @@ async function main(): Promise<void> {
     },
   });
 
+  // A IA conduz a conversa de forma dinâmica (sem sequência fixa de abertura):
+  // a configuração de onboarding foi removida — nada a setar aqui. O comportamento
+  // é guiado pela Descrição da empresa + Base de conhecimento + memória.
+
   const settings = {
     default_whatsapp_daily_limit: String(ws),
     default_email_daily_limit: String(em),

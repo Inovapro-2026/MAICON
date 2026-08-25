@@ -4,13 +4,12 @@ module.exports = {
   apps: [
     {
       name: "prospector-dashboard",
-      cwd: __dirname + "/apps/dashboard",
-      script: "node_modules/.bin/next",
-      args: "start -p 3005",
+      cwd: __dirname + "/apps/dashboard/.next/standalone/apps/dashboard",
+      script: "server.js",
       instances: 1,
       autorestart: true,
       max_memory_restart: "512M",
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", PORT: "3005" },
       out_file: __dirname + "/logs/dashboard.out.log",
       error_file: __dirname + "/logs/dashboard.err.log",
       merge_logs: true,

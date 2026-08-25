@@ -10,6 +10,8 @@
  */
 
 import { AgentSystemPromptInput } from "./prompt-assembler";
+import { activeStrategiesForTenant } from "./learning/strategies";
+import { RuntimeStrategy } from "./learning/types";
 
 /**
  * Subconjunto estrutural do Prisma Client usado por este loader. Duck typing:
@@ -23,12 +25,29 @@ export interface AIConfigDataSource {
       name: string | null;
       segment: string | null;
       description: string | null;
+      slug: string | null;
+      phone: string | null;
+      email: string | null;
     } | null>;
   };
   businessSettings: {
     findUnique(args: {
       where: { business_id: string };
-    }): Promise<{ additional_info: string | null } | null>;
+    }): Promise<{
+      additional_info: string | null;
+      website: string | null;
+      instagram: string | null;
+      opening_hours: string | null;
+      address: string | null;
+      timezone: string | null;
+      target_audience: string | null;
+      problems_solved: string | null;
+      differentials: string | null;
+      positioning: string | null;
+      service_area: string | null;
+      business_objectives: string | null;
+      additional_instructions: string | null;
+    } | null>;
   };
   aISettings: {
     findUnique(args: { where: { business_id: string } }): Promise<{
@@ -37,6 +56,7 @@ export interface AIConfigDataSource {
       message_config: unknown;
       custom_prompt: string | null;
       agent_id: string | null;
+      agent_mode: string | null;
     } | null>;
   };
   aIAgent: {
@@ -64,7 +84,10 @@ export interface AIConfigDataSource {
     findMany(args: {
       where: { business_id: string; active: boolean };
       orderBy: { created_at: "asc" };
-    }): Promise<{ title: string; content: string }[]>;
+    }): Promise<{ title: string; content: string; keywords: string | null }[]>;
+  };
+  commercialStrategy: {
+    findMany(args: unknown): Promise<unknown[]>;
   };
 }
 
@@ -77,15 +100,22 @@ export async function loadAIConfiguration(
   db: AIConfigDataSource,
   businessId: string,
 ): Promise<AgentSystemPromptInput> {
-  const [business, businessSettings, settings, knowledge] = await Promise.all([
-    db.business.findUnique({ where: { id: businessId } }),
-    db.businessSettings.findUnique({ where: { business_id: businessId } }),
-    db.aISettings.findUnique({ where: { business_id: businessId } }),
-    db.aIKnowledge.findMany({
-      where: { business_id: businessId, active: true },
-      orderBy: { created_at: "asc" },
-    }),
-  ]);
+  const [business, businessSettings, settings, knowledge, strategies] =
+    await Promise.all([
+      db.business.findUnique({ where: { id: businessId } }),
+      db.businessSettings.findUnique({ where: { business_id: businessId } }),
+      db.aISettings.findUnique({ where: { business_id: businessId } }),
+      db.aIKnowledge.findMany({
+        where: { business_id: businessId, active: true },
+        orderBy: { created_at: "asc" },
+      }),
+      activeStrategiesForTenant(db, businessId),
+    ]);
+
+  // Sequência de abertura: REMOVIDA. A IA conduz a conversa inteira de forma
+  // dinâmica, guiada pela Descrição da empresa + Base de conhecimento + memória,
+  // sem roteiro fixo de perguntas nem texto de saudação hardcoded (exigência de
+  // produto: nenhum script pode competir com o que está escrito na Descrição).
 
   const agent = settings?.agent_id
     ? await db.aIAgent.findUnique({ where: { id: settings.agent_id } })
@@ -107,7 +137,21 @@ export async function loadAIConfiguration(
       name: business?.name,
       segment: business?.segment,
       description: business?.description,
+      phone: business?.phone,
+      email: business?.email,
       additionalInfo: businessSettings?.additional_info,
+      website: businessSettings?.website,
+      instagram: businessSettings?.instagram,
+      openingHours: businessSettings?.opening_hours,
+      address: businessSettings?.address,
+      timezone: businessSettings?.timezone,
+      targetAudience: businessSettings?.target_audience,
+      problemsSolved: businessSettings?.problems_solved,
+      differentials: businessSettings?.differentials,
+      positioning: businessSettings?.positioning,
+      serviceArea: businessSettings?.service_area,
+      businessObjectives: businessSettings?.business_objectives,
+      additionalInstructions: businessSettings?.additional_instructions,
     },
     settings: settings
       ? {
@@ -117,8 +161,14 @@ export async function loadAIConfiguration(
           messageConfig:
             (settings.message_config as Record<string, unknown>) ?? undefined,
           customPrompt: settings.custom_prompt,
+          agentMode: settings.agent_mode ?? "sales_support",
         }
       : undefined,
-    knowledge: knowledge.map((k) => ({ title: k.title, content: k.content })),
+    knowledge: knowledge.map((k) => ({
+      title: k.title,
+      content: k.content,
+      keywords: k.keywords ?? undefined,
+    })),
+    strategies,
   };
 }

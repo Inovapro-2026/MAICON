@@ -5,6 +5,7 @@ import { QUEUE_NAMES } from '@prospector/queues';
 import { brasiliaWindow, isInsideWindow, startOfBrasiliaDay } from '@prospector/utils';
 import { buildFirstContactMessage } from '@prospector/ai';
 import { getWorkerQueue } from '../queues';
+import { resolveChannelDispatch, resolveEmailContent } from '../services/campaign-channels';
 import { redis, PUMP_RUN_KEY, NEXT_SEND_KEY } from '../services/redis';
 
 const logger = createLogger('worker.campaign');
@@ -135,8 +136,9 @@ export async function processCampaignPump(job: { id?: string; data: PumpJobData 
   let dispatched = 0;
 
   // Estratégia de espaçamento (seguro para o WhatsApp):
-  // despacha no MÁXIMO 1 mensagem por ciclo de pump. O intervalo entre ciclos é
+  // processa NO MÁXIMO 1 lead por ciclo de pump. O intervalo entre ciclos é
   // o `interval_seconds` da campanha, então os envios ficam espaçados de verdade.
+  // No modo BOTH o lead do ciclo pode disparar nos dois canais no mesmo pump.
   for (const cl of pending) {
     if (dispatched >= 1) break;
 
@@ -150,16 +152,26 @@ export async function processCampaignPump(job: { id?: string; data: PumpJobData 
       continue;
     }
 
-    const message = buildFirstContactMessage(lead.business_name);
-    let channel: 'WHATSAPP' | 'EMAIL' | null = null;
+    const dispatch = resolveChannelDispatch(campaign.channel_mode, lead, {
+      whatsapp: whatsappCapacity,
+      email: emailCapacity,
+    });
+    // E-mail usa SEMPRE a mensagem configurada na campanha (com variáveis
+    // renderizadas). Sem configuração → nenhum e-mail é disparado.
+    const emailContent = resolveEmailContent(campaign, lead);
+    const willWhatsapp = dispatch.whatsapp;
+    // Sem mensagem configurada o lead NÃO é marcado como processado: fica na
+    // fila e é enviado quando o usuário salvar assunto/mensagem.
+    const willEmail = dispatch.email && Boolean(emailContent);
 
-    if (lead.phone && whatsappCapacity > 0) {
-      channel = 'WHATSAPP';
-      whatsappCapacity -= 1;
-    } else if (lead.email && emailCapacity > 0) {
-      channel = 'EMAIL';
-      emailCapacity -= 1;
-    } else {
+    if (!willWhatsapp && !willEmail) {
+      if (dispatch.email) {
+        logger.warn('Campanha sem mensagem de e-mail configurada; envio pulado', {
+          campaign_id: campaignId,
+          campaign_lead_id: cl.id,
+          channel_mode: campaign.channel_mode,
+        });
+      }
       continue;
     }
 
@@ -167,34 +179,60 @@ export async function processCampaignPump(job: { id?: string; data: PumpJobData 
       where: { id: cl.id },
       data: {
         status: 'PROCESSING',
-        channel,
+        channel: willWhatsapp ? 'WHATSAPP' : 'EMAIL',
         attempts: { increment: 1 },
         last_attempt_at: new Date(),
       },
     });
 
-    const queue = channel === 'WHATSAPP' ? QUEUE_NAMES.WHATSAPP_SEND : QUEUE_NAMES.EMAIL_SEND;
-    await getWorkerQueue(queue).add(
-      'send',
-      {
-        campaignLeadId: cl.id,
-        leadId: lead.id,
-        campaignId,
-        businessId,
-        phone: lead.phone ?? '',
-        email: lead.email ?? '',
-        message,
-        subject: 'Falo com o responsável pelo estabelecimento?',
-        retryCount: 0,
-      },
-      { jobId: `send-${cl.id}`, attempts: 1, removeOnComplete: true }
-    );
+    const message = buildFirstContactMessage(lead.business_name);
 
-    dispatched += 1;
+    if (willWhatsapp) {
+      whatsappCapacity -= 1;
+      await getWorkerQueue(QUEUE_NAMES.WHATSAPP_SEND).add(
+        'send',
+        {
+          campaignLeadId: cl.id,
+          leadId: lead.id,
+          campaignId,
+          businessId,
+          phone: lead.phone ?? '',
+          email: '',
+          message,
+          subject: 'Falo com o responsável pelo estabelecimento?',
+          retryCount: 0,
+        },
+        { jobId: `send-${cl.id}-wa`, attempts: 1, removeOnComplete: true }
+      );
+      dispatched += 1;
+    }
+
+    if (willEmail && emailContent) {
+      emailCapacity -= 1;
+      await getWorkerQueue(QUEUE_NAMES.EMAIL_SEND).add(
+        'send',
+        {
+          campaignLeadId: cl.id,
+          leadId: lead.id,
+          campaignId,
+          businessId,
+          phone: '',
+          email: lead.email ?? '',
+          message: emailContent.body,
+          subject: emailContent.subject,
+          retryCount: 0,
+        },
+        { jobId: `send-${cl.id}-email`, attempts: 1, removeOnComplete: true }
+      );
+      dispatched += 1;
+    }
+
     logger.debug('Lead enviado para fila de envio', {
       campaign_id: campaignId,
       campaign_lead_id: cl.id,
-      channel,
+      channel_mode: campaign.channel_mode,
+      whatsapp: dispatch.whatsapp,
+      email: dispatch.email,
     });
   }
 

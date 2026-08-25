@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Play, Pause, RotateCcw, Square, Megaphone, Trash2 } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
@@ -25,6 +25,7 @@ interface Campaign {
   interval_seconds: number;
   is_test: boolean;
   start_hour: number | null;
+  channel_mode?: 'WHATSAPP' | 'EMAIL' | 'BOTH';
   next_send_at: string | null;
   stats: {
     total: number;
@@ -35,6 +36,8 @@ interface Campaign {
     errors: number;
   };
 }
+
+const CHANNEL_LABEL: Record<string, string> = { WHATSAPP: 'WhatsApp', EMAIL: 'E-mail', BOTH: 'Ambos' };
 
 function startHourLabel(startHour: number | null): string | null {
   if (startHour === null || startHour === undefined) return null;
@@ -61,6 +64,15 @@ export default function CampaignsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
 
   const campaigns = useApi<Campaign[]>(['campaigns'], 'campaigns', { refetchInterval: 10000 });
+
+  // Regra 1 campanha por empresa: /campaigns é sempre o detalhe da campanha
+  // existente — inclusive ao recarregar a página ou acessar por URL. A lista
+  // abaixo só renderiza quando não há nenhuma campanha (estado de criação).
+  useEffect(() => {
+    if (campaigns.data && campaigns.data.length > 0) {
+      router.replace(`/campaigns/${campaigns.data[0].id}`);
+    }
+  }, [campaigns.data, router]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['campaigns'] });
@@ -129,9 +141,11 @@ export default function CampaignsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <BrasiliaClock />
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> Nova campanha
-          </Button>
+          {campaigns.data && campaigns.data.length === 0 ? (
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" /> Nova campanha
+            </Button>
+          ) : null}
         </div>
 
         {campaigns.data && campaigns.data.length > 0 ? (
@@ -146,7 +160,7 @@ export default function CampaignsPage() {
                       {c.is_test ? <Badge tone="blue">teste</Badge> : null}
                     </div>
                     <div className="mt-1 text-[11px] text-zinc-500">
-                      WA {c.daily_whatsapp_limit}/dia · E-mail {c.daily_email_limit}/dia · a cada {c.interval_seconds}s
+                      Canal {CHANNEL_LABEL[c.channel_mode ?? 'WHATSAPP']} · WA {c.daily_whatsapp_limit}/dia · E-mail {c.daily_email_limit}/dia · a cada {c.interval_seconds}s
                       {startHourLabel(c.start_hour) ? ` · inicia ${startHourLabel(c.start_hour)}` : ''}
                     </div>
                   </div>
@@ -155,10 +169,11 @@ export default function CampaignsPage() {
 
                 <Progress value={c.stats.processed} max={Math.max(1, c.stats.total)} />
 
-                <div className="mt-2 flex items-center justify-between">
-                  <NextSendCountdown targetAt={c.next_send_at} running={c.status === 'ACTIVE'} />
-                  <span className="text-[11px] text-zinc-500">intervalo {c.interval_seconds}s</span>
+                <div className="mt-3 flex items-center justify-between">
+                  <NextSendCountdown targetAt={c.next_send_at} status={c.status} running={c.status === 'ACTIVE'} variant="compact" />
+                  <span className="text-[11px] font-medium text-[#64748B]">intervalo {c.interval_seconds}s</span>
                 </div>
+
 
                 <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[11px] text-zinc-500">
                   <div><div className="font-semibold text-zinc-700">{c.stats.total}</div>total</div>

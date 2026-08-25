@@ -8,6 +8,7 @@
  */
 import { config } from '@prospector/config';
 import { createLogger } from '@prospector/logger';
+import { buildOutgoingParts } from '@prospector/utils';
 import { EventEmitter } from 'events';
 import { IncomingMessage, MessageReceivedHandler, WhatsAppConnectionState, WhatsAppStatus } from '../types';
 import { loadSessionAuth, clearSessionFiles, DEFAULT_BUSINESS_SESSION, isLegacySession } from '../session/store';
@@ -23,6 +24,8 @@ function createSilentLogger(): any {
 
 const BAISLEYS_TIMEOUT_MS = 20000;
 const SEND_TIMEOUT_MS = 20000;
+/** Intervalo entre as partes (texto → URL → URL...) de uma mesma mensagem. */
+const LINK_PART_DELAY_MS = 1500;
 const KEEP_ALIVE_MS = 25000;
 const MAX_RECONNECT_ATTEMPTS = 8;
 
@@ -193,6 +196,10 @@ export class WhatsAppConnection extends EventEmitter {
   /**
    * Envia mensagem. Prioriza o JID do TELEFONE (entrega garantida) e usa o
    * remoteJid apenas como fallback (LIDs podem ser aceitos mas não entregues).
+   *
+   * Normalização de links: se a mensagem contiver URLs, o texto é enviado
+   * primeiro e cada URL vai como mensagem separada, limpa (sem Markdown,
+   * sem duplicatas) — em qualquer fluxo que use este pipeline.
    */
   async sendText(phoneE164: string, text: string, remoteJid?: string): Promise<string | null> {
     if (!this.socket || this.state !== 'connected') {
@@ -202,14 +209,33 @@ export class WhatsAppConnection extends EventEmitter {
     if (!jid) {
       throw new Error('Sem destinatário para enviar mensagem');
     }
-    const result = (await withTimeout(
-      this.socket.sendMessage(jid, { text }) as Promise<any>,
-      SEND_TIMEOUT_MS,
-      `Timeout ao enviar mensagem para ${jid}`
-    )) as { key?: { id?: string } | null } | undefined;
-    const id = result?.key?.id ?? null;
-    logger.info('Mensagem WhatsApp enviada', { to: jid, id, chars: text.length });
-    return id;
+    const parts = buildOutgoingParts(text);
+    if (parts.length === 0) {
+      throw new Error('Mensagem vazia após normalização de links');
+    }
+    let lastId: string | null = null;
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        // Pequeno intervalo entre as mensagens (texto → URL → URL...),
+        // respeitando o ritmo seguro do WhatsApp.
+        await new Promise((resolve) => setTimeout(resolve, LINK_PART_DELAY_MS));
+      }
+      const result = (await withTimeout(
+        this.socket.sendMessage(jid, { text: parts[i] }) as Promise<any>,
+        SEND_TIMEOUT_MS,
+        `Timeout ao enviar mensagem para ${jid}`
+      )) as { key?: { id?: string } | null } | undefined;
+      const id = result?.key?.id ?? null;
+      if (id) lastId = id;
+      logger.info('Mensagem WhatsApp enviada', {
+        to: jid,
+        id,
+        chars: parts[i].length,
+        part: `${i + 1}/${parts.length}`,
+        kind: i === 0 && parts.length > 1 ? 'texto' : 'url',
+      });
+    }
+    return lastId;
   }
 
   isConnected(): boolean {

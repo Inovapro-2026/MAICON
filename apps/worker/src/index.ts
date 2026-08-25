@@ -10,6 +10,7 @@ import { processWhatsAppSend } from "./jobs/whatsapp-send.processor";
 import { processEmailSend } from "./jobs/email-send.processor";
 import { processMessageReceived } from "./jobs/message-received.processor";
 import { processAIResponse } from "./jobs/ai-response.processor";
+import { processConversationLearning } from "./jobs/conversation-learning.processor";
 import { processWebhook } from "./jobs/webhook.processor";
 import { processProspection } from "./jobs/prospect.processor";
 import { processLeadEnrichment } from "./jobs/lead-enrichment.processor";
@@ -33,6 +34,9 @@ function registerWorkers(): void {
     createWorker(QUEUE_NAMES.MESSAGE_RECEIVED, processMessageReceived),
   );
   workers.push(createWorker(QUEUE_NAMES.AI_RESPONSE, processAIResponse));
+  workers.push(
+    createWorker(QUEUE_NAMES.CONVERSATION_LEARNING, processConversationLearning),
+  );
   workers.push(createWorker(QUEUE_NAMES.WEBHOOK_PROCESSING, processWebhook));
   // Prospecção: processo dedicado do worker (nunca no HTTP), com concorrência própria.
   workers.push(

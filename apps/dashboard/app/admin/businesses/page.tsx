@@ -73,6 +73,28 @@ export default function AdminBusinessesPage() {
     }
   };
 
+  const deleteBusiness = async (id: string, name: string) => {
+    const ok = window.confirm(
+      `EXCLUIR PERMANENTEMENTE a conta "${name}"? Esta ação remove TODOS os dados da empresa e do banco de dados e NÃO pode ser desfeita. Digite EXCLUIR para confirmar.`,
+    );
+    if (!ok) return;
+    const typed = window.prompt("Digite EXCLUIR para confirmar a exclusão:");
+    if (typed !== "EXCLUIR") {
+      setError("Exclusão cancelada — digite EXCLUIR para confirmar.");
+      return;
+    }
+    try {
+      const result = await adminApi<{ deleted: boolean; users_deleted?: number }>(
+        `/admin/businesses/${id}`,
+        "DELETE",
+      );
+      setError(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao excluir empresa");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -162,6 +184,13 @@ export default function AdminBusinessesPage() {
                     }
                   >
                     Suporte
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => void deleteBusiness(b.id, b.name)}
+                  >
+                    Apagar
                   </Button>
                 </div>
               </div>

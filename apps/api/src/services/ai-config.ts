@@ -81,6 +81,81 @@ export async function applyAIConfiguration(
     },
   });
 
+  // 3b) BusinessSettings — CONTEXTO DA EMPRESA (fatos que a IA usa): site,
+  // instagram, horários, localização, público, problemas, diferenciais,
+  // posicionamento, área, objetivo e instruções. Persistir aqui garante que o
+  // loader (agent-config) os entregue ao modelo como "FATOS OFICIAIS".
+  await prisma.businessSettings.upsert({
+    where: { business_id: businessId },
+    update: {
+      ...(input.website !== undefined ? { website: input.website || null } : {}),
+      ...(input.instagram !== undefined
+        ? { instagram: input.instagram || null }
+        : {}),
+      ...(input.openingHours !== undefined
+        ? { opening_hours: input.openingHours || null }
+        : {}),
+      ...(input.location !== undefined
+        ? { address: input.location || null }
+        : {}),
+      ...(input.targetAudience !== undefined
+        ? { target_audience: input.targetAudience || null }
+        : {}),
+      ...(input.problemsSolved !== undefined
+        ? { problems_solved: input.problemsSolved || null }
+        : {}),
+      ...(input.differentials !== undefined
+        ? { differentials: input.differentials || null }
+        : {}),
+      ...(input.positioning !== undefined
+        ? { positioning: input.positioning || null }
+        : {}),
+      ...(input.serviceArea !== undefined
+        ? { service_area: input.serviceArea || null }
+        : {}),
+      ...(input.businessObjectives !== undefined
+        ? { business_objectives: input.businessObjectives || null }
+        : {}),
+      ...(input.additionalInstructions !== undefined
+        ? { additional_instructions: input.additionalInstructions || null }
+        : {}),
+    },
+    create: {
+      business_id: businessId,
+      ...(input.website !== undefined ? { website: input.website || null } : {}),
+      ...(input.instagram !== undefined
+        ? { instagram: input.instagram || null }
+        : {}),
+      ...(input.openingHours !== undefined
+        ? { opening_hours: input.openingHours || null }
+        : {}),
+      ...(input.location !== undefined
+        ? { address: input.location || null }
+        : {}),
+      ...(input.targetAudience !== undefined
+        ? { target_audience: input.targetAudience || null }
+        : {}),
+      ...(input.problemsSolved !== undefined
+        ? { problems_solved: input.problemsSolved || null }
+        : {}),
+      ...(input.differentials !== undefined
+        ? { differentials: input.differentials || null }
+        : {}),
+      ...(input.positioning !== undefined
+        ? { positioning: input.positioning || null }
+        : {}),
+      ...(input.serviceArea !== undefined
+        ? { service_area: input.serviceArea || null }
+        : {}),
+      ...(input.businessObjectives !== undefined
+        ? { business_objectives: input.businessObjectives || null }
+        : {}),
+      ...(input.additionalInstructions !== undefined
+        ? { additional_instructions: input.additionalInstructions || null }
+        : {}),
+    },
+  });
+
   logger.info("Configuração estruturada aplicada na IA", {
     business_id: businessId,
     agent_id: agentId,

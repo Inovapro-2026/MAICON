@@ -17,6 +17,7 @@
  */
 import { ChatMessage } from "./types";
 import { buildCommercialEngineRules } from "./commercial-engine";
+import { RuntimeStrategy } from "./learning/types";
 
 /** Camada 1 — identidade base da plataforma. */
 export const SYSTEM_PROMPT = `Você é o assistente de inteligência artificial do SAVYRON, uma plataforma SaaS de gestão comercial e atendimento usada por diversas empresas. Você representa a empresa que o contratou para atender seus clientes.`;
@@ -85,14 +86,32 @@ export interface AgentSystemPromptInput {
     segment?: string | null;
     description?: string | null;
     additionalInfo?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    instagram?: string | null;
+    openingHours?: string | null;
+    address?: string | null;
+    timezone?: string | null;
+    targetAudience?: string | null;
+    problemsSolved?: string | null;
+    differentials?: string | null;
+    positioning?: string | null;
+    serviceArea?: string | null;
+    businessObjectives?: string | null;
+    additionalInstructions?: string | null;
   };
   settings?: {
     tone?: string;
     behaviors?: Record<string, boolean>;
     messageConfig?: Record<string, unknown>;
     customPrompt?: string | null;
+    /** Modo do agente: sales | support | sales_support. */
+    agentMode?: string;
   };
   knowledge?: { title: string; content: string }[];
+  /** Estratégias comerciais ATIVAS aprendidas do tenant (Strategy Engine). */
+  strategies?: RuntimeStrategy[];
 }
 
 /** Monta o prompt de sistema final em camadas. */

@@ -1,27 +1,29 @@
 import { AICompletionResult } from '@prospector/types';
 import { createLogger } from '@prospector/logger';
-import { ChatMessage, GenerateOptions, LLMProvider } from './types';
+import { ChatMessage, GenerateOptions, LLMProvider, ProviderName } from './types';
+import { OpenAIProvider } from './providers/openai';
 import { GroqProvider } from './providers/groq';
 
 const logger = createLogger('ai.provider-manager');
 
 export interface ProviderManagerOptions {
   /** Força o uso de um provedor específico (ex: testes). */
-  forceProvider?: 'groq';
+  forceProvider?: ProviderName;
   timeoutMs?: number;
 }
 
 /**
- * Gerencia o provedor de IA: Groq é usado tanto para análise quanto para
- * geração de resposta. Registra cada chamada para auditoria.
+ * Gerencia os provedores de IA: OpenAI (primário) e Groq (fallback).
+ * A ordem padrão tenta OpenAI primeiro; se falhar (sem créditos, 401, 429,
+ * timeout...), cai automaticamente para o Groq. Registra cada chamada.
  */
 export class AIProviderManager {
   private readonly providers: LLMProvider[];
   private readonly timeoutMs: number;
-  private readonly forceProvider?: 'groq';
+  private readonly forceProvider?: ProviderName;
 
   constructor(options: ProviderManagerOptions = {}) {
-    this.providers = [new GroqProvider()];
+    this.providers = [new OpenAIProvider(), new GroqProvider()];
     this.timeoutMs = options.timeoutMs ?? 30000;
     this.forceProvider = options.forceProvider;
   }
@@ -46,9 +48,9 @@ export class AIProviderManager {
 
   /**
    * Gera uma resposta com fallback automático.
-   * Se `options.provider` for informado, esse provedor é tentado primeiro
-   * (análise/geração usam groq); os demais seguem como fallback.
-   * Se todos falharem, lança o erro do primeiro provedor.
+   * A ordem padrão é OpenAI primeiro, Groq como fallback. Se `options.provider`
+   * for informado, esse provedor é tentado primeiro; os demais seguem como
+   * fallback. Se todos falharem, lança o erro do primeiro provedor tentado.
    */
   async generate(messages: ChatMessage[], options: GenerateOptions = {}): Promise<AICompletionResult> {
     const ordered = this.orderProviders(options.provider);
@@ -87,7 +89,7 @@ export class AIProviderManager {
       }
     }
 
-    const primaryError = attempts.find((a) => a.provider === 'groq')?.error ?? attempts[0]?.error ?? 'sem provedores configurados';
+    const primaryError = attempts[0]?.error ?? 'sem provedores configurados';
     throw new Error(`Todos os provedores de IA falharam: ${primaryError}`);
   }
 

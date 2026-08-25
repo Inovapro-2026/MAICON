@@ -143,21 +143,22 @@ export default function ReportsPage() {
 }
 
 function RateCard({ label, value, tone }: { label: string; value: number; tone?: 'emerald' | 'red' }) {
-  const color = tone === 'emerald' ? 'text-emerald-600' : tone === 'red' ? 'text-red-600' : 'text-zinc-900';
+  const color = tone === 'emerald' ? 'text-[#10B981]' : tone === 'red' ? 'text-[#EF4444]' : 'text-[#0F172A]';
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <div className={`font-display text-3xl font-bold ${color}`}>{value}%</div>
-      <div className="mt-1 text-xs text-zinc-500">{label}</div>
+    <div className="rounded-2xl border border-[#E6E8F0] bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
+      <div className={`text-3xl font-bold ${color}`}>{value}%</div>
+      <div className="mt-1 text-xs font-medium text-[#64748B]">{label}</div>
     </div>
   );
 }
 
 function CountCard({ label, value, tone }: { label: string; value: number; tone?: 'blue' | 'emerald' }) {
-  const color = tone === 'blue' ? 'text-blue-600' : tone === 'emerald' ? 'text-emerald-600' : 'text-zinc-900';
+  const color = tone === 'blue' ? 'text-[#3B82F6]' : tone === 'emerald' ? 'text-[#10B981]' : 'text-[#0F172A]';
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <div className={`font-display text-3xl font-bold ${color}`}>{value}</div>
-      <div className="mt-1 text-xs text-zinc-500">{label}</div>
+    <div className="rounded-2xl border border-[#E6E8F0] bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)]">
+      <div className={`text-3xl font-bold ${color}`}>{value}</div>
+      <div className="mt-1 text-xs font-medium text-[#64748B]">{label}</div>
     </div>
   );
 }
+

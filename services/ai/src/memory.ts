@@ -29,10 +29,15 @@ export interface MemoryDataSource {
       last_question: string;
       sales_stage: string;
       known_json: unknown;
+      asked_questions: unknown;
+      last_customer_message: string | null;
     } | null>;
     // A assinatura genérica do Prisma é complexa; `unknown` nos args garante
     // que o client real seja atribuível a este contrato (duck typing).
     upsert(args: unknown): Promise<unknown>;
+    deleteMany(args: {
+      where: { business_id: string; key: string };
+    }): Promise<{ count: number }>;
   };
 }
 
@@ -61,6 +66,10 @@ export async function loadConversationMemory(
     last_question: row.last_question,
     sales_stage: row.sales_stage as CommercialStageValue,
     known: (row.known_json as KnownFacts | null) ?? null,
+    asked_questions: Array.isArray(row.asked_questions)
+      ? (row.asked_questions as string[])
+      : [],
+    last_customer_message: row.last_customer_message ?? "",
   };
 }
 
@@ -82,6 +91,8 @@ export async function saveConversationMemory(
       last_question: memory.last_question ?? "",
       sales_stage: memory.sales_stage ?? "NEW",
       known_json: memory.known ?? null,
+      asked_questions: memory.asked_questions ?? [],
+      last_customer_message: memory.last_customer_message ?? "",
     },
     update: {
       summary: memory.summary ?? "",
@@ -90,7 +101,23 @@ export async function saveConversationMemory(
       last_question: memory.last_question ?? "",
       sales_stage: memory.sales_stage ?? "NEW",
       known_json: memory.known ?? null,
+      asked_questions: memory.asked_questions ?? [],
+      last_customer_message: memory.last_customer_message ?? "",
     },
+  });
+}
+
+/**
+ * Apaga a memória persistida de uma conversa/sessão (usado ao reiniciar o
+ * playground / começar uma conversa do zero). Não lança se a chave não existir.
+ */
+export async function deleteConversationMemory(
+  prisma: MemoryDataSource,
+  businessId: string,
+  key: string,
+): Promise<void> {
+  await prisma.conversationMemory.deleteMany({
+    where: { business_id: businessId, key },
   });
 }
 
@@ -119,6 +146,8 @@ export function buildMemoryFromResult(result: {
   next_action: NextAction;
   known: KnownFacts;
   conversation: { stage: CommercialStageValue };
+  asked_questions?: string[];
+  last_customer_message?: string;
 }): DecisionMemory {
   return {
     summary: result.summary,
@@ -127,5 +156,7 @@ export function buildMemoryFromResult(result: {
     last_question: questionFromNextAction(result.next_action),
     sales_stage: result.conversation.stage,
     known: result.known,
+    asked_questions: result.asked_questions ?? [],
+    last_customer_message: result.last_customer_message ?? "",
   };
 }

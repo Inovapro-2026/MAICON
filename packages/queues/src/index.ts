@@ -5,6 +5,7 @@ export const QUEUE_NAMES = {
   EMAIL_SEND: "email-send",
   MESSAGE_RECEIVED: "message-received",
   AI_RESPONSE: "ai-response",
+  CONVERSATION_LEARNING: "conversation-learning",
   WEBHOOK_PROCESSING: "webhook-processing",
   PROSPECTION: "prospection",
   LEAD_ENRICHMENT: "lead-enrichment",

@@ -236,6 +236,22 @@ export async function createBusinessFromSignup(
       data: { business_id: business.id, user_id: user.id, role: "OWNER" },
     });
 
+    // Toda conta nova nasce com a própria campanha pronta (regra 1 campanha
+    // por empresa), usando o nome da empresa como título. Nasce ACTIVE — sem
+    // leads na fila nada é disparado; ao importar leads, começa a enviar.
+    await tx.campaign.create({
+      data: {
+        business_id: business.id,
+        name: input.businessName.trim(),
+        status: "ACTIVE",
+        daily_whatsapp_limit: 30,
+        daily_email_limit: 100,
+        interval_seconds: 7200,
+        start_hour: 8,
+        channel_mode: "WHATSAPP",
+      },
+    });
+
     const subscription = await tx.subscription.create({
       data: {
         business_id: business.id,

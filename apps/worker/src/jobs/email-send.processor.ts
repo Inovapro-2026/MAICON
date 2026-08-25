@@ -4,6 +4,7 @@ import { QUEUE_NAMES } from '@prospector/queues';
 import { resendService } from '@prospector/email';
 import { getWorkerQueue } from '../queues';
 import { createMessage, markMessageFailed, updateMessageStatus } from '../services/messages';
+import { ensureConversation, touchConversation } from '../services/conversations';
 
 const logger = createLogger('worker.email-send');
 
@@ -67,11 +68,15 @@ export async function processEmailSend(job: { id?: string; data: EmailSendData }
       text: message,
     });
     await updateMessageStatus(messageId, 'SENT', result.id);
+    // Garante que a conversa existe e aparece no Inbox ("Em atendimento")
+    const conversationId = await ensureConversation(leadId, businessId ?? 'default');
+    await touchConversation(conversationId, businessId);
     // Só marca como SENT se ainda estiver no início do funil (primeiro contato)
     await prisma.campaignLead.updateMany({
       where: { lead_id: leadId, ...(businessId ? { business_id: businessId } : {}), status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'SENT' },
     });
+
     await prisma.lead.updateMany({
       where: { id: leadId, business_id: businessId, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'SENT' },

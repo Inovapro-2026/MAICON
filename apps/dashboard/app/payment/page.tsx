@@ -75,6 +75,25 @@ export default function PaymentPage() {
   const [startingCheckout, setStartingCheckout] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [checkingNow, setCheckingNow] = useState(false);
+  const [fromCheckout, setFromCheckout] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "checkout") setFromCheckout(true);
+  }, []);
+
+  const checkNow = async () => {
+    setCheckingNow(true);
+    setError(null);
+    try {
+      await loadStatus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao verificar pagamento");
+    } finally {
+      setCheckingNow(false);
+    }
+  };
 
   const isPaid = useCallback((s: BillingStatus | null) => {
     return Boolean(
@@ -240,7 +259,8 @@ export default function PaymentPage() {
               <div className="space-y-3">
                 <div className="rounded-xl bg-white px-4 py-3 text-sm text-zinc-700">
                   Você será direcionado para o pagamento seguro (PIX recorrente
-                  ou cartão).
+                  ou cartão). Após pagar, você volta para cá e o acesso é
+                  liberado automaticamente.
                 </div>
                 <Button
                   onClick={() => void startCheckout()}
@@ -248,6 +268,16 @@ export default function PaymentPage() {
                   loading={startingCheckout}
                 >
                   Continuar para pagamento
+                </Button>
+                {fromCheckout ? (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+                    {checkingNow
+                      ? "Confirmando seu pagamento..."
+                      : "Você voltou do pagamento. Estamos aguardando a confirmação do banco — pode levar alguns segundos."}
+                  </div>
+                ) : null}
+                <Button variant="outline" className="w-full" onClick={() => void checkNow()} loading={checkingNow}>
+                  Já paguei — verificar pagamento
                 </Button>
                 <p className="text-center text-[11px] text-zinc-500">
                   O pagamento é processado com segurança. Nunca armazenamos os

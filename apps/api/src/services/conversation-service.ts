@@ -1,13 +1,36 @@
 import { prisma } from '@prospector/database';
+import { PLACEHOLDER_LEAD_NAMES } from '@prospector/utils';
 
 export type InboxFilter = 'all' | 'sent' | 'responded' | 'manual' | 'closed';
 
 export function buildFilterWhere(filter: string, businessId: string): Record<string, unknown> {
   switch (filter) {
     case 'sent':
-      return { status: 'OPEN', business_id: businessId };
+      // "Em atendimento" — disparos enviados onde o cliente AINDA NÃO respondeu
+      return {
+        status: 'OPEN',
+        business_id: businessId,
+        human_handled: false,
+        lead: {
+          business_id: businessId,
+          messages: { none: { direction: 'IN' } },
+          status: { notIn: ['RESPONDED', 'INTERESTED', 'NOT_INTERESTED'] },
+        },
+      };
     case 'responded':
-      return { status: 'OPEN', business_id: businessId, lead: { status: 'RESPONDED', business_id: businessId } };
+      // "Respondido" — clientes que já responderam
+      return {
+        status: 'OPEN',
+        business_id: businessId,
+        human_handled: false,
+        lead: {
+          business_id: businessId,
+          OR: [
+            { messages: { some: { direction: 'IN' } } },
+            { status: { in: ['RESPONDED', 'INTERESTED', 'NOT_INTERESTED'] } },
+          ],
+        },
+      };
     case 'manual':
       return { status: 'OPEN', business_id: businessId, human_handled: true };
     case 'closed':
@@ -17,6 +40,9 @@ export function buildFilterWhere(filter: string, businessId: string): Record<str
       return { status: 'OPEN', business_id: businessId };
   }
 }
+
+
+
 
 export async function listConversations(filter: InboxFilter, page = 1, pageSize = 20, businessId: string) {
   const where = buildFilterWhere(filter, businessId);
@@ -28,7 +54,18 @@ export async function listConversations(filter: InboxFilter, page = 1, pageSize 
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        lead: { select: { id: true, name: true, phone: true, email: true, business_name: true, status: true } },
+        lead: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            business_name: true,
+            status: true,
+            segment: true,
+            lead_score: true,
+          },
+        },
       },
     }),
   ]);
@@ -64,6 +101,8 @@ export async function listConversations(filter: InboxFilter, page = 1, pageSize 
         lead_phone: c.lead.phone,
         lead_email: c.lead.email,
         business_name: c.lead.business_name,
+        lead_segment: c.lead.segment,
+        lead_score: c.lead.lead_score,
         lead_status: c.lead.status,
         last_message: last,
         last_message_preview: last?.content?.slice(0, 120) ?? null,

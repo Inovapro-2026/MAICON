@@ -2,15 +2,16 @@ import {
   ChatMessage,
   GenerateOptions,
   LLMProvider,
+  ProviderName,
   ProviderResult,
 } from "../types";
 
 /**
  * Base comum para provedores compatíveis com a API OpenAI
- * (Groq e OpenRouter). Implementa chamada HTTP com fetch nativo.
+ * (OpenAI e Groq). Implementa chamada HTTP com fetch nativo.
  */
 export abstract class OpenAICompatibleProvider implements LLMProvider {
-  abstract readonly name: "groq";
+  abstract readonly name: ProviderName;
   protected abstract readonly baseUrl: string;
   protected abstract readonly model: string;
   protected abstract readonly apiKey: string | undefined;

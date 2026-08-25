@@ -24,7 +24,7 @@ import {
   cancelSubscription,
   reactivateSubscription,
 } from "../services/billing";
-import { resetBusinessData, ResetCounts } from "../services/business-reset";
+import { resetBusinessData, ResetCounts, deleteBusinessData } from "../services/business-reset";
 import { getQueue } from "../services/queues";
 import { getStripe, isStripeConfigured } from "../services/stripe";
 import {
@@ -92,6 +92,11 @@ adminRouter.get(
       totalConversations,
       totalAI,
       totalContacts,
+      inboundMessages,
+      outboundMessages,
+      aiTokensRows,
+      recentPaymentsRows,
+      businessCreatedRows,
     ] = await Promise.all([
       prisma.business.count(),
       prisma.business.count({ where: { status: "ACTIVE" } }),
@@ -113,6 +118,19 @@ adminRouter.get(
       prisma.conversation.count(),
       prisma.aIGeneration.count(),
       prisma.lead.count(),
+      prisma.message.count({ where: { direction: "IN" } }),
+      prisma.message.count({ where: { direction: "OUT" } }),
+      prisma.aIGeneration.findMany({
+        select: { input_tokens: true, output_tokens: true },
+      }),
+      prisma.payment.findMany({
+        where: { status: "RECEIVED", paid_at: { gte: new Date(now.getTime() - 30 * 86400000) } },
+        select: { value: true, paid_at: true },
+      }),
+      prisma.business.findMany({
+        select: { created_at: true },
+        orderBy: { created_at: "asc" },
+      }),
     ]);
 
     const monthRevenue = monthRevenueRows.reduce(
@@ -140,6 +158,41 @@ adminRouter.get(
       prisma.payment.count({ where: { status: "PENDING" } }),
     ]);
 
+    // Tendência de receita (últimos 30 dias, por dia).
+    const revenueTrendMap = new Map<string, number>();
+    for (const p of recentPaymentsRows) {
+      const day = (p.paid_at ?? new Date()).toISOString().slice(0, 10);
+      revenueTrendMap.set(day, (revenueTrendMap.get(day) ?? 0) + Number(p.value));
+    }
+    const revenue_trend: { day: string; value: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const key = d.toISOString().slice(0, 10);
+      revenue_trend.push({ day: key, value: revenueTrendMap.get(key) ?? 0 });
+    }
+
+    // Crescimento de base (empresas por mês).
+    const growthMap = new Map<string, number>();
+    for (const b of businessCreatedRows) {
+      const month = b.created_at.toISOString().slice(0, 7);
+      growthMap.set(month, (growthMap.get(month) ?? 0) + 1);
+    }
+    const business_growth: { month: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      business_growth.push({ month: key, count: growthMap.get(key) ?? 0 });
+    }
+
+    // Consumo de IA: tokens + custo estimado (mês atual).
+    const inputTokens = aiTokensRows.reduce((a, r) => a + (r.input_tokens ?? 0), 0);
+    const outputTokens = aiTokensRows.reduce((a, r) => a + (r.output_tokens ?? 0), 0);
+    const totalTokens = inputTokens + outputTokens;
+    const aiEstimatedCostBRL = Math.round((totalTokens / 1000) * 0.002 * 100) / 100;
+
+    const avgInteractionsPerClient =
+      totalConversations > 0 ? Math.round((totalMessages / totalConversations) * 10) / 10 : 0;
+
     return ok(res, {
       mrr,
       arr: mrr * 12,
@@ -153,11 +206,23 @@ adminRouter.get(
       churn,
       overdue_subscriptions: overdueSubs,
       pending_payments: pendingPayments,
+      revenue_trend,
+      business_growth,
       ai_usage: {
         messages: totalMessages,
         conversations: totalConversations,
         generations: totalAI,
         contacts: totalContacts,
+        tokens: totalTokens,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        estimated_cost_brl: aiEstimatedCostBRL,
+      },
+      messages: {
+        total: totalMessages,
+        inbound: inboundMessages,
+        outbound: outboundMessages,
+        avg_per_client: avgInteractionsPerClient,
       },
       businesses: {
         total: totalBusinesses,
@@ -339,6 +404,43 @@ adminRouter.post(
       actor: req.user!.sub,
     });
     return ok(res, { business });
+  }),
+);
+
+/**
+ * DELETE /admin/businesses/:id — apaga DEFINITIVAMENTE a conta/tenant do banco
+ * (empresa + todos os dados + contas de usuário órfãs). Irreversível.
+ * Restrito a PLATFORM_ADMIN.
+ */
+adminRouter.delete(
+  "/businesses/:id",
+  adminWrite,
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    const business = await prisma.business.findUnique({
+      where: { id },
+      select: { id: true, name: true, slug: true },
+    });
+    if (!business) throw ApiError.notFound("Empresa não encontrada");
+
+    const counts = await deleteBusinessData(id);
+
+    void writeAudit({
+      actor: req.user!.sub,
+      businessId: id,
+      action: "admin.business.deleted",
+      entity: "Business",
+      entityId: id,
+      metadata: { name: business.name, slug: business.slug, ...counts },
+    });
+    logger.warn("Empresa excluída do banco pelo admin", {
+      businessId: id,
+      name: business.name,
+      actor: req.user!.sub,
+      ...counts,
+    });
+
+    return ok(res, { deleted: true, name: business.name, ...counts });
   }),
 );
 

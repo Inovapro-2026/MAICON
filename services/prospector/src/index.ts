@@ -26,6 +26,7 @@ export * from "./orchestrator";
 export * from "./metrics";
 export * from "./discovery/overpass-query";
 export * from "./discovery/overpass-client";
+export * from "./discovery/apify";
 export { FirecrawlClient, FirecrawlProvider, OverpassProvider };
 
 /**

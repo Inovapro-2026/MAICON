@@ -23,20 +23,20 @@ function ProspectHub() {
       <div className="mb-6 flex gap-2">
         <button
           onClick={() => setTab("prospect")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 ${
             active === "prospect"
-              ? "bg-emerald-600 text-white shadow-sm"
-              : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+              ? "bg-[#6366F1] text-white shadow-xs"
+              : "border border-[#E6E8F0] bg-white text-[#475569] hover:bg-slate-50 hover:text-[#0F172A]"
           }`}
         >
           <Search className="h-4 w-4" /> Prospecção web
         </button>
         <button
           onClick={() => setTab("import")}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 ${
             active === "import"
-              ? "bg-emerald-600 text-white shadow-sm"
-              : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+              ? "bg-[#6366F1] text-white shadow-xs"
+              : "border border-[#E6E8F0] bg-white text-[#475569] hover:bg-slate-50 hover:text-[#0F172A]"
           }`}
         >
           <Upload className="h-4 w-4" /> Importação manual
@@ -47,6 +47,7 @@ function ProspectHub() {
     </>
   );
 }
+
 
 export default function ProspectPage() {
   return (

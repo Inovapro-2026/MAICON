@@ -103,11 +103,18 @@ test("business-reset apaga apenas dados da empresa (escopo por business_id)", ()
   assert.match(businessReset, /db\.prospectionRun\.deleteMany\(\{ where: scope \}\)/);
   // Transação (evita estado parcialmente apagado).
   assert.match(businessReset, /db\.\$transaction/);
-  // Preserva User/Business/Subscription/Payment (não apaga).
-  assert.ok(!/db\.user\.delete/.test(businessReset));
-  assert.ok(!/db\.business\.delete/.test(businessReset));
-  assert.ok(!/db\.subscription\.delete/.test(businessReset));
-  assert.ok(!/db\.payment\.delete/.test(businessReset));
+  // `resetBusinessData` preserva User/Business/Subscription/Payment (não apaga).
+  const resetFn = businessReset.slice(
+    businessReset.indexOf("export async function resetBusinessData"),
+    businessReset.indexOf("export interface DeleteBusinessCounts"),
+  );
+  assert.ok(!/db\.user\.delete/.test(resetFn));
+  assert.ok(!/db\.business\.delete/.test(resetFn));
+  assert.ok(!/db\.subscription\.delete/.test(resetFn));
+  assert.ok(!/db\.payment\.delete/.test(resetFn));
+  // A exclusão TOTAL (deleteBusinessData) existe e remove empresa/usuários órfãos.
+  assert.match(businessReset, /db\.business\.delete/);
+  assert.match(businessReset, /db\.user\.delete/);
 });
 
 test("admin não-admin não consegue resetar (middleware de plataforma)", () => {

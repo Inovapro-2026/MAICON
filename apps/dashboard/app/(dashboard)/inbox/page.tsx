@@ -17,8 +17,8 @@ import { InboxSkeletonCards } from '@/components/inbox/skeleton-cards';
 import type { RealtimeEventMessage } from '@/lib/realtime';
 
 const FILTERS = [
-  { key: 'sent', label: 'Enviado' },
   { key: 'responded', label: 'Respondido' },
+  { key: 'sent', label: 'Em atendimento' },
   { key: 'manual', label: 'Manual' },
   { key: 'closed', label: 'Encerradas' },
 ];
@@ -52,7 +52,7 @@ export default function InboxPage() {
   const queryClient = useQueryClient();
   const { success, error: toastError } = useToast();
   const { user } = useSession();
-  const [filter, setFilter] = useState('sent');
+  const [filter, setFilter] = useState('responded');
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [unseen, setUnseen] = useState<Set<string>>(() => readUnseen());
   const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null);
@@ -162,7 +162,7 @@ export default function InboxPage() {
     setDeleting(true);
     try {
       await request(`conversations/${deleteTarget.id}`, { method: 'DELETE', body: {} });
-      success('Conversa excluída');
+      success('Conversa e lead excluídos');
       setDeleteTarget(null);
       invalidate();
     } catch (e) {
@@ -196,10 +196,10 @@ export default function InboxPage() {
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`h-9 shrink-0 rounded-full px-4 text-xs font-semibold transition-colors ${
+                className={`h-9 shrink-0 rounded-full px-4 text-xs font-semibold transition-all duration-150 ${
                   filter === f.key
-                    ? 'bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/40'
-                    : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-100'
+                    ? 'bg-[#EEF2FF] text-[#6366F1] border border-[#C7D2FE] shadow-xs'
+                    : 'bg-white text-[#64748B] border border-[#E6E8F0] hover:bg-slate-50 hover:text-[#0F172A]'
                 }`}
               >
                 {f.label}
@@ -213,16 +213,16 @@ export default function InboxPage() {
         ) : list.length > 0 ? (
           <>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs font-medium text-[#64748B]">
                 {conversations.data?.total ?? list.length} conversa{list.length === 1 ? '' : 's'}
               </p>
               {canAdmin ? (
-                <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-500/10 hover:text-red-600" onClick={() => setClearAllOpen(true)}>
-                  <Trash2 className="h-4 w-4" /> Limpar tudo
+                <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200" onClick={() => setClearAllOpen(true)}>
+                  <Trash2 className="h-4 w-4 mr-1.5" /> Limpar tudo
                 </Button>
               ) : null}
             </div>
-            {/* Grid responsivo de cards quadrados */}
+            {/* Grid responsivo de cards compactos */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {list.map((c) => (
                 <InboxCard
@@ -238,10 +238,11 @@ export default function InboxPage() {
           </>
         ) : (
           <Card className="py-16 text-center">
-            <MessageSquare className="mx-auto mb-3 h-10 w-10 text-zinc-700" />
-            <div className="text-sm text-zinc-500">Nenhuma conversa neste filtro.</div>
+            <MessageSquare className="mx-auto mb-3 h-10 w-10 text-[#94A3B8]" />
+            <div className="text-sm font-medium text-[#64748B]">Nenhuma conversa neste filtro.</div>
           </Card>
         )}
+
       </div>
 
       <ConfirmModal

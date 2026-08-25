@@ -42,10 +42,38 @@ export const config = {
   },
 
   ai: {
+    // OpenAI é o provedor PRIMÁRIO; Groq fica como fallback (falha/limite).
+    openaiApiKey: optional("OPENAI_API_KEY"),
+    openaiModel: optional("OPENAI_MODEL", "gpt-4o-mini"),
     groqApiKey: optional("GROQ_API_KEY"),
     groqModel: optional("GROQ_MODEL", "llama-3.1-8b-instant"),
     timeoutMs: int("AI_TIMEOUT_MS", 30000),
     maxMessageLength: int("AI_MAX_MESSAGE_LENGTH", 600),
+    /**
+     * Delay natural entre mensagens fracionadas (1ª → 2ª) no WhatsApp.
+     * Aleatório dentro do intervalo para parecer humano.
+     */
+    messageSplitDelayMinMs: int("AI_MESSAGE_SPLIT_DELAY_MIN_MS", 800),
+    messageSplitDelayMaxMs: int("AI_MESSAGE_SPLIT_DELAY_MAX_MS", 1800),
+  },
+
+  /**
+   * Conversation Learning Engine — limites para a inteligência comercial por
+   * tenant. Uma conversa isolada NUNCA altera o comportamento: somente
+   * estratégias com amostras/confiança suficientes (e status ACTIVE) são
+   * usadas automaticamente pelo Decision Engine.
+   */
+  learning: {
+    // Amostras mínimas para a estratégia sair de LEARNING para ACTIVE.
+    minSamplesActive: int("LEARNING_MIN_SAMPLES_ACTIVE", 30),
+    // Continuidade mínima (respostas substantivas) para ativar.
+    minContinuityActive: int("LEARNING_MIN_CONTINUITY_ACTIVE", 50),
+    // Confiança mínima (0-100) para uso automático pelo Decision Engine.
+    minConfidence: int("LEARNING_MIN_CONFIDENCE", 60),
+    // Abaixo desta continuidade a estratégia é descartada (com amostras suficientes).
+    discardContinuity: int("LEARNING_DISCARD_CONTINUITY", 20),
+    // A cada N mensagens recebidas a conversa é analisada incrementalmente.
+    analyzeEveryMessages: int("LEARNING_ANALYZE_EVERY_MESSAGES", 4),
   },
 
   email: {
@@ -136,6 +164,26 @@ export const config = {
     scrapyServiceUrl: optional("SCRAPY_SERVICE_URL", "http://localhost:6810"),
     scrapyConcurrency: int("SCRAPY_CONCURRENCY", 2),
     scrapyRequestDelayMs: int("SCRAPY_REQUEST_DELAY_MS", 1000),
+    /**
+     * Prospecção multi-plataforma via Apify (pago por evento).
+     * `apiToken` é obrigatório para ativar as fontes Apify; sem token, o job
+     * de prospecção Apify falha de forma VISÍVEL (nunca contador zerado).
+     */
+    apify: {
+      apiToken: optional("APIFY_API_TOKEN"),
+      actorGoogleMaps: optional(
+        "APIFY_ACTOR_GOOGLE_MAPS",
+        "compass/google-maps-extractor",
+      ),
+      actorInstagram: optional("APIFY_ACTOR_INSTAGRAM", "apify/instagram-scraper"),
+      maxCrawledPlacesPerSearch: int(
+        "APIFY_MAX_CRAWLED_PLACES_PER_SEARCH",
+        20,
+      ),
+      maxInstagramProfiles: int("APIFY_MAX_INSTAGRAM_PROFILES", 30),
+      requestTimeoutMs: int("APIFY_REQUEST_TIMEOUT_MS", 120000),
+      pollIntervalMs: int("APIFY_POLL_INTERVAL_MS", 5000),
+    },
   },
 
   ports: {

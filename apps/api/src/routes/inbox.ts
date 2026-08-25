@@ -4,6 +4,7 @@ import { createLogger } from '@prospector/logger';
 import { QUEUE_NAMES } from '@prospector/queues';
 import { asyncHandler, ok } from '../lib/http';
 import { requireAuth, requireBusiness, requireRole } from '../middleware/auth';
+import { requireActiveSubscription } from '../middleware/active-subscription';
 import { getQueue } from '../services/queues';
 import { realtimeService, buildEvent } from '../services/realtime';
 import { listConversations, getConversationDetail, InboxFilter } from '../services/conversation-service';
@@ -84,6 +85,7 @@ inboxRouter.post(
 /** POST /conversations/:id/message — envio manual (humano). */
 inboxRouter.post(
   '/:id/message',
+  requireActiveSubscription,
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
     const id = String(req.params.id);

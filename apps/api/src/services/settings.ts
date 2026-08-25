@@ -39,6 +39,13 @@ export interface BusinessSettingsPatch {
   timezone?: string;
   logo_url?: string | null;
   additional_info?: string | null;
+  target_audience?: string | null;
+  problems_solved?: string | null;
+  differentials?: string | null;
+  positioning?: string | null;
+  service_area?: string | null;
+  business_objectives?: string | null;
+  additional_instructions?: string | null;
 }
 
 export async function setBusinessSettings(
@@ -58,6 +65,13 @@ export async function setBusinessSettings(
       ...(data.timezone !== undefined ? { timezone: data.timezone } : {}),
       ...(data.logo_url !== undefined ? { logo_url: data.logo_url } : {}),
       ...(data.additional_info !== undefined ? { additional_info: data.additional_info } : {}),
+      ...(data.target_audience !== undefined ? { target_audience: data.target_audience } : {}),
+      ...(data.problems_solved !== undefined ? { problems_solved: data.problems_solved } : {}),
+      ...(data.differentials !== undefined ? { differentials: data.differentials } : {}),
+      ...(data.positioning !== undefined ? { positioning: data.positioning } : {}),
+      ...(data.service_area !== undefined ? { service_area: data.service_area } : {}),
+      ...(data.business_objectives !== undefined ? { business_objectives: data.business_objectives } : {}),
+      ...(data.additional_instructions !== undefined ? { additional_instructions: data.additional_instructions } : {}),
     },
     create: {
       business_id: businessId,
@@ -71,6 +85,13 @@ export async function setBusinessSettings(
       ...(data.timezone !== undefined ? { timezone: data.timezone } : {}),
       ...(data.logo_url !== undefined ? { logo_url: data.logo_url } : {}),
       ...(data.additional_info !== undefined ? { additional_info: data.additional_info } : {}),
+      ...(data.target_audience !== undefined ? { target_audience: data.target_audience } : {}),
+      ...(data.problems_solved !== undefined ? { problems_solved: data.problems_solved } : {}),
+      ...(data.differentials !== undefined ? { differentials: data.differentials } : {}),
+      ...(data.positioning !== undefined ? { positioning: data.positioning } : {}),
+      ...(data.service_area !== undefined ? { service_area: data.service_area } : {}),
+      ...(data.business_objectives !== undefined ? { business_objectives: data.business_objectives } : {}),
+      ...(data.additional_instructions !== undefined ? { additional_instructions: data.additional_instructions } : {}),
     },
   });
 }

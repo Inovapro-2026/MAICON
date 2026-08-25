@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./providers/provider";
 export * from "./providers/groq";
+export * from "./providers/openai";
 export * from "./provider-manager";
 export * from "./prompts";
 export * from "./prompt-assembler";
@@ -13,3 +14,7 @@ export * from "./structured-config";
 export * from "./commercial-engine";
 export * from "./commercial-turn";
 export * from "./memory";
+export * from "./strategy-engine";
+export * from "./learning/types";
+export * from "./learning/insights";
+export * from "./learning/strategies";

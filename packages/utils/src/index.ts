@@ -1,5 +1,6 @@
 export * from "./phones";
 export * from "./emails";
+export * from "./messages";
 export * from "./csv";
 export * from "./crypto";
 export * from "./misc";

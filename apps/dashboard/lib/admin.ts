@@ -65,11 +65,23 @@ export interface AdminDashboard {
   churn: number;
   overdue_subscriptions: number;
   pending_payments: number;
+  revenue_trend: { day: string; value: number }[];
+  business_growth: { month: string; count: number }[];
   ai_usage: {
     messages: number;
     conversations: number;
     generations: number;
     contacts: number;
+    tokens: number;
+    input_tokens: number;
+    output_tokens: number;
+    estimated_cost_brl: number;
+  };
+  messages: {
+    total: number;
+    inbound: number;
+    outbound: number;
+    avg_per_client: number;
   };
   businesses: { total: number; active: number; pending_payment: number };
 }

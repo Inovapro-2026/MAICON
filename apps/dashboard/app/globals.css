@@ -6,107 +6,116 @@
   :root {
     color-scheme: light;
 
-    --background: 0 0% 98%;          /* #FAFAFA — fundo do app */
-    --foreground: 0 0% 4%;           /* #0A0A0A — texto principal */
-    --card: 0 0% 100%;               /* branco */
-    --card-foreground: 0 0% 4%;
-    --muted: 0 0% 96%;               /* #F5F5F5 */
-    --muted-foreground: 240 5% 30%;  /* #494B50 — secundário legível (itens não ativos do menu) */
-    --border: 0 0% 90%;              /* #E5E5E5 */
-    --input: 0 0% 84%;               /* #D6D6D6 */
-    --ring: 152 76% 40%;             /* emerald-600 #059669 */
-    --primary: 152 76% 40%;          /* #059669 */
+    --background: 210 20% 98%;          /* #F5F7FA — fundo claro corporativo */
+    --foreground: 222 47% 11%;          /* #0F172A — texto principal preto/slate escuro */
+    --card: 0 0% 100%;                  /* #FFFFFF — branco puro */
+    --card-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;               /* #F1F5F9 */
+    --muted-foreground: 215 16% 47%;   /* #64748B — secundário legível */
+    --border: 220 13% 91%;              /* #E6E8F0 — borda sutil */
+    --input: 214 32% 91%;               /* #E2E8F0 */
+    --ring: 239 84% 67%;                /* #6366F1 Indigo */
+    --primary: 239 84% 67%;             /* #6366F1 Indigo */
     --primary-foreground: 0 0% 100%;
-    --success: 152 76% 40%;
-    --warning: 38 92% 50%;
-    --error: 0 84% 60%;
+    --success: 152 76% 40%;             /* #10B981 */
+    --warning: 38 92% 50%;              /* #F59E0B */
+    --error: 0 84% 60%;                 /* #EF4444 */
   }
 
   body {
-    @apply bg-zinc-50 text-zinc-900 font-sans antialiased;
+    @apply bg-[#F5F7FA] text-[#0F172A] font-sans antialiased;
   }
 
   * {
-    @apply border-zinc-200;
+    @apply border-[#E6E8F0];
   }
 }
 
 @layer components {
-  /* Card centralizado: borda fina com leve tom/brilho da marca (fluorescente sutil).
-     Utilitários explícitos de borda (ex.: border-red-500/30) têm precedência. */
+  /* Card corporativo padrão: fundo branco, borda suave, sombra leve, cantos 16px */
   .card {
-    @apply bg-white rounded-xl p-4 shadow-sm;
-    border: 1px solid rgba(5, 150, 105, 0.16);
-    box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+    @apply bg-white rounded-2xl p-5;
+    border: 1px solid #E6E8F0;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
   }
 
-  /* Título/heading centralizado: negrito + tom escuro do design system (--foreground). */
+  /* Título/heading centralizado: negrito alto contraste */
   .heading-strong {
-    @apply font-display font-bold text-foreground;
+    @apply font-bold text-[#0F172A];
   }
 
-  /*
-   * Divisor "fluorescente" — linha fina com leve brilho/borda na cor da marca.
-   * Única definição de divisor do sistema (não repetir estilo por tela).
-   */
+  /* Divisor sutil */
   .divider-fluorescent {
-    border-bottom: 1px solid rgba(5, 150, 105, 0.28);
-    box-shadow: 0 1px 0 rgba(5, 150, 105, 0.16);
+    border-bottom: 1px solid #E6E8F0;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-zinc-300 disabled:text-zinc-500 disabled:cursor-not-allowed transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#6366F1] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4F46E5] active:scale-[0.99] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all shadow-sm;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-200 disabled:opacity-50 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-[#E6E8F0] px-4 py-2 text-sm font-semibold text-[#0F172A] hover:bg-slate-50 disabled:opacity-50 transition-all shadow-sm;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-500 disabled:opacity-50 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#334155] hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 transition-all;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#EF4444] px-4 py-2 text-sm font-semibold text-white hover:bg-[#DC2626] disabled:opacity-50 transition-all shadow-sm;
+  }
+
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#10B981] px-4 py-2 text-sm font-semibold text-white hover:bg-[#059669] disabled:opacity-50 transition-all shadow-sm;
   }
 
   .input {
-    @apply w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:opacity-50;
+    @apply w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm text-[#0F172A] placeholder-slate-400 focus:border-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1]/20 disabled:opacity-50 transition-all;
   }
 
   .label {
-    @apply mb-1 block text-xs font-medium text-zinc-600;
+    @apply mb-1.5 block text-xs font-semibold text-[#0F172A];
   }
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-300 rounded-full;
+  @apply bg-slate-200 rounded-full hover:bg-slate-300;
 }
 
-/* ==========================================================================
-   Tempo real — animações dos cards do Inbox
-   ========================================================================== */
+/* Animação suave para o Logo SAVYRON */
+@keyframes savyron-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.45));
+  }
+}
+
+.logo-savyron-animated {
+  animation: savyron-glow 4s ease-in-out infinite;
+}
 
 /* Flash sutil quando um card recebe atualização em tempo real */
 @keyframes inbox-flash {
   0% {
     transform: scale(1);
-    border-color: rgba(5, 150, 105, 0.55);
-    box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.5), 0 8px 28px rgba(5, 150, 105, 0.2);
+    border-color: rgba(99, 102, 241, 0.6);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2), 0 8px 24px rgba(99, 102, 241, 0.1);
   }
   50% {
-    transform: scale(1.02);
+    transform: scale(1.01);
   }
   100% {
     transform: scale(1);
-    border-color: rgba(228, 228, 231, 1);
+    border-color: #E6E8F0;
   }
 }
 
@@ -114,7 +123,7 @@
   animation: inbox-flash 600ms ease-in-out;
 }
 
-/* Shimmer dos skeleton cards */
+/* Shimmer dos skeleton cards claros */
 @keyframes inbox-shimmer {
   0% {
     background-position: -200% 0;
@@ -125,30 +134,27 @@
 }
 
 .inbox-shimmer {
-  background: linear-gradient(100deg, rgba(228, 228, 231, 0.6) 20%, rgba(244, 244, 245, 0.9) 40%, rgba(228, 228, 231, 0.6) 60%);
+  background: linear-gradient(90deg, #F1F5F9 0%, #E2E8F0 50%, #F1F5F9 100%);
   background-size: 200% 100%;
-  animation: inbox-shimmer 1.4s linear infinite;
+  animation: inbox-shimmer 1.5s linear infinite;
 }
 
-/* Scrollbar discreto no carrossel de filtros do mobile */
+/* Scrollbar discreto */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(212, 212, 216, 0.6) transparent;
+  scrollbar-color: rgba(203, 213, 225, 0.8) transparent;
 }
 
-/* ==========================================================================
-   Chat — scrollbar fina e indicador de digitando
-   ========================================================================== */
-
+/* Chat scrollbar */
 .chat-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(212, 212, 216, 0.8) transparent;
+  scrollbar-color: rgba(203, 213, 225, 0.8) transparent;
 }
 .chat-scroll::-webkit-scrollbar {
   width: 5px;
 }
 .chat-scroll::-webkit-scrollbar-thumb {
-  background: rgba(212, 212, 216, 0.8);
+  background: rgba(203, 213, 225, 0.8);
   border-radius: 9999px;
 }
 .chat-scroll::-webkit-scrollbar-track {
@@ -179,10 +185,7 @@
   animation-delay: 0.3s;
 }
 
-/* ==========================================================================
-   Card com efeito 3D (tilt) — login / cadastro / pagamento
-   ========================================================================== */
-
+/* Card com efeito 3D (tilt) */
 .tilt-card {
   transform-style: preserve-3d;
   transition: transform 0.12s ease-out;
@@ -191,3 +194,4 @@
 .tilt-inner {
   transform: translateZ(24px);
 }
+

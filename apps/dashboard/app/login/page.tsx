@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { TiltCard } from '@/components/ui/tilt-card';
+import '../auth.css';
 
 interface LoginResponse {
   success: boolean;
@@ -63,48 +63,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4">
-      <div className="mb-8">
-        <Logo />
-      </div>
-      <TiltCard className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-xl shadow-zinc-900/5">
-        <div className="tilt-inner">
-          <h1 className="mb-1 text-center font-display text-2xl font-bold text-zinc-900">Entrar</h1>
-          <p className="mb-6 text-center text-sm text-zinc-500">Acesso ao SAVYRON</p>
-          <form onSubmit={submit} className="space-y-4">
-            <Input
-              label="E-mail"
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="voce@empresa.com"
-              required
-            />
-            <Input
-              label="Senha"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-            {error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-            ) : null}
-            <Button type="submit" className="w-full" loading={loading}>
-              Entrar
-            </Button>
-          </form>
-          <p className="mt-6 text-center text-sm text-zinc-500">
-            Ainda não possui uma conta?{' '}
-            <Link href="/signup" className="font-medium text-emerald-700 hover:text-emerald-800">
-              Cadastre-se
-            </Link>
-          </p>
+    <div className="auth-page-container">
+      <div className="auth-card max-w-sm">
+        <div className="mb-6 text-center">
+          <Logo />
         </div>
-      </TiltCard>
+        <h1 className="auth-title">Entrar</h1>
+        <p className="auth-subtitle">Acesso ao SAVYRON</p>
+        <form onSubmit={submit} className="space-y-4">
+          <Input
+            label="E-mail"
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="voce@empresa.com"
+            required
+          />
+          <Input
+            label="Senha"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
+          {error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          ) : null}
+          <Button type="submit" className="w-full" loading={loading}>
+            Entrar
+          </Button>
+        </form>
+        <p className="mt-6 text-center text-sm text-zinc-500">
+          Ainda não possui uma conta?{' '}
+          <Link href="/signup" className="font-medium text-emerald-700 hover:text-emerald-800">
+            Cadastre-se
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

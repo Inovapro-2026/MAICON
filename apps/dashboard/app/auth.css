@@ -1,0 +1,216 @@
+/* ==========================================================================
+   AUTH — estilos EXCLUSIVOS das telas de Login e Cadastro (SAVYRON).
+   Escopo por `.auth-page-container` + `.auth-card` — NÃO afeta outras telas.
+   Importado APENAS em /login e /signup (nunca global).
+   ========================================================================== */
+
+/* 1. BACKGROUND (SAVYRON.png) + OVERLAY */
+.auth-page-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+  background-color: #071a3d; /* fallback enquanto a imagem carrega */
+  background-image: url("/SAVYRON.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.auth-page-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, rgba(3, 9, 26, 0.3) 0%, rgba(2, 7, 22, 0.6) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.auth-page-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* 2. CARD AZUL-MARINHO PREMIUM (glass sutil) */
+.auth-card {
+  width: 100%;
+  padding: 2.25rem;
+  border-radius: 18px;
+  box-sizing: border-box;
+  background: rgba(7, 26, 61, 0.9); /* #071A3D */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(122, 156, 255, 0.22);
+}
+
+/* 3. TÍTULOS E SUBTÍTULOS */
+.auth-title {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-align: center;
+  margin: 0 0 0.4rem 0;
+}
+
+.auth-subtitle {
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* 4. LABELS */
+.auth-label {
+  color: #ffffff;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* 5. INPUTS */
+.auth-input,
+.auth-card .input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(9, 23, 52, 0.78);
+  color: #ffffff;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.auth-input::placeholder,
+.auth-card .input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+.auth-input:focus,
+.auth-card .input:focus {
+  outline: none;
+  border-color: #8b5cf6; /* roxo no foco */
+  background: rgba(10, 27, 60, 0.9);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+/* 6. BOTÃO PRINCIPAL (identidade SAVYRON: verde + roxo) */
+.auth-button,
+.auth-card .btn-primary {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  margin-top: 1rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 10px 24px -8px rgba(5, 150, 105, 0.5);
+  transition: all 0.2s ease;
+}
+.auth-button:hover,
+.auth-card .btn-primary:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+}
+.auth-button:disabled,
+.auth-card .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Botão secundário/outline dentro do card */
+.auth-card .btn-outline {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(160, 180, 255, 0.3);
+  color: #e2e8ff;
+}
+.auth-card .btn-outline:hover {
+  border-color: rgba(160, 180, 255, 0.55);
+  color: #ffffff;
+}
+
+/* 7. LINKS (Login ⇄ Cadastro) */
+.auth-link,
+.auth-card a {
+  color: #8ab4ff;
+  font-weight: 600;
+}
+.auth-link:hover,
+.auth-card a:hover {
+  color: #aecbff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 8. Overrides p/ componentes compartilhados DENTRO do card de auth */
+.auth-card .card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+.auth-card .label {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.auth-card .text-zinc-500,
+.auth-card .text-zinc-600,
+.auth-card .text-zinc-700 {
+  color: rgba(255, 255, 255, 0.72);
+}
+.auth-card .text-zinc-900 {
+  color: #ffffff;
+}
+
+/* Stepper do Cadastro */
+.auth-card .bg-zinc-100 {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+.auth-card .bg-emerald-500 {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #06281c;
+}
+
+/* Mensagens de erro (glass escuro) */
+.auth-card .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+.auth-card .border-red-200,
+.auth-card .border-red-500\/30 {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+.auth-card .text-red-700,
+.auth-card .text-red-600 {
+  color: #fca5a5;
+}
+
+/* Planos (PlanStep) e caixas brancas avulsas do cadastro */
+.auth-card .bg-white {
+  background-color: rgba(11, 30, 66, 0.55);
+}
+.auth-card .border-zinc-200,
+.auth-card .border-zinc-300 {
+  border-color: rgba(148, 163, 255, 0.2);
+}
+
+/* Acessibilidade */
+.auth-page-container :focus-visible {
+  outline: 2px solid rgba(141, 169, 255, 0.7);
+  outline-offset: 2px;
+}

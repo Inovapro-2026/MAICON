@@ -3,7 +3,12 @@ import { CampaignStats } from '@prospector/types';
 import { startOfBrasiliaDay } from '@prospector/utils';
 
 export async function getCampaignStats(campaignId: string, businessId: string): Promise<CampaignStats> {
-  const [cl, messagesToday] = await Promise.all([
+  const campaign = await prisma.campaign.findFirst({
+    where: { id: campaignId, business_id: businessId },
+    select: { created_at: true },
+  });
+
+  const [cl, messagesToday, respondedRows] = await Promise.all([
     prisma.campaignLead.groupBy({
       by: ['status'],
       where: { campaign_id: campaignId, business_id: businessId },
@@ -17,6 +22,20 @@ export async function getCampaignStats(campaignId: string, businessId: string): 
         direction: 'OUT',
         created_at: { gte: startOfBrasiliaDay(new Date()) },
         status: { in: ['SENT', 'DELIVERED', 'READ'] },
+      },
+      _count: { _all: true },
+    }),
+    // "Respondeu" é cumulativo (≥1 mensagem recebida do lead desde o início da
+    // campanha) — o estado RESPONDED do funil é transitório: a IA sobrescreve
+    // para AGENT_ACTIVE/INTERESTED ao responder, o que zerava o contador.
+    // Mesma fonte de verdade de /reports e /clientes (Message direction IN).
+    prisma.message.groupBy({
+      by: ['lead_id'],
+      where: {
+        direction: 'IN',
+        business_id: businessId,
+        created_at: { gte: campaign?.created_at ?? new Date(0) },
+        lead: { campaign_leads: { some: { campaign_id: campaignId, business_id: businessId } } },
       },
       _count: { _all: true },
     }),
@@ -35,7 +54,7 @@ export async function getCampaignStats(campaignId: string, businessId: string): 
     processed,
     pending: countOf('PENDING'),
     sent: countOf('SENT'),
-    responded: countOf('RESPONDED'),
+    responded: respondedRows.length,
     interested: countOf('INTERESTED'),
     notInterested: countOf('NOT_INTERESTED'),
     optOut: countOf('OPT_OUT'),

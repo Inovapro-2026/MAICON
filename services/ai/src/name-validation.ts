@@ -164,7 +164,7 @@ export function buildNameClassificationUserMessage(raw: string): string {
   return `O texto a seguir foi enviado como resposta à pergunta "qual é o seu nome?": "${String(raw ?? '').trim()}". É um nome próprio de pessoa plausível? Responda apenas SIM ou NÃO.`;
 }
 
-/** Classificador padrão via provider (Groq → OpenRouter), barato e rápido. */
+/** Classificador padrão via provider (Groq), barato e rápido. */
 export type NameClassifier = (raw: string) => Promise<boolean>;
 
 export const defaultClassifier: NameClassifier = async (raw: string): Promise<boolean> => {
@@ -174,7 +174,7 @@ export const defaultClassifier: NameClassifier = async (raw: string): Promise<bo
       { role: 'system', content: NAME_CLASSIFICATION_SYSTEM_PROMPT },
       { role: 'user', content: buildNameClassificationUserMessage(raw) },
     ],
-    { maxTokens: 5, temperature: 0, timeoutMs: 8000, provider: 'groq' }
+    { maxTokens: 5, temperature: 0, timeoutMs: 8000, provider: 'openai' }
   );
   const answer = result.text.trim().toLowerCase();
   if (/^(n[aã]o|nao)\b/.test(answer)) return false;

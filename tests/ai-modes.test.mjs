@@ -79,7 +79,9 @@ test("worker: calcula contactType por dados reais (status/histórico)", () => {
 });
 
 test("worker: usa generateCommercialTurn com memória (contexto do cliente chega ao modelo)", () => {
-  assert.match(processor, /generateCommercialTurn\(context, \{ agentConfig, memory \}\)/);
+  assert.match(processor, /generateCommercialTurn\(context, \{\s*agentConfig,\s*memory,/);
+  assert.ok(!/onboarding: onboardingConfig/.test(processor), "não deve passar onboarding");
+  assert.ok(!/onboardingStage: conversation\.onboarding_stage/.test(processor), "não deve passar onboarding_stage");
   assert.ok(!/generateAgentReply/.test(processor));
   assert.match(processor, /buildCommercialTurnMessages/);
   assert.match(processor, /loadConversationMemory/);
@@ -110,4 +112,33 @@ test("guia: pré-preenche NOME DO NEGÓCIO/SEGMENTO com dados do Meu negócio", 
   assert.match(guide, /Usar dados do meu negócio/);
   assert.match(guide, /\[COLOQUE O NOME DO NEGÓCIO\]/);
   assert.match(guide, /\[COLOQUE O SEGMENTO\]/);
+});
+
+test("guia: seção de descrição completa do negócio (template + exemplo real)", () => {
+  assert.match(guide, /Como escrever uma descrição completa do seu negócio/);
+  assert.match(guide, /DESCRIPTION_TEMPLATE/);
+  assert.match(guide, /\[DESCRIÇÃO GERAL\]/);
+  assert.match(guide, /\[POSICIONAMENTO\]/);
+  assert.match(guide, /\[PRINCIPAIS RECURSOS\/PRODUTOS\/SERVIÇOS\]/);
+  assert.match(guide, /\[PRINCIPAL OBJETIVO\]/);
+  assert.match(guide, /\[COMO A IA DEVE FALAR SOBRE O NEGÓCIO\]/);
+});
+
+test("guia: exemplo real da SAVYRON reproduzido + distinção comportamento × descrição", () => {
+  assert.match(guide, /SAVYRON_DESCRIPTION/);
+  assert.match(guide, /Descrição real da própria SAVYRON/);
+  assert.match(guide, /A SAVYRON é uma plataforma SaaS de inteligência comercial/);
+  assert.match(guide, /REGRAS DE COMPORTAMENTO/);
+  assert.match(guide, /conhecimento de contexto/);
+  assert.match(guide, /comportamento \(prompt\) \+ conhecimento \(descrição\)/);
+});
+
+test("guia: exemplo da Barbearia Imperial segue o template de 5 blocos", () => {
+  assert.match(guide, /BARBEARIA_EXAMPLE/);
+  assert.match(guide, /DESCRIÇÃO GERAL/);
+  assert.match(guide, /POSICIONAMENTO/);
+  assert.match(guide, /PRINCIPAIS RECURSOS/);
+  assert.match(guide, /PRINCIPAL OBJETIVO/);
+  assert.match(guide, /COMO A IA DEVE FALAR/);
+  assert.match(guide, /Barbearia Imperial/);
 });

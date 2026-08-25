@@ -15,6 +15,7 @@ import {
   completeSignup,
   OnboardingPlan,
 } from "@/lib/onboarding";
+import "../auth.css";
 
 type Step = "email" | "details" | "plan";
 
@@ -124,13 +125,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-10">
-      <div className="mb-8">
+    <div className="auth-page-container">
+      <div className="auth-card max-w-lg">
+      <div className="mb-6 text-center">
         <Link href="/login">
           <Logo />
         </Link>
       </div>
-      <div className="w-full max-w-lg">
+      <div className="w-full">
         <h1 className="mb-1 text-center font-display text-2xl font-bold text-zinc-900">
           Criar conta no SAVYRON
         </h1>
@@ -310,6 +312,7 @@ export default function SignupPage() {
             Entrar
           </Link>
         </p>
+      </div>
       </div>
     </div>
   );

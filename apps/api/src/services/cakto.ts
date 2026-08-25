@@ -124,6 +124,13 @@ export function buildCaktoCheckoutUrl(input: {
   if (input.cpfCnpj) params.set("cpf", input.cpfCnpj);
   if (input.phone) params.set("phone", input.phone);
   params.set("sck", `biz_${input.businessId}`);
+  // Após o pagamento, o cliente volta para o SAVYRON (painel de pagamento), que
+  // confirma via polling/webhook e redireciona para /dashboard — NUNCA para a
+  // tela de sucesso do Cakto (app.cakto.com.br/student/courses).
+  const appUrl = config.app.url?.trim() || "https://crm.inovapro.cloud";
+  const returnUrl = `${appUrl}/payment?from=checkout`;
+  params.set("redirect_url", returnUrl);
+  params.set("return_url", returnUrl);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }

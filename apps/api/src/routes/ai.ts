@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { prisma } from '@prospector/database';
+import { prisma, InsightOutcome } from '@prospector/database';
 import { createLogger } from '@prospector/logger';
 import { asyncHandler, ok, ApiError } from '../lib/http';
 import { requireAuth, requireBusiness, requireRole } from '../middleware/auth';
@@ -13,7 +13,9 @@ import {
   CommercialStageValue,
   loadConversationMemory,
   saveConversationMemory,
+  deleteConversationMemory,
   buildMemoryFromResult,
+  questionFromNextAction,
   memoryKeySession,
 } from '@prospector/ai';
 
@@ -24,7 +26,12 @@ export const aiRouter = Router();
 aiRouter.use(requireAuth, requireBusiness);
 
 const TONES = ['PROFESSIONAL', 'FRIENDLY', 'CASUAL', 'RELAXED', 'PREMIUM', 'CONSULTATIVE', 'TECHNICAL'];
-const CATEGORIES = ['PRODUCTS', 'SERVICES', 'PRICES', 'HOURS', 'POLICIES', 'FAQ', 'ADDRESS', 'PAYMENT', 'INTERNAL_RULES'];
+const AGENT_MODES = ['sales', 'support', 'sales_support'];
+const CATEGORIES = [
+  'PRODUCTS', 'SERVICES', 'PLANS', 'PRICES', 'PROMOTIONS', 'HOURS', 'DAYS',
+  'PAYMENT', 'ADDRESS', 'FAQ', 'POLICIES', 'BENEFITS', 'COMMERCIAL_RULES',
+  'LINKS', 'INTERNAL_RULES',
+];
 
 // ---------------------------------------------------------------------------
 // Agentes
@@ -119,6 +126,11 @@ function normalizeAISettings(body: Record<string, unknown>) {
   if (body.behaviors !== undefined) data.behaviors = body.behaviors;
   if (body.message_config !== undefined) data.message_config = body.message_config;
   if (body.custom_prompt !== undefined) data.custom_prompt = body.custom_prompt ? String(body.custom_prompt).slice(0, 20000) : null;
+  if (body.agent_mode !== undefined) {
+    const mode = String(body.agent_mode).toLowerCase().replace(/[\s-]+/g, '_');
+    if (!AGENT_MODES.includes(mode)) throw ApiError.badRequest('Modo do agente inválido. Use: sales, support ou sales_support');
+    data.agent_mode = mode;
+  }
   return data;
 }
 
@@ -184,7 +196,7 @@ aiRouter.post(
   requireRole(['OWNER', 'BUSINESS_ADMIN']),
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
-    const { title, content, category, active } = req.body ?? {};
+    const { title, content, category, active, keywords } = req.body ?? {};
     if (!title || !String(title).trim()) throw ApiError.badRequest('Informe o título');
     if (!content || !String(content).trim()) throw ApiError.badRequest('Informe o conteúdo');
     const cat = String(category ?? 'FAQ').toUpperCase();
@@ -196,6 +208,7 @@ aiRouter.post(
         content: String(content).slice(0, 10000),
         category: cat as never,
         active: active !== false,
+        keywords: keywords ? String(keywords).slice(0, 500) : null,
       },
     });
     void writeAudit({ actor: req.user!.sub, businessId, action: 'ai.knowledge.created', entity: 'AIKnowledge', entityId: item.id });
@@ -212,7 +225,7 @@ aiRouter.patch(
     const id = String(req.params.id);
     const existing = await prisma.aIKnowledge.findFirst({ where: { id, business_id: businessId } });
     if (!existing) throw ApiError.notFound('Item não encontrado');
-    const { title, content, category, active } = req.body ?? {};
+    const { title, content, category, active, keywords } = req.body ?? {};
     const data: Record<string, unknown> = {};
     if (title !== undefined) data.title = String(title).slice(0, 200);
     if (content !== undefined) data.content = String(content).slice(0, 10000);
@@ -222,6 +235,7 @@ aiRouter.patch(
       data.category = cat;
     }
     if (active !== undefined) data.active = Boolean(active);
+    if (keywords !== undefined) data.keywords = keywords ? String(keywords).slice(0, 500) : null;
     const updated = await prisma.aIKnowledge.update({ where: { id }, data });
     void writeAudit({ actor: req.user!.sub, businessId, action: 'ai.knowledge.updated', entity: 'AIKnowledge', entityId: id });
     return ok(res, updated);
@@ -317,11 +331,23 @@ aiRouter.post(
 
     // Persiste a memória atualizada para o próximo turno da sessão.
     if (memKey) {
+      const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
       await saveConversationMemory(
         prisma,
         businessId,
         memKey,
-        buildMemoryFromResult(result),
+        buildMemoryFromResult({
+          ...result,
+          asked_questions: Array.from(
+            new Set([
+              ...(memory?.asked_questions ?? []),
+              ...(questionFromNextAction(result.next_action)
+                ? [questionFromNextAction(result.next_action)]
+                : []),
+            ]),
+          ).slice(-12),
+          last_customer_message: lastUserMessage?.content ?? '',
+        }),
       );
     }
 
@@ -332,6 +358,7 @@ aiRouter.post(
       reply: result.reply,
       session_id: sessionId,
       stage: result.conversation.stage,
+      knowledge_used: result.knowledge_used,
       technique_used: result.technique_used,
       action: result.action,
       intent: result.intent,
@@ -347,5 +374,156 @@ aiRouter.post(
       output_tokens: result.outputTokens,
       latency_ms: result.latencyMs,
     });
+  })
+);
+
+/**
+ * POST /ai/playground/clear — reinicia o chat do playground: apaga a memória
+ * persistida da sessão (ConversationMemory) para a próxima mensagem começar do
+ * zero. NUNCA apaga mensagens/envios reais (o playground é 100% isolado).
+ */
+aiRouter.post(
+  '/playground/clear',
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const sessionId =
+      typeof req.body?.session_id === 'string' && req.body.session_id.trim()
+        ? req.body.session_id.trim().slice(0, 64)
+        : null;
+
+    if (sessionId) {
+      await deleteConversationMemory(
+        prisma,
+        businessId,
+        memoryKeySession(sessionId),
+      );
+    }
+
+    return ok(res, { cleared: true, session_id: sessionId });
+  })
+);
+
+// ---------------------------------------------------------------------------
+// Inteligência comercial (aprendizado por tenant — conversas reais)
+// ---------------------------------------------------------------------------
+
+/** GET /ai/intelligence/summary — resumo da inteligência comercial da empresa. */
+aiRouter.get(
+  '/intelligence/summary',
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const [insights, strategies, activeStrategies, learningStrategies] =
+      await Promise.all([
+        prisma.salesConversationInsight.findMany({
+          where: { business_id: businessId },
+          orderBy: { created_at: 'desc' },
+          take: 500,
+        }),
+        prisma.commercialStrategy.findMany({
+          where: { business_id: businessId },
+          orderBy: { created_at: 'desc' },
+        }),
+        prisma.commercialStrategy.count({
+          where: { business_id: businessId, status: 'ACTIVE' },
+        }),
+        prisma.commercialStrategy.count({
+          where: { business_id: businessId, status: 'LEARNING' },
+        }),
+      ]);
+
+    const total = insights.length;
+    const outcomes = insights.reduce(
+      (acc: Record<string, number>, i) => {
+        acc[i.outcome] = (acc[i.outcome] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    const pains = new Map<string, number>();
+    const objections = new Map<string, number>();
+    const needs = new Map<string, number>();
+    for (const i of insights) {
+      for (const p of Array.isArray(i.pains) ? (i.pains as string[]) : [])
+        pains.set(p, (pains.get(p) ?? 0) + 1);
+      for (const o of Array.isArray(i.objections) ? (i.objections as string[]) : [])
+        objections.set(o, (objections.get(o) ?? 0) + 1);
+      for (const n of Array.isArray(i.needs) ? (i.needs as string[]) : [])
+        needs.set(n, (needs.get(n) ?? 0) + 1);
+    }
+    const top = (m: Map<string, number>, n: number) =>
+      [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+
+    return ok(res, {
+      analyzed_conversations: total,
+      outcomes,
+      top_pains: top(pains, 5),
+      top_objections: top(objections, 5),
+      top_needs: top(needs, 5),
+      strategies: {
+        total: strategies.length,
+        active: activeStrategies,
+        learning: learningStrategies,
+      },
+    });
+  })
+);
+
+/** GET /ai/intelligence/insights — insights de conversas (paginação). */
+aiRouter.get(
+  '/intelligence/insights',
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.min(50, Math.max(1, Number(req.query.page_size) || 20));
+    const outcome = typeof req.query.outcome === 'string' ? req.query.outcome : undefined;
+
+    const where: { business_id: string; outcome?: string } = {
+      business_id: businessId,
+      ...(outcome ? { outcome } : {}),
+    };
+    const [items, total] = await Promise.all([
+      prisma.salesConversationInsight.findMany({
+        where: { business_id: businessId, ...(outcome ? { outcome: outcome as InsightOutcome } : {}) },
+        orderBy: { created_at: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.salesConversationInsight.count({
+        where: { business_id: businessId, ...(outcome ? { outcome: outcome as InsightOutcome } : {}) },
+      }),
+    ]);
+
+    return ok(res, {
+      items,
+      total,
+      page,
+      page_size: pageSize,
+    });
+  })
+);
+
+/** GET /ai/intelligence/strategies — estratégias aprendidas da empresa. */
+aiRouter.get(
+  '/intelligence/strategies',
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const strategies = await prisma.commercialStrategy.findMany({
+      where: { business_id: businessId },
+      orderBy: [{ status: 'asc' }, { confidence: 'desc' }],
+    });
+    return ok(res, { strategies });
+  })
+);
+
+/** GET /ai/intelligence/strategies/active — estratégias ativas (usadas no runtime). */
+aiRouter.get(
+  '/intelligence/strategies/active',
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+    const strategies = await prisma.commercialStrategy.findMany({
+      where: { business_id: businessId, status: 'ACTIVE' },
+      orderBy: { confidence: 'desc' },
+    });
+    return ok(res, { strategies });
   })
 );

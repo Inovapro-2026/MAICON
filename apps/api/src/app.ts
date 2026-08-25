@@ -18,7 +18,9 @@ import { businessRouter } from "./routes/business";
 import { aiRouter } from "./routes/ai";
 import { emailsRouter } from "./routes/emails";
 import { clientsRouter } from "./routes/clients";
+import { notificationsRouter } from "./routes/notifications";
 import { errorHandler } from "./middleware/error-handler";
+
 import { rateLimit } from "./middleware/rate-limit";
 import { initQueues } from "./services/queues";
 import { config } from "@prospector/config";
@@ -80,8 +82,10 @@ export function createApp(): Express {
   app.use("/ai", aiRouter);
   app.use("/emails", emailsRouter);
   app.use("/clients", clientsRouter);
+  app.use("/notifications", notificationsRouter);
 
   app.use((_req, res) => {
+
     res.status(404).json({
       success: false,
       error: { code: "NOT_FOUND", message: "Rota não encontrada" },

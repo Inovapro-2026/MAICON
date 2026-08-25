@@ -52,6 +52,13 @@ businessRouter.get(
       timezone: settings?.timezone ?? "America/Sao_Paulo",
       logo_url: settings?.logo_url ?? null,
       additional_info: settings?.additional_info ?? null,
+      target_audience: settings?.target_audience ?? null,
+      problems_solved: settings?.problems_solved ?? null,
+      differentials: settings?.differentials ?? null,
+      positioning: settings?.positioning ?? null,
+      service_area: settings?.service_area ?? null,
+      business_objectives: settings?.business_objectives ?? null,
+      additional_instructions: settings?.additional_instructions ?? null,
       limits: {
         whatsapp_daily_limit: settings?.whatsapp_daily_limit ?? 30,
         email_daily_limit: settings?.email_daily_limit ?? 100,
@@ -124,6 +131,27 @@ businessRouter.patch(
       ...(body.additional_info !== undefined
         ? { additional_info: body.additional_info || null }
         : {}),
+      ...(body.target_audience !== undefined
+        ? { target_audience: body.target_audience || null }
+        : {}),
+      ...(body.problems_solved !== undefined
+        ? { problems_solved: body.problems_solved || null }
+        : {}),
+      ...(body.differentials !== undefined
+        ? { differentials: body.differentials || null }
+        : {}),
+      ...(body.positioning !== undefined
+        ? { positioning: body.positioning || null }
+        : {}),
+      ...(body.service_area !== undefined
+        ? { service_area: body.service_area || null }
+        : {}),
+      ...(body.business_objectives !== undefined
+        ? { business_objectives: body.business_objectives || null }
+        : {}),
+      ...(body.additional_instructions !== undefined
+        ? { additional_instructions: body.additional_instructions || null }
+        : {}),
     });
 
     void writeAudit({
@@ -193,7 +221,7 @@ businessRouter.post(
       email: body.email ? String(body.email).slice(0, 200) : undefined,
       phone: body.phone ? String(body.phone).slice(0, 40) : undefined,
       description: body.description
-        ? String(body.description).slice(0, 4000)
+        ? String(body.description).slice(0, 15000)
         : undefined,
       website: body.site ? String(body.site).slice(0, 200) : undefined,
       instagram: body.instagram
@@ -205,7 +233,29 @@ businessRouter.post(
       location: body.localizacao
         ? String(body.localizacao).slice(0, 300)
         : undefined,
+      targetAudience: body.publico
+        ? String(body.publico).slice(0, 2000)
+        : undefined,
+      problemsSolved: body.problemas
+        ? String(body.problemas).slice(0, 2000)
+        : undefined,
+      differentials: body.diferenciais
+        ? String(body.diferenciais).slice(0, 2000)
+        : undefined,
+      positioning: body.posicionamento
+        ? String(body.posicionamento).slice(0, 2000)
+        : undefined,
+      serviceArea: body.area_atendimento
+        ? String(body.area_atendimento).slice(0, 500)
+        : undefined,
+      businessObjectives: body.objetivo
+        ? String(body.objetivo).slice(0, 500)
+        : undefined,
+      additionalInstructions: body.instrucoes
+        ? String(body.instrucoes).slice(0, 15000)
+        : undefined,
     });
+
 
     void writeAudit({
       actor: req.user!.sub,

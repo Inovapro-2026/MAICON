@@ -27,7 +27,7 @@ const NAV = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[#E6E8F0] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden shadow-[0_-4px_16px_rgba(15,23,42,0.04)]">
       <div className="scrollbar-thin flex items-stretch overflow-x-auto">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active =
@@ -37,13 +37,15 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex min-w-[64px] flex-1 flex-col items-center justify-center gap-1 py-2"
+              className={`flex min-w-[64px] flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors ${
+                active ? "text-[#6366F1] font-semibold" : "text-[#64748B] hover:text-[#0F172A]"
+              }`}
             >
               <Icon
-                className={`h-5 w-5 ${active ? "text-emerald-600" : "text-muted-foreground"}`}
+                className={`h-5 w-5 ${active ? "text-[#6366F1]" : "text-[#64748B]"}`}
               />
               <span
-                className={`text-[10px] ${active ? "text-emerald-600" : "text-muted-foreground"}`}
+                className={`text-[10px] ${active ? "text-[#6366F1]" : "text-[#64748B]"}`}
               >
                 {label}
               </span>

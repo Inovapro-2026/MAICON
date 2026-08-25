@@ -57,19 +57,19 @@ export function ConfirmModal({
       }
     >
       <div className="space-y-4">
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-          <div className="text-sm text-zinc-700">{message}</div>
+          <div className="text-sm text-[#334155]">{message}</div>
         </div>
         {confirmText ? (
           <div>
             <label className="label">
-              Digite <strong className="text-zinc-900">{confirmText}</strong> para confirmar
+              Digite <strong className="text-[#0F172A]">{confirmText}</strong> para confirmar
             </label>
             <input
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
-              className="input"
+              className="input font-mono"
               placeholder={confirmText}
               autoComplete="off"
               autoFocus
@@ -80,3 +80,4 @@ export function ConfirmModal({
     </Modal>
   );
 }
+

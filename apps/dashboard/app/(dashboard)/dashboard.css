@@ -1,0 +1,167 @@
+/* ==========================================================================
+   DASHBOARD — tema interno do painel SAVYRON (Light Profissional).
+   Importado APENAS no layout do grupo `(dashboard)`.
+   ========================================================================== */
+
+/* 1. Fundo geral limpo e corporativo */
+.dashboard-wrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #F5F7FA;
+}
+
+/* 2. Área de conteúdo do painel */
+.dashboard-dark-theme {
+  color: #0F172A;
+}
+
+/* 3. Cards internos — branco puro com sombra suave e borda sutil */
+.dashboard-dark-theme .card {
+  background: #FFFFFF;
+  border: 1px solid #E6E8F0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  color: #0F172A;
+  border-radius: 16px;
+}
+
+/* 4. Títulos e cabeçalhos em alto contraste */
+.dashboard-dark-theme .heading-strong,
+.dashboard-dark-theme .card h1,
+.dashboard-dark-theme .card h2,
+.dashboard-dark-theme .card h3,
+.dashboard-dark-theme .card h4,
+.dashboard-dark-theme .card h5,
+.dashboard-dark-theme .card h6 {
+  color: #0F172A;
+  font-weight: 700;
+}
+
+.dashboard-dark-theme .label {
+  color: #0F172A;
+  font-weight: 600;
+}
+
+/* 5. Textos secundários */
+.dashboard-dark-theme .text-muted-foreground {
+  color: #64748B;
+}
+
+/* 6. Inputs / selects / textareas */
+.dashboard-dark-theme .input,
+.dashboard-dark-theme select,
+.dashboard-dark-theme textarea {
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #0F172A;
+  border-radius: 10px;
+}
+.dashboard-dark-theme .input::placeholder,
+.dashboard-dark-theme textarea::placeholder {
+  color: #94A3B8;
+}
+.dashboard-dark-theme .input:focus,
+.dashboard-dark-theme select:focus,
+.dashboard-dark-theme textarea:focus {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #FFFFFF;
+}
+
+/* 7. Sidebar */
+.dashboard-wrapper aside {
+  background: #FFFFFF;
+  border-color: #E6E8F0;
+  color: #334155;
+  box-shadow: 1px 0 3px rgba(15, 23, 42, 0.02);
+}
+
+.dashboard-wrapper aside a,
+.dashboard-wrapper aside button {
+  color: #475569;
+}
+
+.dashboard-wrapper aside a:hover,
+.dashboard-wrapper aside button:hover {
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+/* Item ativo na sidebar: destaque roxo/índigo suave */
+.dashboard-wrapper aside a[class*="text-emerald-600"],
+.dashboard-wrapper aside a[class*="text-brand"],
+.dashboard-wrapper aside a[class*="active"],
+.dashboard-wrapper aside .nav-item-active {
+  background: #EEF2FF !important;
+  color: #6366F1 !important;
+  font-weight: 600;
+}
+
+.dashboard-wrapper aside a[class*="text-emerald-600"]:hover,
+.dashboard-wrapper aside a[class*="text-brand"]:hover,
+.dashboard-wrapper aside a[class*="active"]:hover,
+.dashboard-wrapper aside .nav-item-active:hover {
+  background: #E0E7FF !important;
+}
+
+/* 8. Topbar */
+.dashboard-wrapper header {
+  background: #FFFFFF;
+  border-color: #E6E8F0;
+}
+
+.dashboard-wrapper header h1,
+.dashboard-wrapper header .heading-strong {
+  color: #0F172A;
+}
+
+/* 9. Tabelas */
+.dashboard-dark-theme table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.dashboard-dark-theme table th {
+  background: #F8FAFC;
+  color: #475569;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #E6E8F0;
+}
+
+.dashboard-dark-theme table td {
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F5F9;
+  color: #334155;
+}
+
+.dashboard-dark-theme table tr:hover td {
+  background: #F8FAFC;
+}
+
+/* 10. Cards da listagem de Mensagens (Inbox) */
+.dashboard-dark-theme .inbox-card {
+  background: #FFFFFF;
+  border: 1px solid #E6E8F0;
+  color: #0F172A;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-dark-theme .inbox-card:hover {
+  background: #FFFFFF;
+  border-color: #C7D2FE;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+}
+
+/* 11. Bottom nav mobile */
+.dashboard-wrapper nav[class*="bottom"],
+.dashboard-wrapper nav[class*="fixed inset-x-0 bottom-0"] {
+  background: #FFFFFF;
+  border-color: #E6E8F0;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04);
+}
+
+

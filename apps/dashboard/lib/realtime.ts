@@ -32,8 +32,10 @@ export interface RealtimeEventMessage {
     direction?: "IN" | "OUT";
     lead_status?: string;
     human_handled?: boolean;
+    notification?: Record<string, unknown>;
   };
 }
+
 
 /** URL base do Socket.IO — definida via env no build/produção. */
 export const SOCKET_OPTIONS = {

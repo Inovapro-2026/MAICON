@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Sparkles,
   CheckCircle2,
@@ -8,6 +9,7 @@ import {
   ChevronDown,
   ChevronUp,
   Building2,
+  BookOpen,
 } from "lucide-react";
 import { DashboardShell } from "@/components/layout/shell";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -42,6 +44,13 @@ interface BusinessSettings {
   instagram: string | null;
   opening_hours: string | null;
   address: string | null;
+  target_audience: string | null;
+  problems_solved: string | null;
+  differentials: string | null;
+  positioning: string | null;
+  service_area: string | null;
+  business_objectives: string | null;
+  additional_instructions: string | null;
 }
 
 interface AiConfigStatus {
@@ -105,6 +114,13 @@ export default function EmpresaIaPage() {
         ["instagram", settings.instagram],
         ["horario", settings.opening_hours],
         ["localizacao", settings.address],
+        ["publico", settings.target_audience],
+        ["problemas", settings.problems_solved],
+        ["diferenciais", settings.differentials],
+        ["posicionamento", settings.positioning],
+        ["area_atendimento", settings.service_area],
+        ["objetivo", settings.business_objectives],
+        ["instrucoes", settings.additional_instructions],
       ];
       for (const [key, value] of map) {
         if (next[key] === undefined && value != null) next[key] = value;
@@ -146,6 +162,13 @@ export default function EmpresaIaPage() {
           instagram: (form.instagram ?? settings?.instagram ?? "").trim(),
           horario: (form.horario ?? settings?.opening_hours ?? "").trim(),
           localizacao: (form.localizacao ?? settings?.address ?? "").trim(),
+          publico: (form.publico ?? settings?.target_audience ?? "").trim(),
+          problemas: (form.problemas ?? settings?.problems_solved ?? "").trim(),
+          diferenciais: (form.diferenciais ?? settings?.differentials ?? "").trim(),
+          posicionamento: (form.posicionamento ?? settings?.positioning ?? "").trim(),
+          area_atendimento: (form.area_atendimento ?? settings?.service_area ?? "").trim(),
+          objetivo: (form.objetivo ?? settings?.business_objectives ?? "").trim(),
+          instrucoes: (form.instrucoes ?? settings?.additional_instructions ?? "").trim(),
         },
       });
       success("Informações aplicadas com sucesso à IA.");
@@ -180,8 +203,8 @@ export default function EmpresaIaPage() {
       <div className="mb-6">
         <h1 className="heading-strong text-xl">Configuração da IA</h1>
         <p className="text-sm text-zinc-500">
-          Dados da sua empresa aplicados automaticamente ao agente de
-          atendimento.
+          Descreva sua empresa e o comportamento da IA em um único lugar — tudo é
+          aplicado automaticamente ao agente de atendimento.
         </p>
       </div>
 
@@ -189,7 +212,7 @@ export default function EmpresaIaPage() {
         <Card>
           <CardHeader
             title="Dados da empresa"
-            subtitle="Informações usadas pela IA para personalizar o atendimento"
+            subtitle="Campo único: informações da empresa + regras de comportamento da IA"
           />
           <div className="space-y-4 p-5">
             <Input
@@ -235,20 +258,41 @@ export default function EmpresaIaPage() {
               disabled={isLoading}
             />
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-                Descrição da empresa
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className="block text-sm font-medium text-zinc-700">
+                  Descrição da empresa/instrução de comportamento da IA
+                </label>
+                <Link
+                  href="/ai/prompt-guide"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Guia de prompts
+                </Link>
+              </div>
               <textarea
                 value={fieldValue("description", settings?.description)}
                 onChange={(e) => setField("description", e.target.value)}
                 disabled={isLoading}
-                rows={3}
-                placeholder="Descreva o que sua empresa faz, os produtos ou serviços oferecidos..."
-                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                maxLength={15000}
+                rows={10}
+                placeholder="Descreva sua empresa (o que faz, produtos ou serviços) e como a IA deve se comportar: tom de voz, postura e regras de atendimento. Use o modelo do Guia de prompts: descrição geral, posicionamento, principais recursos, principal objetivo e como a IA deve falar."
+                className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
               />
+              <p className="mt-1 flex items-center justify-between gap-2 text-[11px] text-zinc-500">
+                <span>
+                  Campo único para dados da empresa + regras de comportamento da
+                  IA (até 15.000 caracteres).
+                </span>
+                <span className="text-zinc-400">
+                  {fieldValue("description", settings?.description).length} /{" "}
+                  15000
+                </span>
+              </p>
             </div>
           </div>
         </Card>
+
 
         <Card>
           <button
@@ -303,9 +347,96 @@ export default function EmpresaIaPage() {
                   disabled={isLoading}
                 />
               </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  Público-alvo
+                </label>
+                <textarea
+                  value={fieldValue("publico", settings?.target_audience)}
+                  onChange={(e) => setField("publico", e.target.value)}
+                  disabled={isLoading}
+                  rows={2}
+                  placeholder="Ex.: Pequenas e médias empresas, profissionais autônomos, lojas..."
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  Problemas que a empresa resolve
+                </label>
+                <textarea
+                  value={fieldValue("problemas", settings?.problems_solved)}
+                  onChange={(e) => setField("problemas", e.target.value)}
+                  disabled={isLoading}
+                  rows={2}
+                  placeholder="Ex.: Falta de novos leads, prospecção manual, baixa produtividade..."
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  Diferenciais da empresa
+                </label>
+                <textarea
+                  value={fieldValue("diferenciais", settings?.differentials)}
+                  onChange={(e) => setField("diferenciais", e.target.value)}
+                  disabled={isLoading}
+                  rows={2}
+                  placeholder="Ex.: Automação com IA, prospecção integrada, CRM, agentes inteligentes..."
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  Posicionamento
+                </label>
+                <textarea
+                  value={fieldValue("posicionamento", settings?.positioning)}
+                  onChange={(e) => setField("posicionamento", e.target.value)}
+                  disabled={isLoading}
+                  rows={2}
+                  placeholder="Ex.: Uma plataforma de inteligência comercial e automação de vendas, não apenas um CRM."
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Área de atendimento"
+                  value={fieldValue("area_atendimento", settings?.service_area)}
+                  onChange={(e) => setField("area_atendimento", e.target.value)}
+                  placeholder="Ex.: Todo o Brasil, São Paulo, Online"
+                  disabled={isLoading}
+                />
+                <Input
+                  label="Objetivo principal"
+                  value={fieldValue("objetivo", settings?.business_objectives)}
+                  onChange={(e) => setField("objetivo", e.target.value)}
+                  placeholder="Ex.: Gerar leads, vender produtos, agendar atendimentos"
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  Instruções adicionais para a IA
+                </label>
+                <textarea
+                  value={fieldValue("instrucoes", settings?.additional_instructions)}
+                  onChange={(e) => setField("instrucoes", e.target.value)}
+                  disabled={isLoading}
+                  maxLength={15000}
+                  rows={6}
+                  placeholder="Ex.: Sempre envie o link da vitrine quando o cliente demonstrar intenção de compra."
+                  className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-emerald-500/60"
+                />
+                <p className="mt-1 text-right text-[11px] text-zinc-400">
+                  {fieldValue("instrucoes", settings?.additional_instructions).length}{" "}
+                  / 15000
+                </p>
+              </div>
             </div>
           ) : null}
         </Card>
+
 
         <Card>
           <div className="flex flex-col gap-4">

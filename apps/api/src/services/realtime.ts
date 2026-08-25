@@ -41,8 +41,10 @@ export interface RealtimeEventMessage {
     direction?: "IN" | "OUT";
     lead_status?: string;
     human_handled?: boolean;
+    notification?: Record<string, unknown>;
   };
 }
+
 
 class RealtimeService {
   private io: SocketIOServer | null = null;

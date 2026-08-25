@@ -40,6 +40,23 @@ billingRouter.get(
     const subscription = await getSubscriptionData(businessId);
     const lastPayment = subscription?.payments?.[0] ?? null;
 
+    // Preço ATUAL do plano (fonte autoritativa = Plan), com fallback para o
+    // snapshot da assinatura (evita exibir valor antigo quando o plano muda).
+    let currentPlanPrice: number | null = null;
+    if (subscription?.plan_id) {
+      const plan = await prisma.plan.findUnique({
+        where: { id: subscription.plan_id },
+        select: { price: true },
+      });
+      currentPlanPrice = plan ? Number(plan.price) : null;
+    }
+
+    // Vencimento: assinatura ativa com período final no passado = expirada.
+    const isExpired = Boolean(
+      subscription?.current_period_end &&
+        subscription.current_period_end.getTime() < Date.now(),
+    );
+
     return ok(res, {
       business: {
         id: business.id,
@@ -52,10 +69,12 @@ billingRouter.get(
             id: subscription.id,
             status: subscription.status,
             plan_name: subscription.plan_name,
-            plan_price: subscription.plan_price
-              ? Number(subscription.plan_price)
-              : null,
+            plan_price:
+              currentPlanPrice ??
+              (subscription.plan_price ? Number(subscription.plan_price) : null),
             current_period_end: subscription.current_period_end,
+            expires_at: subscription.current_period_end,
+            is_expired: isExpired,
             stripe_customer_id: subscription.stripe_customer_id,
             stripe_subscription_id: subscription.stripe_subscription_id,
             cakto_subscription_id: subscription.cakto_subscription_id,
@@ -74,6 +93,7 @@ billingRouter.get(
           }
         : null,
       requires_payment: business.status === "PENDING_PAYMENT",
+      is_expired: isExpired,
       stripe_configured: isStripeConfigured(),
       stripe_publishable_key: getPublishableKey(),
       cakto_configured: isCaktoConfigured(),

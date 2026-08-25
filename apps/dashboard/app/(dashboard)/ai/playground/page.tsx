@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Send, Bot, User, FlaskConical } from 'lucide-react';
+import { Send, Bot, User, FlaskConical, Trash2 } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ interface ChatMessage {
 interface PlaygroundReply {
   reply: string;
   stage: string;
+  knowledge_used: string[];
   intent: string;
   goal: string;
   next_action: string;
@@ -115,6 +116,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 }
 
 const SESSION_KEY = 'savvyron-playground-session';
+const MESSAGES_KEY = 'savvyron-playground-messages';
 
 function getOrCreateSessionId(): string {
   if (typeof window === 'undefined') return '';
@@ -125,9 +127,26 @@ function getOrCreateSessionId(): string {
   return id;
 }
 
+/** Carrega as mensagens persistidas (sobrevivem a sair da aba / recarregar). */
+function loadStoredMessages(): ChatMessage[] {
+  if (typeof window === 'undefined') return [WELCOME];
+  try {
+    const raw = window.localStorage.getItem(MESSAGES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed as ChatMessage[];
+      }
+    }
+  } catch {
+    // JSON corrompido → começa do zero.
+  }
+  return [WELCOME];
+}
+
 export default function AIPlaygroundPage() {
   const status = useApi<PlaygroundStatus>(['ai-playground-status'], 'ai/playground/status');
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadStoredMessages());
   const [input, setInput] = useState('');
   const [stage, setStage] = useState<string | null>(null);
   const [lastReply, setLastReply] = useState<PlaygroundReply | null>(null);
@@ -135,10 +154,46 @@ export default function AIPlaygroundPage() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Persiste as mensagens para não sumirem ao sair da aba / recarregar.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    } catch {
+      // sem localStorage (modo privado) → segue sem persistir.
+    }
+  }, [messages]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, loading]);
+
+  /** Reinicia o chat do zero: limpa a memória da sessão (servidor) e o histórico. */
+  const clearChat = async () => {
+    setLoading(true);
+    try {
+      const sessionId = window.localStorage.getItem(SESSION_KEY);
+      if (sessionId) {
+        try {
+          await request('ai/playground/clear', {
+            method: 'POST',
+            body: { session_id: sessionId },
+          });
+        } catch {
+          // Falha ao limpar no servidor não impede o reset local.
+        }
+      }
+      window.localStorage.removeItem(SESSION_KEY);
+      window.localStorage.removeItem(MESSAGES_KEY);
+      setMessages([WELCOME]);
+      setLastReply(null);
+      setStage(null);
+      setError(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -174,18 +229,29 @@ export default function AIPlaygroundPage() {
             a mensagem <strong>não é enviada</strong> para cliente real.
           </p>
         </div>
-        {lastReply?.agent ? (
-          <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600">
-            <Bot className="h-3.5 w-3.5 text-emerald-600" />
-            {lastReply.agent.name}
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {lastReply?.agent ? (
+            <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600">
+              <Bot className="h-3.5 w-3.5 text-emerald-600" />
+              {lastReply.agent.name}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void clearChat()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:border-red-200 hover:bg-red-500/5 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Limpar conversa
+          </button>
+        </div>
       </div>
 
       {!status.isLoading && !status.data?.available ? (
         <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
           <div className="p-4 text-sm text-amber-600">
-            Nenhum provedor de IA configurado (GROQ_API_KEY / OPENROUTER_API_KEY). Configure para testar o agente.
+            Nenhum provedor de IA configurado (OPENAI_API_KEY / GROQ_API_KEY). Configure para testar o agente.
           </div>
         </Card>
       ) : null}
@@ -243,6 +309,11 @@ export default function AIPlaygroundPage() {
           {lastReply.stage ? (
             <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-zinc-600">
               Estágio: {STAGE_LABELS[lastReply.stage] ?? lastReply.stage}
+            </span>
+          ) : null}
+          {lastReply.knowledge_used?.length ? (
+            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-zinc-600">
+              Base de conhecimento: {lastReply.knowledge_used.join(', ')}
             </span>
           ) : null}
           {lastReply.intent ? (

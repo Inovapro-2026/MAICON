@@ -4,6 +4,7 @@ import { QUEUE_NAMES } from '@prospector/queues';
 import { getWhatsAppManager } from '@prospector/whatsapp';
 import { getWorkerQueue } from '../queues';
 import { createMessage, markMessageFailed, updateMessageStatus } from '../services/messages';
+import { ensureConversation, touchConversation } from '../services/conversations';
 
 const logger = createLogger('worker.whatsapp-send');
 
@@ -77,6 +78,13 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
   try {
     const externalId = await waManager.sendText(phone, message, remoteJid);
     await updateMessageStatus(messageId, 'DELIVERED', externalId);
+
+
+
+    // Garante que a conversa existe e aparece no Inbox ("Em atendimento")
+    const conversationId = await ensureConversation(leadId, businessId ?? 'default');
+    await touchConversation(conversationId, businessId);
+
     // Só marca como SENT se ainda estiver no início do funil (primeiro contato).
     // Respostas de IA/conversa ativa mantêm o status definido pelo agente.
     await prisma.campaignLead.updateMany({
@@ -88,6 +96,7 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
       data: { status: 'SENT' },
     });
     logger.info('Mensagem WhatsApp enviada', { lead_id: leadId, phone, message_id: messageId });
+
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     logger.error('Falha no envio WhatsApp', { lead_id: leadId, phone, reason });

@@ -43,8 +43,10 @@ export interface RealtimeEventMessage {
     conversation_stage?: string;
     /** Técnica comercial usada pelo Motor Comercial na última resposta. */
     technique_used?: string;
+    notification?: Record<string, unknown>;
   };
 }
+
 
 /** Monta um evento de progresso de prospecção para o canal realtime. */
 export function buildProspectingEvent(params: {

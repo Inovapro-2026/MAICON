@@ -66,7 +66,16 @@ export async function deleteConversation(
 
   await db.$transaction([
     db.aIGeneration.deleteMany({ where: { conversation_id: conversationId } }),
+    db.conversationMemory.deleteMany({
+      where: {
+        business_id: businessId,
+        key: `conversation:${conversationId}`,
+      },
+    }),
     db.conversation.delete({ where: { id: conversationId } }),
+    // Apaga o LEAD por completo (cascade: optOut, campaignLead, demais
+    // mensagens/conversas do lead também somem). Excluir conversa = excluir lead.
+    db.lead.delete({ where: { id: conversation.lead_id } }),
   ]);
 
   void audit({
@@ -75,7 +84,11 @@ export async function deleteConversation(
     action: 'conversation.deleted',
     entity: 'Conversation',
     entityId: conversationId,
-    metadata: { lead_id: conversation.lead_id, messages_deleted: deletedMessages.count },
+    metadata: {
+      lead_id: conversation.lead_id,
+      lead_deleted: true,
+      messages_deleted: deletedMessages.count,
+    },
   });
 
   return { deleted: true };

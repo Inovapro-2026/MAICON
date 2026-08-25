@@ -17,6 +17,21 @@
 
 export const COMMERCIAL_ENGINE_VERSION = "v1";
 
+/**
+ * Link oficial da vitrine do SAVYRON (CTA de conversão). Quando o lead
+ * demonstrar intenção de compra, o agente responde + apresenta este link NA
+ * MESMA mensagem — nunca esconde para uma mensagem futura nem usa placeholder.
+ */
+export const SAVYRON_VITRINE_URL = "https://crm.inovapro.cloud/vitrine";
+
+/** Item da base de conhecimento (AIKnowledge ativo). */
+export interface KnowledgeItem {
+  title: string;
+  content: string;
+  /** Palavras-chave opcionais (melhoram a recuperação: "preço, valor, quanto custa"). */
+  keywords?: string;
+}
+
 export type CommercialTechnique =
   | "tactical_empathy"
   | "mirroring"
@@ -29,9 +44,7 @@ export type CommercialTechnique =
   | "respectful_close";
 
 export type CommercialAction =
-  | "CONTINUE_CONVERSATION"
-  | "TRANSFER_TO_HUMAN"
-  | "CLOSE_CONVERSATION";
+  "CONTINUE_CONVERSATION" | "TRANSFER_TO_HUMAN" | "CLOSE_CONVERSATION";
 
 export type CommercialStageValue =
   | "NEW"
@@ -99,6 +112,16 @@ export interface KnownFacts {
   segment: CustomerFact | null;
   need: CustomerFact | null;
   acquisition_channel: CustomerFact | null;
+  /** Dor/desafio principal — explorar antes de apresentar a solução. */
+  pain: CustomerFact | null;
+  /** Objetivo comercial do cliente. */
+  objective: CustomerFact | null;
+  /** Orçamento/fôlego financeiro mencionado. */
+  budget: CustomerFact | null;
+  /** Objeção já manifestada. */
+  objection: CustomerFact | null;
+  /** Ferramentas/processo atuais do cliente. */
+  tools: CustomerFact | null;
 }
 
 /** Objetivo deste turno de conversa. */
@@ -127,6 +150,7 @@ export type NextAction =
   | "HANDLE_OBJECTION"
   | "QUALIFY_INTEREST"
   | "PROPOSE_NEXT_STEP"
+  | "SEND_LINK"
   | "TRANSFER_TO_HUMAN"
   | "CLOSE_CONVERSATION";
 
@@ -166,6 +190,7 @@ export const NEXT_ACTIONS: readonly NextAction[] = [
   "HANDLE_OBJECTION",
   "QUALIFY_INTEREST",
   "PROPOSE_NEXT_STEP",
+  "SEND_LINK",
   "TRANSFER_TO_HUMAN",
   "CLOSE_CONVERSATION",
 ];
@@ -177,7 +202,11 @@ export interface CommercialAnalysis {
   known: KnownFacts;
   goal: ConversationGoal;
   next_action: NextAction;
-  customer: { name: string | null; segment: string | null; interest: boolean | null };
+  customer: {
+    name: string | null;
+    segment: string | null;
+    interest: boolean | null;
+  };
   technique_used: CommercialTechnique;
   action: CommercialAction;
   /** Resumo curto e atualizado da conversa (para memória persistente). */
@@ -211,25 +240,166 @@ export const TECHNIQUE_LABELS: Record<CommercialTechnique, string> = {
  * nunca controla a resposta de forma mecânica — o gerador nunca vê o jargão
  * ("technique_used", "mirroring", "Stage NEW"...).
  */
-export function buildGeneratorInstruction(analysis: CommercialAnalysis): string {
+export function buildGeneratorInstruction(
+  analysis: CommercialAnalysis,
+  askedQuestions?: string[],
+): string {
+  const parts: string[] = [];
+
+  // Diretiva do próximo passo comercial natural (Decision Engine / análise).
   const directive = NEXT_ACTION_DIRECTIVES[analysis.next_action] ?? "";
-  const parts = [directive];
+  if (directive) parts.push(directive);
 
   // Nunca perguntar o que o cliente já informou (aproveitar o contexto).
   if (analysis.known.name) {
-    parts.push(`O cliente se chama "${analysis.known.name.value}" — use o nome naturalmente.`);
+    parts.push(
+      `O cliente se chama "${analysis.known.name.value}" — use o nome naturalmente.`,
+    );
   }
   if (analysis.known.segment) {
-    parts.push(`O cliente já disse o segmento ("${analysis.known.segment.value}") — não pergunte de novo; aproveite esse contexto.`);
+    parts.push(
+      `O cliente já disse o segmento ("${analysis.known.segment.value}") — não pergunte de novo; aproveite esse contexto.`,
+    );
   }
   if (analysis.known.acquisition_channel) {
-    parts.push(`O cliente capta clientes por "${analysis.known.acquisition_channel.value}" — não pergunte de novo; aproveite esse contexto.`);
+    parts.push(
+      `O cliente capta clientes por "${analysis.known.acquisition_channel.value}" — não pergunte de novo; aproveite esse contexto.`,
+    );
   }
+  if (analysis.known.need) {
+    parts.push(`O cliente já revelou a necessidade ("${analysis.known.need.value}") — não pergunte de novo.`);
+  }
+  if (analysis.known.pain) {
+    parts.push(`O cliente já revelou a dor ("${analysis.known.pain.value}") — não pergunte de novo.`);
+  }
+  if (analysis.known.objective) {
+    parts.push(`O cliente já revelou o objetivo ("${analysis.known.objective.value}") — não pergunte de novo.`);
+  }
+  if (analysis.known.budget) {
+    parts.push(`O cliente já mencionou orçamento ("${analysis.known.budget.value}") — não pergunte de novo.`);
+  }
+  if (analysis.known.objection) {
+    parts.push(`O cliente já manifestou a objeção ("${analysis.known.objection.value}") — trate-a, não pergunte de novo.`);
+  }
+  if (analysis.known.tools) {
+    parts.push(`O cliente já disse o processo atual ("${analysis.known.tools.value}") — não pergunte de novo.`);
+  }
+
+  // Nunca repetir uma pergunta já feita (memória de perguntas do lead).
+  if (Array.isArray(askedQuestions) && askedQuestions.length > 0) {
+    const seen = Array.from(new Set(askedQuestions.slice(-6)))
+      .map((q) => `"${q}"`)
+      .join(", ");
+    parts.push(
+      `Perguntas que você JÁ fez nesta conversa (não repita o mesmo assunto): ${seen}.`,
+    );
+  }
+
   if (analysis.summary) {
     parts.push(`Contexto da conversa: ${analysis.summary}`);
   }
 
+  parts.push("Prioridade: Se as instruções da empresa especificarem uma resposta, pergunta ou fluxo para este momento, siga rigorosamente as instruções da empresa.");
+
   return parts.join(" ");
+}
+
+/**
+ * Seleciona os itens da base de conhecimento relevantes ao atendimento.
+ * O `message` deve conter o contexto da conversa (mensagem atual + histórico
+ * recente), permitindo resolver perguntas como "qual valor?" para o produto já
+ * discutido. Entende sinais de PREÇO (inclui itens com preço) e de OFERTA/LINK
+ * (inclui itens com link de vitrine/checkout), além do match por palavras.
+ */
+export function getRelevantKnowledge(
+  message: string,
+  items: KnowledgeItem[],
+  limit = 5,
+): KnowledgeItem[] {
+  if (!message || !Array.isArray(items) || items.length === 0) return [];
+  const norm = (s: string) =>
+    String(s ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const text = norm(message);
+  const messageWords = text.split(/\s+/).filter((w) => w.length > 2);
+
+  // Sinais de intenção: pergunta de preço e pedido de oferta/link.
+  const isPriceQuestion =
+    /(quanto custa|qual o valor|qual o preco|quanto e|quanto fica|preco|valor|custa|caro|investimento|plano|mensalidade|parcelar|parcela|desconto|promocao)/.test(
+      text,
+    );
+  const isOfferRequest =
+    /(quero conhecer|quero ver|me manda|manda o link|onde compro|quero contratar|quero comprar|quero assinar|quero adquirir|quero fechar|quero saber mais|tem link|quero comecar|quero testar|link|vitrine|checkout|agendar|contratacao)/.test(
+      text,
+    );
+
+  const scored = items.map((item) => {
+    const haystack = norm(
+      `${item.title} ${item.content} ${item.keywords ?? ""}`,
+    );
+    let score = messageWords.filter((w) => haystack.includes(w)).length;
+
+    // Título mencionado explicitamente → forte relevância (domina a seleção).
+    const titleNorm = norm(item.title);
+    const titleMatch =
+      titleNorm.length > 2 && text.includes(titleNorm);
+    if (titleMatch) score += 3;
+
+    // Palavra-chave do item mencionada → relevância.
+    if (item.keywords) {
+      const kws = norm(item.keywords).split(/[,;]/).map((k) => k.trim());
+      if (kws.some((k) => k.length > 2 && text.includes(k))) score += 2;
+    }
+
+    // Pergunta de preço → itens com preço/valor ganham peso.
+    if (
+      isPriceQuestion &&
+      /(r\$|reais|custa|por mes|mensal|valor|preco)/.test(haystack)
+    ) {
+      score += 1;
+    }
+    // Pedido de oferta/link → itens com link de venda ganham peso.
+    if (isOfferRequest && /(https?:\/\/|vitrine|checkout|agendamento|comprar|contratar)/.test(haystack)) {
+      score += 1;
+    }
+
+    return { item, score, titleMatch };
+  });
+
+  // Quando o cliente nomeia um produto/serviço, o match por TÍTULO domina:
+  // evita trazer o preço de outro item só porque compartilha a palavra "custa".
+  const titleMatched = scored.filter((s) => s.score > 0 && s.titleMatch);
+  if (titleMatched.length > 0) {
+    return titleMatched
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((s) => s.item);
+  }
+
+  const matched = scored.filter((s) => s.score > 0);
+
+  // Fallback comercial: pergunta de preço/oferta sem match direto → traz os
+  // itens que contêm preço ou link, para o agente não dizer "não tenho
+  // informação" quando existe dado útil disponível.
+  if (matched.length === 0 && (isPriceQuestion || isOfferRequest)) {
+    return scored
+      .filter((s) =>
+        /(r\$|reais|custa|https?:\/\/|vitrine|checkout)/.test(
+          norm(`${s.item.title} ${s.item.content}`),
+        ),
+      )
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((s) => s.item);
+  }
+
+  return matched
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((s) => s.item);
 }
 
 /** Tradução do próximo passo → postura natural para o gerador (nunca expõe jargão). */
@@ -239,28 +409,63 @@ const NEXT_ACTION_DIRECTIVES: Record<NextAction, string> = {
   ASK_NAME:
     "Pergunte o nome do cliente, de forma natural e leve, sem interromper o fluxo.",
   ASK_BUSINESS_TYPE:
-    "Pergunte, de forma natural, qual é o tipo de negócio do cliente (barbearia, clínica, restaurante...).",
+    "Avance a conversa seguindo o fluxo e as regras da empresa. Caso a empresa adote abordagem consultiva aberta, pergunte, de forma natural, qual é o tipo de negócio do cliente.",
   ASK_CURRENT_ACQUISITION:
-    "Pergunte como o cliente consegue novos clientes hoje (indicação, redes sociais, anúncios...).",
+    "Avance a conversa seguindo o fluxo e as regras da empresa. Caso a empresa adote abordagem consultiva aberta, entenda de forma leve como o cliente atua hoje.",
   ASK_CURRENT_PROCESS:
-    "Pergunte, de forma natural, como o cliente conduz esse processo hoje.",
+    "Avance a conversa seguindo o fluxo e as regras da empresa.",
   UNDERSTAND_PAIN:
-    "Pergunte qual é a maior dificuldade ou desafio do cliente hoje, de forma natural.",
+    "Entenda a necessidade ou desafio do cliente de forma natural, respeitando as regras da empresa.",
   ANSWER_QUESTION:
     "Responda à pergunta do cliente de forma direta, com conteúdo real, sem enrolar.",
   EXPLAIN_RELEVANT_SOLUTION:
-    "Explique apenas o que for relevante para o que o cliente acabou de dizer, de forma concisa.",
+    "Explique apenas o que for relevante para o que o cliente acabou de dizer, de forma concisa, conduzindo conforme o fluxo da empresa.",
   HANDLE_OBJECTION:
     "Valide a preocupação do cliente sem confrontar e explore o que ele precisaria para avançar.",
   QUALIFY_INTEREST:
     "Confirme o interesse do cliente de forma leve, sem pressionar, e entenda o que ele espera.",
   PROPOSE_NEXT_STEP:
     "Proponha um próximo passo concreto (teste, cadastro, demonstração) e convide o cliente.",
+  SEND_LINK:
+    "O lead demonstrou intenção comercial clara. Responda à dúvida de forma objetiva e apresente o link oficial indicado nas instruções da empresa ou base de conhecimento (vitrine/cadastro). NUNCA coloque a URL dentro da frase: finalize a mensagem textual (sem nenhum link) e escreva a URL sozinha na última linha, em linha própria. Nunca esconda o link para uma mensagem futura, nunca use '[link]' ou placeholder, nunca use Markdown de link.",
   TRANSFER_TO_HUMAN:
     "Informe educadamente que um atendente humano vai acompanhar o assunto.",
   CLOSE_CONVERSATION:
     "Encerre de forma educada e respeitosa, agradecendo o contato e deixando a porta aberta.",
 };
+
+/** Modo de atuação do agente (Objetivo do agente). */
+export type AgentMode = "sales" | "support" | "sales_support";
+
+/** Normaliza o modo do agente ("VENDAS" → sales, inválido → sales_support). */
+export function normalizeAgentMode(value: unknown): AgentMode {
+  const v = String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s-+]+/g, "_");
+  if (v === "sales" || v === "vendas" || v === "venda") return "sales";
+  if (v === "support" || v === "suporte" || v === "atendimento") return "support";
+  if (
+    v === "sales_support" ||
+    v.includes("vendas_suporte") ||
+    v.includes("venda_suporte")
+  )
+    return "sales_support";
+  return "sales_support";
+}
+
+/** Instrução comportamental do MODO DO AGENTE (mesmo motor, prioridade adaptável). */
+export function buildAgentModeInstruction(mode: AgentMode): string {
+  switch (mode) {
+    case "sales":
+      return "MODO DO AGENTE: VENDAS. Você é um ESPECIALISTA EM VENDAS: sua prioridade é compreender a necessidade do cliente, apresentar a solução adequada, demonstrar valor, tratar objeções e conduzir para o próximo passo comercial. Use a Base de conhecimento (produtos, serviços, planos, preços, benefícios e links). NÃO invente informações. Quando houver intenção clara de compra, facilite a conversão (link de compra/vitrine quando existir).";
+    case "support":
+      return "MODO DO AGENTE: SUPORTE. Você é um ESPECIALISTA EM SUPORTE: sua prioridade é resolver o problema do cliente com clareza, precisão e eficiência. Use a Base de conhecimento, a memória e o histórico da conversa. NÃO tente vender algo não relacionado ao problema atual. Se não houver informação suficiente, seja transparente e encaminhe conforme a empresa.";
+    default:
+      return "MODO DO AGENTE: VENDAS + SUPORTE. Identifique PRIMEIRO a intenção do cliente: oportunidade comercial → atue como vendedor; problema/erro → atue como suporte; as duas → resolva primeiro o problema e depois conduza a oportunidade comercial quando fizer sentido. NUNCA force uma venda durante uma situação de suporte.";
+  }
+}
 
 /**
  * Conduta curta do gerador (anti-padrões) — anexada à diretiva final.
@@ -268,11 +473,24 @@ const NEXT_ACTION_DIRECTIVES: Record<NextAction, string> = {
  * bloqueio de raciocínio vazado ficam no OUTPUT VALIDATOR.
  */
 export const GENERATOR_CONDUCT = [
+  "Você representa a empresa como um ESPECIALISTA EM VENDAS e atendimento. Siga com prioridade MÁXIMA as instruções, fluxo e regras descritos em 'DESCRIÇÃO DA EMPRESA E INSTRUÇÕES DE COMPORTAMENTO' no prompt de sistema.",
+  "Conduza a conversa de acordo com o posicionamento da empresa: se a empresa definir um fluxo de conversão direto, siga o fluxo da empresa; se a abordagem for consultiva, descubra quem é o cliente e o que procura antes de apresentar a solução.",
+  "A Base de conhecimento é sua fonte de ARGUMENTOS comerciais e fatos: use apenas as informações relevantes ao momento da conversa.",
+  "Quando o lead demonstrar intenção de compra ou interesse claro, facilite e conduza à conversão.",
+  "Trate objeções com respeito e empatia, explorando o critério do cliente conforme as orientações da empresa.",
+  "Avance a conversa para um próximo passo natural quando fizer sentido, sem CTA artificial em toda mensagem.",
+  "Use o nome do cliente com moderação, apenas quando contribuir para a proximidade — não repita o nome em toda mensagem.",
   "Nunca comente literalmente a mensagem do cliente (não diga 'você começou com oi' nem 'você perguntou X').",
-  "Não liste todas as funcionalidades da plataforma de uma vez; apresente só o que for útil para o momento da conversa.",
-  "Não pergunte algo que o cliente já informou.",
-  "Uma pergunta por vez. Se o cliente fez uma pergunta, responda antes de perguntar.",
-  "Aja como um consultor humano natural, não como um formulário.",
+  "Não pergunte algo que o cliente já informou. Uma pergunta por vez. Se o cliente fez uma pergunta, responda antes de perguntar.",
+  "Mantenha as respostas CURTAS: 1-3 frases, dentro do limite de caracteres configurado. Evite parágrafos institucionais longos.",
+  "Prioridade por tipo de pergunta: pergunta simples ('oi', 'como funciona?') → 1 mensagem curta. Cliente pedindo mais detalhes ('explica melhor', 'quero saber mais') → no máximo 2 mensagens curtas, cada uma com sentido completo; prefira perguntar o que especificamente ele quer saber em vez de despejar um resumo institucional inteiro.",
+  "NUNCA responda a pergunta e encerre o assunto quando existir oportunidade de continuar: RESPONDA + CONTEXTUALIZE + PERGUNTE (uma pergunta estratégica por vez) quando fizer sentido.",
+  "Não despeje recursos: apresente a solução conectada à DOR que o cliente revelou; aprofunde a dor antes de vender (1-2 perguntas por vez, nunca interrogatório).",
+  "Lead quente (quero contratar/comprar/assinar/manda o link) → pare as perguntas e conduza à conversão. Objeção ('está caro', 'vou pensar', 'preciso ver') → descubra o motivo antes de rebater.",
+  "NUNCA invente preços, valores, planos, condições, descontos, promoções ou funcionalidades. Informe preços/valores SOMENTE se estiverem EXPLÍCITOS na Base de conhecimento fornecida ou na descrição da empresa. Se o cliente pedir um preço/valor/plano que NÃO consta em lugar nenhum, diga com honestidade que você não tem essa informação disponível no momento e ofereça encaminhar para um atendente humano. NUNCA preencha o vazio com um valor inventado.",
+  "Use os dados da Base de conhecimento EXATAMENTE como estão escritos, sem mudar o contexto.",
+  "Quando o cliente pedir site/link/vitrine/instagram/telefone/e-mail, use EXATAMENTE o valor cadastrado nos FATOS OFICIAIS DA EMPRESA, na descrição da empresa ou na Base de conhecimento — NUNCA escreva '[link]', nunca invente URLs/perfis e nunca omita o endereço existente.",
+  "Não repita valores ditos pela própria IA em mensagens anteriores da conversa como se fossem oficiais, a menos que estejam confirmados na Base de conhecimento.",
 ].join(" ");
 
 /**
@@ -335,7 +553,7 @@ Regras da saída:
 /**
  * Instrução da FASE DE ANÁLISE (Groq): a IA analisa a conversa e decide
  * intenção, contexto conhecido, objetivo e próximo passo — SEM gerar a resposta.
- * A resposta é gerada depois (OpenRouter) seguindo essa análise.
+ * A resposta é gerada depois (Groq) seguindo essa análise.
  */
 export function buildCommercialAnalysisInstruction(): string {
   return `Analise a conversa comercial e responda APENAS com um JSON válido (sem texto antes ou depois) no formato exato:
@@ -345,11 +563,16 @@ export function buildCommercialAnalysisInstruction(): string {
     "name": { "value": "nome revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
     "segment": { "value": "segmento revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
     "need": { "value": "necessidade revelada ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
-    "acquisition_channel": { "value": "canal de aquisição revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null
+    "acquisition_channel": { "value": "canal de aquisição revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
+    "pain": { "value": "dor/desafio revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
+    "objective": { "value": "objetivo/meta revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
+    "budget": { "value": "orçamento revelado ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
+    "objection": { "value": "objeção/resistência revelada ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null,
+    "tools": { "value": "processo/ferramentas atuais revelados ou null", "source": "customer | inference", "confidence": 0.0-1.0 } | null
   },
   "conversation": { "stage": "NEW | QUALIFYING | DISCOVERY | EVALUATION | NEGOTIATION | CLOSED_WON | CLOSED_LOST" },
   "goal": "start_rapport | answer_question | discover_business | understand_pain | present_solution | handle_objection | qualify_interest | propose_next_step | transfer_to_human | close_conversation",
-  "next_action": "BUILD_RAPPORT | ASK_NAME | ASK_BUSINESS_TYPE | ASK_CURRENT_ACQUISITION | ASK_CURRENT_PROCESS | UNDERSTAND_PAIN | ANSWER_QUESTION | EXPLAIN_RELEVANT_SOLUTION | HANDLE_OBJECTION | QUALIFY_INTEREST | PROPOSE_NEXT_STEP | TRANSFER_TO_HUMAN | CLOSE_CONVERSATION",
+  "next_action": "BUILD_RAPPORT | ASK_NAME | ASK_BUSINESS_TYPE | ASK_CURRENT_ACQUISITION | ASK_CURRENT_PROCESS | UNDERSTAND_PAIN | ANSWER_QUESTION | EXPLAIN_RELEVANT_SOLUTION | HANDLE_OBJECTION | QUALIFY_INTEREST | PROPOSE_NEXT_STEP | SEND_LINK | TRANSFER_TO_HUMAN | CLOSE_CONVERSATION",
   "customer": { "name": "nome identificado ou null", "segment": "segmento conhecido ou null", "interest": true | false | null },
   "technique_used": "tactical_empathy | mirroring | emotional_labeling | calibrated_questions | no_oriented | understanding_confirmation | objection_handling | conversion_lead | respectful_close",
   "commercial_engine_version": "v1",
@@ -363,6 +586,9 @@ Regras da análise (condução humana, NÃO mecânica):
 - Prioridade: se o cliente fez pergunta objetiva → "next_action": "ANSWER_QUESTION" e responda PRIMEIRO.
 - Abertura (primeiro contato): "next_action": "BUILD_RAPPORT" — apresente-se e pergunte o nome.
 - Se o cliente já informou segmento/necessidade/canal na mesma mensagem, não repita perguntas sobre isso.
+- Prefira explorar a dor/objetivo do cliente ANTES de apresentar a solução ("UNDERSTAND_PAIN" antes de "EXPLAIN_RELEVANT_SOLUTION").
+- Se o cliente revelar objeção (preço, já tem fornecedor, não tem tempo), o próximo passo deve tratar a objeção ("HANDLE_OBJECTION"), não perguntar de novo.
+- INTENÇÃO DE COMPRA TEM PRIORIDADE SOBRE DESCOBERTA: quando o lead demonstrar intenção comercial clara (como funciona, como começar, quero testar, tem teste, onde entro, me manda o link, quero conhecer, como faço para contratar, quanto custa, quero usar, isso que preciso, quero, contratação/cadastro/acesso/início), o "next_action" DEVE ser "SEND_LINK": responda a dúvida de forma objetiva e apresente o link https://crm.inovapro.cloud/vitrine. NUNCA coloque a URL dentro da frase ou misturada ao texto: termine a mensagem textual e escreva a URL sozinha, em linha própria no final. NUNCA continue perguntando sobre a dor antes de enviar o link, nunca responda apenas "a SAVYRON pode ajudar", nunca esconda o link para uma mensagem futura, nunca use placeholder "[link]" e nunca use Markdown de link.
 - "summary": substitua o resumo anterior por um novo que incorpore o que foi dito agora.
 - "customer.name": preencha quando o cliente revelar o nome; "interest": true se houver intenção clara, false se recusou, null se ainda não dá para saber.
 - "conversation.stage": o estágio comercial mais coerente com a conversa até agora; NÃO volte para "NEW" se a conversa já avançou.
@@ -374,7 +600,10 @@ Regras da análise (condução humana, NÃO mecânica):
 function normalizeFact(raw: unknown): CustomerFact | null {
   if (!raw || typeof raw !== "object") return null;
   const f = raw as Record<string, unknown>;
-  const value = typeof f.value === "string" && f.value.trim() ? f.value.trim().slice(0, 120) : null;
+  const value =
+    typeof f.value === "string" && f.value.trim()
+      ? f.value.trim().slice(0, 120)
+      : null;
   if (!value) return null;
   const source = f.source === "inference" ? "inference" : "customer";
   const confRaw = typeof f.confidence === "number" ? f.confidence : 0.5;
@@ -387,12 +616,16 @@ export function normalizeCommercialAnalysis(
 ): CommercialAnalysis {
   const customerRaw = (raw.customer ?? {}) as Record<string, unknown>;
   const customer = {
-    name: typeof customerRaw.name === "string" && customerRaw.name.trim() ? customerRaw.name.trim().slice(0, 120) : null,
+    name:
+      typeof customerRaw.name === "string" && customerRaw.name.trim()
+        ? customerRaw.name.trim().slice(0, 120)
+        : null,
     segment:
       typeof customerRaw.segment === "string" && customerRaw.segment.trim()
         ? customerRaw.segment.trim().slice(0, 120)
         : null,
-    interest: typeof customerRaw.interest === "boolean" ? customerRaw.interest : null,
+    interest:
+      typeof customerRaw.interest === "boolean" ? customerRaw.interest : null,
   };
 
   const conversationRaw = (raw.conversation ?? {}) as Record<string, unknown>;
@@ -412,6 +645,11 @@ export function normalizeCommercialAnalysis(
     segment: normalizeFact(knownRaw.segment),
     need: normalizeFact(knownRaw.need),
     acquisition_channel: normalizeFact(knownRaw.acquisition_channel),
+    pain: normalizeFact(knownRaw.pain),
+    objective: normalizeFact(knownRaw.objective),
+    budget: normalizeFact(knownRaw.budget),
+    objection: normalizeFact(knownRaw.objection),
+    tools: normalizeFact(knownRaw.tools),
   };
 
   const goal = CONVERSATION_GOALS.includes(raw.goal as ConversationGoal)
@@ -422,7 +660,9 @@ export function normalizeCommercialAnalysis(
     ? (raw.next_action as NextAction)
     : "BUILD_RAPPORT";
 
-  const technique = COMMERCIAL_TECHNIQUES.includes(raw.technique_used as CommercialTechnique)
+  const technique = COMMERCIAL_TECHNIQUES.includes(
+    raw.technique_used as CommercialTechnique,
+  )
     ? (raw.technique_used as CommercialTechnique)
     : "tactical_empathy";
 
@@ -430,22 +670,38 @@ export function normalizeCommercialAnalysis(
     ? (raw.action as CommercialAction)
     : actionFromNextAction(next_action);
 
-  const summary = typeof raw.summary === "string" && raw.summary.trim() ? raw.summary.trim().slice(0, 400) : "";
+  const summary =
+    typeof raw.summary === "string" && raw.summary.trim()
+      ? raw.summary.trim().slice(0, 400)
+      : "";
 
-  return { intent, stage, known, goal, next_action, customer, technique_used: technique, action, summary };
+  return {
+    intent,
+    stage,
+    known,
+    goal,
+    next_action,
+    customer,
+    technique_used: technique,
+    action,
+    summary,
+  };
 }
 
 /** Normaliza os campos de saída do motor comercial para valores seguros. */
-export function normalizeCommercialOutput(
-  raw: Record<string, unknown>,
-): {
+export function normalizeCommercialOutput(raw: Record<string, unknown>): {
   reply: string;
-  customer: { name: string | null; segment: string | null; interest: boolean | null };
+  customer: {
+    name: string | null;
+    segment: string | null;
+    interest: boolean | null;
+  };
   stage: CommercialStageValue;
   technique_used: CommercialTechnique;
   action: CommercialAction;
 } {
-  const reply = typeof raw.reply === "string" && raw.reply.trim() ? raw.reply.trim() : "";
+  const reply =
+    typeof raw.reply === "string" && raw.reply.trim() ? raw.reply.trim() : "";
   return { reply, ...normalizeCommercialAnalysis(raw) };
 }
 
@@ -453,22 +709,55 @@ export function normalizeCommercialOutput(
 // DECISION ENGINE DETERMINÍSTICO (fallback + camada testável)
 // ---------------------------------------------------------------------------
 
-const BUSINESS_TYPE_RE =
-  /(barbearia|sal[aã]o de beleza|cl[ií]nica|consult[oó]rio|restaurante|pizzaria|lancheria|hamburgueria|loja|petshop|pet shop|academia|escola|autoescola|imobili[aá]ria|advocacia|escrit[oó]rio|contabilidade|dentista|est[eé]tica|spa|hotel|distribuidora|oficina|mec[aâ]nica|padaria|confeitaria|mercearia|supermercado|farm[aá]cia|distribuidor|ag[eê]ncia|agencia|studio|sal[aã]o)/i;
+export const BUSINESS_TYPE_RE =
+  /(barbearia|sal[aã]o de beleza|cl[ií]nica|consult[oó]rio|restaurante|pizzaria|lancheria|hamburgueria|loja|petshop|pet shop|academia|escola|autoescola|imobili[aá]ria|advocacia|escrit[oó]rio|contabilidade|dentista|est[eé]tica|spa|hotel|distribuidora|oficina|mec[aâ]nica|padaria|confeitaria|mercearia|supermercado|farm[aá]cia|distribuidor|ag[eê]ncia|agencia|studio|sal[aã]o|ecommerce|e-comerce|e comerce|comercio eletronico|loja virtual|loja online|negocio online|empresa online|loja na internet|ecommerce|loja)/i;
 
 const NEED_RE =
   /(mais clientes|prospectar|prospecta[cç][ãa]o|automatizar|automatiza[cç][ãa]o|atender|atendimento|vender mais|aumentar vendas|engajar|engajamento|campanha|leads|or[çc]amento|agendar|agendamento|divulgar|divulga[cç][ãa]o|converter|convers[aã]o|whatsapp|resposta|recuperar)/i;
 
+const PAIN_RE =
+  /(dificuldade|maior dificuldade|problema|dor|desafio|nao tenho clientes|poucos clientes|sem clientes|nao aparece|nao tenho retorno|falta de clientes|dificuldade em atrair|nao consigo|esta dificil|ta dificil|complicado|perco clientes|perdendo|pouca venda|poucas vendas)/i;
+
+const OBJECTIVE_RE =
+  /(objetivo|meta|quero crescer|gostaria de crescer|crescer|expandir|evoluir|melhorar|dobrar)/i;
+
+const BUDGET_RE =
+  /(orcamento|budget|posso investir|tenho disponivel|quanto posso investir|investimento de)/i;
+
+const OBJECTION_RE =
+  /(caro|muito caro|ja tenho crm|ja uso|ja tenho um sistema|nao preciso|vou pensar|preciso ver|nao tenho orcamento|nao e pra mim|tenho um sistema|ja trabalho com outro)/i;
+
+const TOOLS_RE =
+  /(uso o|utilizo|trabalho com|ferramenta|uso um sistema|uso planilha|planilha|tenho um crm|uso crm)/i;
+
 const ACQUISITION_CHANNEL_RE =
   /(redes sociais|instagram|facebook|tiktok|linkedin|indicacao|indicacoes|indicaram|indicam|boca a boca|boca a boca|anuncio|anuncios|google|marca|marca propria|whatsapp|site|loja online|youtube|panfleto|panfletos|outdoor|radio|radio|insta)/i;
+
+/**
+ * Sinais de INTENÇÃO COMERCIAL CLARA (o lead quer avançar): funcionamento,
+ * começo, teste, contratação, cadastro, acesso ou preço. Quando aparece, o
+ * agente responde a dúvida E envia o link da vitrine NA MESMA mensagem —
+ * a conversa NUNCA fica presa na descoberta quando o lead quer avançar.
+ */
+const BUY_INTENT_RE =
+  /(como funciona|como comecar|como comec[oê]|quero testar|tem teste|onde entro|me manda o link|manda o link|quero conhecer|como faco para contratar|como faco pra contratar|como contratar|quanto custa|qual o preco|qual o valor|quero usar|quero comecar|isso que preciso|isso e o que preciso|quero|contratar|cadastrar|cadastro|acessar|acesso|vou querer|quero o plano|quero ver o plano|quero saber o preco|quero saber o valor|quero contratar|quero assinar|quero comprar|quero entrar)/i;
+
+/** Curiosidade/explicação — NÃO é intenção de compra (responde, não envia link). */
+const CURIOUS_RE =
+  /(quero saber mais|me explica|me conta mais|quero entender|nao entendi|entendi nada|quero conhecer mais sobre)/i;
 
 // O input é normalizado (NFD + remoção de acentos) antes do match: "é" vira "e".
 const NAME_RE = /(meu nome e|me chamo|sou (o|a)?)\s+([a-zà-ÿ]+)/i;
 
 /** Palavras curtas que nunca são nome (fragmentos genéricos). */
-const NOT_A_NAME_RE = /^(oi|ola|sim|nao|ok|obrigado|obrigada|claro|pode|viu|ta|blz|nice|show|legal|haha|kkk|como|e|a|o|de|do|da)$/i;
+export const NOT_A_NAME_RE =
+  /^(oi|ola|sim|nao|ok|obrigado|obrigada|claro|pode|viu|ta|blz|nice|show|legal|haha|kkk|como|e|a|o|de|do|da)$/i;
 
-function fact(value: string | null, source: "customer" | "inference" = "customer", confidence = 1): CustomerFact | null {
+function fact(
+  value: string | null,
+  source: "customer" | "inference" = "customer",
+  confidence = 1,
+): CustomerFact | null {
   return value ? { value, source, confidence } : null;
 }
 
@@ -484,17 +773,38 @@ export function detectKnownContext(
     .join(" ")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
-  const allRaw = history.filter((m) => m.role === "user").map((m) => m.content).join(" ");
+  const allRaw = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join(" ");
 
   const detected: KnownFacts = {
-    name: fact(extractCustomerName(allRaw)) ?? (leadName ? fact(leadName) : null),
+    name:
+      fact(extractCustomerName(allRaw)) ?? (leadName ? fact(leadName) : null),
     segment: fact(extractSegment(allRaw)),
     need: fact(extractNeed(allRaw)),
     acquisition_channel: fact(extractAcquisitionChannel(allRaw)),
+    pain: fact(extractPain(allRaw)),
+    objective: fact(extractObjective(allRaw)),
+    budget: fact(extractBudget(allRaw)),
+    objection: fact(extractObjection(allRaw)),
+    tools: fact(extractTools(allRaw)),
   };
-  if (!detected.segment && BUSINESS_TYPE_RE.test(all)) detected.segment = fact(extractSegment(allRaw));
-  if (!detected.need && NEED_RE.test(all)) detected.need = fact(extractNeed(allRaw));
-  if (!detected.acquisition_channel && ACQUISITION_CHANNEL_RE.test(all)) detected.acquisition_channel = fact(extractAcquisitionChannel(allRaw));
+  if (!detected.segment && BUSINESS_TYPE_RE.test(all))
+    detected.segment = fact(extractSegment(allRaw));
+  if (!detected.need && NEED_RE.test(all))
+    detected.need = fact(extractNeed(allRaw));
+  if (!detected.acquisition_channel && ACQUISITION_CHANNEL_RE.test(all))
+    detected.acquisition_channel = fact(extractAcquisitionChannel(allRaw));
+  if (!detected.pain && PAIN_RE.test(all)) detected.pain = fact(extractPain(allRaw));
+  if (!detected.objective && OBJECTIVE_RE.test(all))
+    detected.objective = fact(extractObjective(allRaw));
+  if (!detected.budget && BUDGET_RE.test(all))
+    detected.budget = fact(extractBudget(allRaw));
+  if (!detected.objection && OBJECTION_RE.test(all))
+    detected.objection = fact(extractObjection(allRaw));
+  if (!detected.tools && TOOLS_RE.test(all))
+    detected.tools = fact(extractTools(allRaw));
 
   // Memória persistida serve de base quando o recorte de histórico não alcança.
   if (baseline) {
@@ -502,7 +812,13 @@ export function detectKnownContext(
       name: detected.name ?? baseline.name,
       segment: detected.segment ?? baseline.segment,
       need: detected.need ?? baseline.need,
-      acquisition_channel: detected.acquisition_channel ?? baseline.acquisition_channel,
+      acquisition_channel:
+        detected.acquisition_channel ?? baseline.acquisition_channel,
+      pain: detected.pain ?? baseline.pain,
+      objective: detected.objective ?? baseline.objective,
+      budget: detected.budget ?? baseline.budget,
+      objection: detected.objection ?? baseline.objection,
+      tools: detected.tools ?? baseline.tools,
     };
   }
   return detected;
@@ -531,6 +847,46 @@ export function extractAcquisitionChannel(history: string): string | null {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
+/** Extrai a dor/desafio principal mencionado na conversa. */
+export function extractPain(history: string): string | null {
+  const m = history.match(PAIN_RE);
+  if (!m) return null;
+  const raw = m[0];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/** Extrai o objetivo comercial mencionado na conversa. */
+export function extractObjective(history: string): string | null {
+  const m = history.match(OBJECTIVE_RE);
+  if (!m) return null;
+  const raw = m[0];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/** Extrai orçamento mencionado na conversa. */
+export function extractBudget(history: string): string | null {
+  const m = history.match(BUDGET_RE);
+  if (!m) return null;
+  const raw = m[0];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/** Extrai uma objeção manifestada na conversa. */
+export function extractObjection(history: string): string | null {
+  const m = history.match(OBJECTION_RE);
+  if (!m) return null;
+  const raw = m[0];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/** Extrai ferramenta/processo atual mencionado na conversa. */
+export function extractTools(history: string): string | null {
+  const m = history.match(TOOLS_RE);
+  if (!m) return null;
+  const raw = m[0];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 /** Extrai o nome mencionado na conversa. */
 export function extractCustomerName(history: string): string | null {
   const normalized = history.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -541,24 +897,96 @@ export function extractCustomerName(history: string): string | null {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-/** Monta um resumo curto e atualizado da conversa. */
-export function buildConversationSummary(known: KnownFacts, stage: CommercialStageValue): string {
+/**
+ * Palavras que nunca fazem parte de um nome próprio (fragmentos de conversa,
+ * saudações, verbos, pedidos). Usado para não gravar lixo como nome.
+ */
+const NON_NAME_WORDS_RE =
+  /^(quero|queria|gostaria|gostar|preciso|precisa|precisamos|saber|conhecer|conheco|entender|entendi|explicar|explica|explico|ajudar|ajuda|ajudaria|ver|veja|mostrar|mostra|conta|contame|dizer|falar|fala|usar|usaria|funciona|funcionar|vou|vamos|vao|vai|posso|podemos|pode|poderia|tenho|temos|estou|esta|estamos|era|seria|ser|sei|sabe|acho|dar|da|dando|fazer|faco|fez|comecar|iniciar|agendar|agenda|testar|testa|cadastrar|cadastra|contratar|contrata|comprar|compra|assinar|assina|fechar|fecha|mais|menos|informacoes|informacao|detalhes|detalhe|preco|precos|valor|valores|plano|planos|horario|horarios|endereco|website|site|whatsapp|instagram|telefone|contato|clientes|leads|mercado|negocio|oi|ola|bom|boa|tarde|noite|dia|manha|eai|ai|tudo|bem|sim|nao|ok|claro|blz|beleza|certo|talvez|obrigado|obrigada|legal|show|perfeito|muito|pouco|me|te|se|nos|lhe|eu|voce|voces|seu|sua|seus|suas|meu|minha|meus|minhas|de|da|do|das|dos|com|para|pra|que|em|no|na|um|uma|uns|umas|o|a|os|as|e|ou|mas|se|por|so|ainda|sempre|nunca|tambem|depois|agora|ate|primeiro|hoje|amanha|ontem|como|quando|onde|qual|quais|porque|oq|pq|q|isso|aquilo|assim|entao|tipo|sobre|gente)$/i;
+
+/** Nomes placeholder de leads auto-criados — NUNCA tratados como nome real. */
+const PLACEHOLDER_NAME_RE =
+  /^(novo contato|novo usuario|novo usu[aá]rio|contato|cliente|lead)$/i;
+
+/**
+ * Valida que TODAS as palavras de um trecho parecem parte de um nome de pessoa
+ * (nenhuma é palavra de conversa/verbo/saudação/tipo de negócio). NUNCA salva
+ * cumprimentos como nome. Retorna o nome capitalizado ou null.
+ */
+export function validateNameWords(raw: string): string | null {
+  const words = String(raw ?? "").trim().split(/\s+/).slice(0, 3);
+  if (words.length === 0) return null;
   const parts: string[] = [];
-  if (known.name) parts.push(`O cliente se chama ${known.name.value}.`);
-  if (known.segment) parts.push(`É dono/atua em ${known.segment.value}.`);
-  if (known.acquisition_channel) parts.push(`Capta clientes por ${known.acquisition_channel.value}.`);
-  if (known.need) parts.push(`Necessidade: ${known.need.value}.`);
-  if (known.name) {
-    parts.push(`Fase atual: ${stage}.`);
-  } else {
-    parts.push(`Fase atual: ${stage}.`);
+  for (const w of words) {
+    if (!/^[a-zà-ÿ]+$/i.test(w)) return null;
+    const norm = w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (norm.length < 2 || norm.length > 25) return null;
+    if (NOT_A_NAME_RE.test(norm)) return null;
+    if (BUSINESS_TYPE_RE.test(norm)) return null;
+    if (NON_NAME_WORDS_RE.test(norm)) return null;
+    parts.push(w.charAt(0).toUpperCase() + w.slice(1));
   }
   return parts.join(" ");
 }
 
-function buildAnalysis(partial: Partial<CommercialAnalysis>): CommercialAnalysis {
+/**
+ * Nome direto em resposta à pergunta "qual é o seu nome?": 1 a 3 palavras que
+ * não são fragmento genérico, saudação, verbo de conversa nem tipo de negócio.
+ * "Maicon Silva" → "Maicon Silva"; "quero saber mais" → null.
+ */
+export function extractPlainName(message: string): string | null {
+  const trimmed = String(message ?? "").trim();
+  if (!trimmed) return null;
+  const words = trimmed.split(/\s+/);
+  if (words.length < 1 || words.length > 3) return null;
+  return validateNameWords(trimmed);
+}
+
+/** True se o texto parece um nome de pessoa (resposta à pergunta do nome). */
+function looksLikeNameAnswer(message: string): boolean {
+  const trimmed = String(message ?? "").trim();
+  if (!trimmed) return false;
+  if (/[?!/\d]/.test(trimmed)) return false;
+  if (PLACEHOLDER_NAME_RE.test(trimmed.toLowerCase())) return false;
+  return extractPlainName(trimmed) !== null;
+}
+
+
+/** Monta um resumo curto e atualizado da conversa. */
+export function buildConversationSummary(
+  known: KnownFacts,
+  stage: CommercialStageValue,
+): string {
+  const parts: string[] = [];
+  if (known.name) parts.push(`O cliente se chama ${known.name.value}.`);
+  if (known.segment) parts.push(`É dono/atua em ${known.segment.value}.`);
+  if (known.acquisition_channel)
+    parts.push(`Capta clientes por ${known.acquisition_channel.value}.`);
+  if (known.need) parts.push(`Necessidade: ${known.need.value}.`);
+  if (known.pain) parts.push(`Dor principal: ${known.pain.value}.`);
+  if (known.objective) parts.push(`Objetivo: ${known.objective.value}.`);
+  if (known.budget) parts.push(`Orçamento: ${known.budget.value}.`);
+  if (known.objection) parts.push(`Objeção: ${known.objection.value}.`);
+  if (known.tools) parts.push(`Processo atual: ${known.tools.value}.`);
+  parts.push(`Fase atual: ${stage}.`);
+  return parts.join(" ");
+}
+
+function buildAnalysis(
+  partial: Partial<CommercialAnalysis>,
+): CommercialAnalysis {
   const next_action = partial.next_action ?? "BUILD_RAPPORT";
-  const known = partial.known ?? { name: null, segment: null, need: null, acquisition_channel: null };
+  const known = partial.known ?? {
+    name: null,
+    segment: null,
+    need: null,
+    acquisition_channel: null,
+    pain: null,
+    objective: null,
+    budget: null,
+    objection: null,
+    tools: null,
+  };
   return {
     intent: partial.intent ?? "unknown",
     stage: partial.stage ?? "NEW",
@@ -568,7 +996,9 @@ function buildAnalysis(partial: Partial<CommercialAnalysis>): CommercialAnalysis
     customer: partial.customer ?? { name: null, segment: null, interest: null },
     technique_used: partial.technique_used ?? "tactical_empathy",
     action: partial.action ?? actionFromNextAction(next_action),
-    summary: partial.summary ?? buildConversationSummary(known, partial.stage ?? "NEW"),
+    summary:
+      partial.summary ??
+      buildConversationSummary(known, partial.stage ?? "NEW"),
   };
 }
 
@@ -580,6 +1010,10 @@ export interface DecisionMemory {
   last_question?: string;
   known?: KnownFacts | null;
   sales_stage?: CommercialStageValue | string;
+  /** Perguntas já feitas pelo agente (para nunca repetir). */
+  asked_questions?: string[];
+  /** Última mensagem recebida do cliente (continuidade entre turnos). */
+  last_customer_message?: string;
 }
 
 /**
@@ -587,6 +1021,23 @@ export interface DecisionMemory {
  * por regras, USANDO a memória da conversa para interpretar fragmentos e
  * NUNCA reiniciando a conversa (fallback preserva o estado).
  */
+
+/**
+ * Escolhe a próxima pergunta de DESCOBERTA com base nas lacunas de informação
+ * (consultiva: situação → dor → necessidade → solução). NUNCA pergunta o que já
+ * é conhecido. O Strategy Engine pode refinar esta escolha com o que o tenant
+ * aprendeu (ver `applyStrategyRecommendation` em commercial-turn).
+ */
+export function chooseNextDiscoveryAction(known: KnownFacts): NextAction {
+  if (!known.name) return "ASK_NAME";
+  if (!known.segment) return "ASK_BUSINESS_TYPE";
+  if (!known.acquisition_channel) return "ASK_CURRENT_ACQUISITION";
+  // Explora dor/necessidade/objetivo antes de apresentar a solução.
+  if (!known.need && !known.pain && !known.objective) {
+    return "UNDERSTAND_PAIN";
+  }
+  return "EXPLAIN_RELEVANT_SOLUTION";
+}
 export function deterministicCommercialAnalysis(context: {
   history: { role: string; content: string }[];
   leadName?: string | null;
@@ -594,29 +1045,53 @@ export function deterministicCommercialAnalysis(context: {
   memory?: DecisionMemory | null;
 }): CommercialAnalysis {
   const history = context.history ?? [];
-  const last = (history.at(-1)?.content ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const last = (history.at(-1)?.content ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
   const lastRaw = (history.at(-1)?.content ?? "").trim();
   const mem = context.memory ?? null;
 
-  const known = detectKnownContext(history, context.leadName, mem?.known ?? null);
-  const customerName = known.name?.value ?? extractCustomerName(history.map((m) => m.content).join(" ")) ?? context.leadName ?? null;
+  const known = detectKnownContext(
+    history,
+    context.leadName,
+    mem?.known ?? null,
+  );
+  // Nome extraído apenas das mensagens do CLIENTE — nunca das respostas da IA
+  // (que podem conter "Sou o Atendente..."). O join sem filtro vazaria o nome
+  // do próprio agente como nome do cliente.
+  const userText = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join(" ");
+  const customerName =
+    known.name?.value ??
+    extractCustomerName(userText) ??
+    context.leadName ??
+    null;
   const segment = known.segment?.value ?? null;
 
   // Estado anterior da conversa — preservado quando a análise falha/é ambígua.
-  const prevStage: CommercialStageValue = mem?.sales_stage && COMMERCIAL_STAGES.includes(mem.sales_stage as CommercialStageValue)
-    ? (mem.sales_stage as CommercialStageValue)
-    : "NEW";
+  const prevStage: CommercialStageValue =
+    mem?.sales_stage &&
+    COMMERCIAL_STAGES.includes(mem.sales_stage as CommercialStageValue)
+      ? (mem.sales_stage as CommercialStageValue)
+      : "NEW";
   const advanced = prevStage !== "NEW";
-  const prevNext = mem?.next_action && NEXT_ACTIONS.includes(mem.next_action as NextAction)
-    ? (mem.next_action as NextAction)
-    : null;
+  const prevNext =
+    mem?.next_action && NEXT_ACTIONS.includes(mem.next_action as NextAction)
+      ? (mem.next_action as NextAction)
+      : null;
 
   // INTERPRETA A RESPOSTA À ÚLTIMA PERGUNTA (context recovery).
   // Fragmento curto que só faz sentido à luz da pergunta anterior.
   const looksLikeFragment = lastRaw.length > 0 && lastRaw.length <= 60;
 
-  // Resposta direta de nome quando acabamos de perguntar.
-  if (prevNext === "ASK_NAME" && !known.name && /^[a-z\u00e0-\u00ff]{2,20}$/.test(last) && !NOT_A_NAME_RE.test(last)) {
+  // Resposta direta de nome quando acabamos de perguntar (nome simples, com ou
+  // sem sobrenome, sem padrão "meu nome é"). Ex.: "Maicon Silva" após a IA
+  // perguntar o nome. Também captura quando o cliente já disse o nome em um
+  // turno anterior mas o engine ainda não registrou (fatos do histórico).
+  if ((prevNext === "ASK_NAME" || prevNext === "BUILD_RAPPORT") && !known.name) {
     // Se o cliente respondeu com um segmento em vez de um nome, não vira nome —
     // reconhece o segmento e avança para a descoberta.
     if (BUSINESS_TYPE_RE.test(last)) {
@@ -627,25 +1102,37 @@ export function deterministicCommercialAnalysis(context: {
         known,
         goal: "understand_pain",
         next_action: "ASK_CURRENT_ACQUISITION",
-        customer: { name: customerName, segment: known.segment?.value ?? null, interest: null },
+        customer: {
+          name: customerName,
+          segment: known.segment?.value ?? null,
+          interest: null,
+        },
         summary: buildConversationSummary(known, "DISCOVERY"),
       });
     }
-    known.name = fact(capitalize(lastRaw));
-    return buildAnalysis({
-      intent: "info_sharing",
-      stage: "DISCOVERY",
-      known,
-      goal: "discover_business",
-      next_action: "ASK_BUSINESS_TYPE",
-      customer: { name: known.name?.value ?? null, segment, interest: null },
-      summary: buildConversationSummary(known, "DISCOVERY"),
-    });
+    if (looksLikeNameAnswer(lastRaw)) {
+      known.name = fact(extractPlainName(lastRaw) ?? capitalize(lastRaw));
+      return buildAnalysis({
+        intent: "info_sharing",
+        stage: "DISCOVERY",
+        known,
+        goal: "discover_business",
+        next_action: "ASK_BUSINESS_TYPE",
+        customer: { name: known.name?.value ?? null, segment, interest: null },
+        summary: buildConversationSummary(known, "DISCOVERY"),
+      });
+    }
   }
 
   // Resposta de canal de aquisição quando acabamos de perguntar.
-  if (prevNext === "ASK_CURRENT_ACQUISITION" && ACQUISITION_CHANNEL_RE.test(last)) {
-    known.acquisition_channel = fact(extractAcquisitionChannel(lastRaw) ?? extractAcquisitionChannel(history.map((m) => m.content).join(" ")));
+  if (
+    prevNext === "ASK_CURRENT_ACQUISITION" &&
+    ACQUISITION_CHANNEL_RE.test(last)
+  ) {
+    known.acquisition_channel = fact(
+      extractAcquisitionChannel(lastRaw) ??
+        extractAcquisitionChannel(history.map((m) => m.content).join(" ")),
+    );
     return buildAnalysis({
       intent: "info_sharing",
       stage: "DISCOVERY",
@@ -667,15 +1154,25 @@ export function deterministicCommercialAnalysis(context: {
       known,
       goal: "understand_pain",
       next_action: hasNeedHere ? "UNDERSTAND_PAIN" : "ASK_CURRENT_ACQUISITION",
-      customer: { name: customerName, segment: known.segment?.value ?? null, interest: null },
-      technique_used: hasNeedHere ? "understanding_confirmation" : "calibrated_questions",
+      customer: {
+        name: customerName,
+        segment: known.segment?.value ?? null,
+        interest: null,
+      },
+      technique_used: hasNeedHere
+        ? "understanding_confirmation"
+        : "calibrated_questions",
       summary: buildConversationSummary(known, "DISCOVERY"),
     });
   }
 
   // Fragmento com segmento/canal no meio de uma pergunta de outro tipo —
   // aproveita o contexto mas segue a pergunta anterior.
-  if (prevNext && prevNext !== "ASK_BUSINESS_TYPE" && prevNext !== "ASK_CURRENT_ACQUISITION") {
+  if (
+    prevNext &&
+    prevNext !== "ASK_BUSINESS_TYPE" &&
+    prevNext !== "ASK_CURRENT_ACQUISITION"
+  ) {
     if (BUSINESS_TYPE_RE.test(last) && !known.segment) {
       known.segment = fact(extractSegment(lastRaw));
     }
@@ -685,7 +1182,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // OPT-OUT
-  if (/(nao quero|pare|me tire da lista|me tira da lista|nao me mande|nao desejo|remova|sai da lista|bloqueie)/.test(last)) {
+  if (
+    /(nao quero|pare|me tire da lista|me tira da lista|nao me mande|nao desejo|remova|sai da lista|bloqueie)/.test(
+      last,
+    )
+  ) {
     return buildAnalysis({
       intent: "opt_out",
       stage: "CLOSED_LOST",
@@ -697,14 +1198,49 @@ export function deterministicCommercialAnalysis(context: {
     });
   }
 
+  // INTENÇÃO COMERCIAL CLARA → SEND_LINK (REGRA CRÍTICA).
+  // O lead quer avançar (funcionamento, teste, contratação, acesso, preço):
+  // responde a dúvida E apresenta o link da vitrine. A URL vai SEMPRE em linha
+  // própria, separada do texto (o envio divide em mensagens no WhatsApp).
+  // NUNCA fica preso na descoberta quando o lead já demonstra intenção de avançar.
+  // Exceção: curiosidade/explicação (não é intenção de compra).
+  if (BUY_INTENT_RE.test(last) && !CURIOUS_RE.test(last)) {
+    return buildAnalysis({
+      intent: "positive_response",
+      stage: advanced ? prevStage : "QUALIFYING",
+      known,
+      goal: "present_solution",
+      next_action: "SEND_LINK",
+      customer: { name: customerName, segment, interest: true },
+      technique_used: "conversion_lead",
+      summary: buildConversationSummary(
+        known,
+        advanced ? prevStage : "QUALIFYING",
+      ),
+    });
+  }
+
   // PERGUNTA OBJETIVA — responder PRIMEIRO (preserva estágio avançado).
-  const isPriceQuestion = /(quanto custa|qual o preco|preco|valor|mensalidade|quanto e|tabela|plano|condicoes)/.test(last);
-  const isHowQuestion = /(como funciona|o que e|o que sao|como faz|como voces|pra que serve|me explica|quero entender|como voce|me conta mais)/.test(last);
-  const isClarifyFragment = /^(como|como assim|o que|oq|por que|porque|nao entendi|nao entendi a pergunta|explique|explica|pode repetir|eh como)/.test(last);
+  const isPriceQuestion =
+    /(quanto custa|qual o preco|preco|valor|mensalidade|quanto e|tabela|plano|condicoes)/.test(
+      last,
+    );
+  const isHowQuestion =
+    /(como funciona|o que e|o que sao|como faz|como voces|pra que serve|me explica|quero entender|como voce|me conta mais)/.test(
+      last,
+    );
+  const isClarifyFragment =
+    /^(como|como assim|o que|oq|por que|porque|nao entendi|nao entendi a pergunta|explique|explica|pode repetir|eh como)/.test(
+      last,
+    );
   if (isPriceQuestion || isHowQuestion || isClarifyFragment) {
     return buildAnalysis({
       intent: "question",
-      stage: isPriceQuestion ? "EVALUATION" : advanced ? prevStage : "DISCOVERY",
+      stage: isPriceQuestion
+        ? "EVALUATION"
+        : advanced
+          ? prevStage
+          : "DISCOVERY",
       known,
       goal: "answer_question",
       next_action: "ANSWER_QUESTION",
@@ -714,7 +1250,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // INTERESSE FORTE — quer contratar
-  if (/(quero contratar|quero assinar|quero comprar|quero fechar|vou querer|quero o plano|quero testar a plataforma|quero cadastrar)/.test(last)) {
+  if (
+    /(quero contratar|quero assinar|quero comprar|quero fechar|vou querer|quero o plano|quero testar a plataforma|quero cadastrar)/.test(
+      last,
+    )
+  ) {
     return buildAnalysis({
       intent: "positive_response",
       stage: "NEGOTIATION",
@@ -727,7 +1267,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // OBJEÇÃO
-  if (/(ja tenho crm|ja uso|ja tenho um sistema|nao preciso|muito caro|caro demais|tenho um sistema|ja trabalho com outro|ja tenho solucao)/.test(last)) {
+  if (
+    /(ja tenho crm|ja uso|ja tenho um sistema|nao preciso|muito caro|caro demais|tenho um sistema|ja trabalho com outro|ja tenho solucao)/.test(
+      last,
+    )
+  ) {
     return buildAnalysis({
       intent: "objection",
       stage: "EVALUATION",
@@ -740,7 +1284,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // RECUSA
-  if (/(nao tenho interesse|sem interesse|nao quero|nao e pra mim|obrigado mas nao|obrigada mas nao|dispenso|deixa pra la)/.test(last)) {
+  if (
+    /(nao tenho interesse|sem interesse|nao quero|nao e pra mim|obrigado mas nao|obrigada mas nao|dispenso|deixa pra la)/.test(
+      last,
+    )
+  ) {
     return buildAnalysis({
       intent: "negative_response",
       stage: "CLOSED_LOST",
@@ -753,7 +1301,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // SÓ PESQUISANDO
-  if (/(so estou pesquisando|so pesquisando|so olhando|apenas vendo|estou vendo|so conhecendo)/.test(last)) {
+  if (
+    /(so estou pesquisando|so pesquisando|so olhando|apenas vendo|estou vendo|so conhecendo)/.test(
+      last,
+    )
+  ) {
     return buildAnalysis({
       intent: "negative_response",
       stage: "QUALIFYING",
@@ -766,56 +1318,56 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // COMPARTILHOU CONTEXTO (segmento/necessidade/canal)
-  if (/(tenho (uma|um)|trabalho com|sou (da|do|de)|meu (negocio|comercio)|tenho um|atuo|somos|nos somos)/.test(last)) {
+  if (
+    /(tenho (uma|um)|trabalho com|sou (da|do|de)|meu (negocio|comercio)|tenho um|atuo|somos|nos somos)/.test(
+      last,
+    )
+  ) {
     const seg = known.segment ?? fact(extractSegment(lastRaw));
     if (seg) known.segment = seg;
     const hasNeedHere = NEED_RE.test(last);
     if (hasNeedHere) known.need = known.need ?? fact(extractNeed(lastRaw));
-    if (ACQUISITION_CHANNEL_RE.test(last)) known.acquisition_channel = known.acquisition_channel ?? fact(extractAcquisitionChannel(lastRaw));
-    let next_action: NextAction;
-    let goal: ConversationGoal;
-    if (!known.segment) {
-      next_action = "ASK_BUSINESS_TYPE";
-      goal = "discover_business";
-    } else if (!known.acquisition_channel) {
-      next_action = "ASK_CURRENT_ACQUISITION";
-      goal = "understand_pain";
-    } else if (!known.need) {
-      next_action = "UNDERSTAND_PAIN";
-      goal = "understand_pain";
-    } else {
-      next_action = "EXPLAIN_RELEVANT_SOLUTION";
-      goal = "present_solution";
-    }
+    if (ACQUISITION_CHANNEL_RE.test(last))
+      known.acquisition_channel =
+        known.acquisition_channel ?? fact(extractAcquisitionChannel(lastRaw));
+    const next_action = chooseNextDiscoveryAction(known);
+    const goal: ConversationGoal =
+      next_action === "ASK_NAME" || next_action === "ASK_BUSINESS_TYPE"
+        ? "discover_business"
+        : next_action === "EXPLAIN_RELEVANT_SOLUTION"
+          ? "present_solution"
+          : "understand_pain";
     return buildAnalysis({
       intent: "info_sharing",
       stage: "DISCOVERY",
       known,
       goal,
       next_action,
-      customer: { name: customerName, segment: known.segment?.value ?? null, interest: null },
-      technique_used: hasNeedHere ? "understanding_confirmation" : "calibrated_questions",
+      customer: {
+        name: customerName,
+        segment: known.segment?.value ?? null,
+        interest: null,
+      },
+      technique_used: hasNeedHere
+        ? "understanding_confirmation"
+        : "calibrated_questions",
       summary: buildConversationSummary(known, "DISCOVERY"),
     });
   }
 
   // INTERESSE / RESPOSTA POSITIVA
-  if (/(quero saber mais|tenho interesse|me interessa|pode sim|pode me mostrar|quero conhecer|me mostra|vamos ver|quero ver|pode falar|conta mais)/.test(last)) {
-    let next_action: NextAction;
-    let goal: ConversationGoal;
-    if (!known.segment) {
-      next_action = "ASK_BUSINESS_TYPE";
-      goal = "discover_business";
-    } else if (!known.acquisition_channel) {
-      next_action = "ASK_CURRENT_ACQUISITION";
-      goal = "understand_pain";
-    } else if (!known.need) {
-      next_action = "UNDERSTAND_PAIN";
-      goal = "understand_pain";
-    } else {
-      next_action = "EXPLAIN_RELEVANT_SOLUTION";
-      goal = "present_solution";
-    }
+  if (
+    /(quero saber mais|tenho interesse|me interessa|pode sim|pode me mostrar|quero conhecer|me mostra|vamos ver|quero ver|pode falar|conta mais)/.test(
+      last,
+    )
+  ) {
+    const next_action = chooseNextDiscoveryAction(known);
+    const goal: ConversationGoal =
+      next_action === "ASK_NAME" || next_action === "ASK_BUSINESS_TYPE"
+        ? "discover_business"
+        : next_action === "EXPLAIN_RELEVANT_SOLUTION"
+          ? "present_solution"
+          : "understand_pain";
     return buildAnalysis({
       intent: "positive_response",
       stage: advanced ? prevStage : "DISCOVERY",
@@ -828,7 +1380,11 @@ export function deterministicCommercialAnalysis(context: {
   }
 
   // CUMPRIMENTO — só abre se a conversa ainda não avançou.
-  if (/^(oi|ola|eai|e ai|opa|fala|bom dia|boa tarde|boa noite|tudo bem|hello|hey)[\s!.,]*$/.test(last)) {
+  if (
+    /^(oi|ola|eai|e ai|opa|fala|bom dia|boa tarde|boa noite|tudo bem|hello|hey)[\s!.,]*$/.test(
+      last,
+    )
+  ) {
     if (advanced) {
       // Já avançou: não reinicia. Continua a descoberta a partir da memória.
       return buildAnalysis({
@@ -836,7 +1392,10 @@ export function deterministicCommercialAnalysis(context: {
         stage: prevStage,
         known,
         goal: (mem?.current_goal as ConversationGoal) ?? "understand_pain",
-        next_action: prevNext && prevNext !== "BUILD_RAPPORT" && prevNext !== "ASK_NAME" ? prevNext : known.acquisition_channel ? "UNDERSTAND_PAIN" : known.segment ? "ASK_CURRENT_ACQUISITION" : "ASK_BUSINESS_TYPE",
+        next_action:
+          prevNext && prevNext !== "BUILD_RAPPORT" && prevNext !== "ASK_NAME"
+            ? prevNext
+            : chooseNextDiscoveryAction(known),
         customer: { name: customerName, segment, interest: null },
         technique_used: "tactical_empathy",
       });
@@ -855,13 +1414,10 @@ export function deterministicCommercialAnalysis(context: {
 
   // FALLBACK — NUNCA reinicia uma conversa avançada.
   if (advanced) {
-    const fallbackNext: NextAction = prevNext && prevNext !== "BUILD_RAPPORT" && prevNext !== "ASK_NAME"
-      ? prevNext
-      : known.acquisition_channel
-        ? "UNDERSTAND_PAIN"
-        : known.segment
-          ? "ASK_CURRENT_ACQUISITION"
-          : "ASK_BUSINESS_TYPE";
+    const fallbackNext: NextAction =
+      prevNext && prevNext !== "BUILD_RAPPORT" && prevNext !== "ASK_NAME"
+        ? prevNext
+        : chooseNextDiscoveryAction(known);
     return buildAnalysis({
       intent: "info_sharing",
       stage: prevStage,
@@ -887,7 +1443,7 @@ export function deterministicCommercialAnalysis(context: {
   });
 }
 
-function capitalize(s: string): string {
+export function capitalize(s: string): string {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
 }

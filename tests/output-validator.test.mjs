@@ -14,6 +14,7 @@ import {
   hasReasoningLeak,
   buildGeneratorInstruction,
   buildCommercialReplyMessages,
+  GENERATOR_CONDUCT,
   NEXT_ACTIONS,
 } from "@prospector/ai";
 
@@ -159,4 +160,91 @@ test("generator: a última mensagem pede só a resposta ao cliente", () => {
   const last = messages[messages.length - 1];
   assert.equal(last.role, "user");
   assert.match(last.content, /Escreva agora a sua resposta ao cliente/);
+});
+
+// ---------------------------------------------------------------------------
+// 4. Anti-alucinação de preços/planos (prompt do gerador + respostas honestas)
+// ---------------------------------------------------------------------------
+
+test("generator: conduta proíbe inventar preços/valores/planos", () => {
+  assert.match(GENERATOR_CONDUCT, /NUNCA invente pre[çc]os/);
+  assert.match(GENERATOR_CONDUCT, /Base de conhecimento/);
+  assert.match(GENERATOR_CONDUCT, /atendente humano/);
+  assert.match(GENERATOR_CONDUCT, /EXATAMENTE como est[ãa]o escritos/);
+});
+
+test("generator: a regra anti-invenção de preços chega ao prompt do gerador", () => {
+  const messages = buildCommercialReplyMessages(
+    { agent: { name: "Atendente" }, business: { name: "SAVYRON" } },
+    { leadName: "Maicon", history: [{ role: "user", content: "qual o valor do plano?" }] },
+    analysis({ intent: "question", next_action: "ANSWER_QUESTION", goal: "answer_question" }),
+  );
+  const full = messages.map((m) => m.content).join("\n");
+  assert.match(full, /NUNCA invente pre[çc]os, valores, planos/);
+  assert.match(full, /n[ãa]o tem essa informa[çc][ãa]o/);
+});
+
+test("generator: resposta honesta de preço desconhecido NÃO é vazamento", () => {
+  const honest = [
+    "Olá Maicon! No momento não tenho essa informação de valores disponível aqui. Posso encaminhar para um atendente humano te passar os valores do plano?",
+    "Não temos uma tabela de preços divulgada agora. Prefere que eu acione um atendente para te passar os valores?",
+    "Sobre os planos, ainda não recebemos a tabela oficial. Posso te encaminhar para alguém da equipe confirmar?",
+  ];
+  for (const msg of honest) {
+    assert.equal(hasReasoningLeak(msg), false, `não deve marcar como vazamento: ${msg}`);
+    assert.equal(validateGeneratedReply(msg).valid, true, `deve ser válida: ${msg}`);
+  }
+});
+
+test("generator: limite de caracteres da config CHEGA ao prompt (gera curto na origem)", () => {
+  const messages = buildCommercialReplyMessages(
+    {
+      agent: { name: "Atendente" },
+      business: { name: "SAVYRON" },
+      settings: { messageConfig: { max_length: 200 } },
+    },
+    { leadName: "Maicon", history: [{ role: "user", content: "gostaria de saber mais" }] },
+    analysis({ intent: "info_sharing" }),
+  );
+  const full = messages.map((m) => m.content).join("\n");
+  assert.match(full, /máximo 200 caracteres/);
+  assert.match(full, /1-3 frases curtas/);
+  assert.match(full, /parágrafo institucional longo/);
+});
+
+test("generator: age como ESPECIALISTA EM VENDAS (persona no prompt)", () => {
+  const messages = buildCommercialReplyMessages(
+    { agent: { name: "Vendedor" }, business: { name: "SAVYRON" } },
+    { history: [{ role: "user", content: "oi" }] },
+    analysis(),
+  );
+  const full = messages.map((m) => m.content).join("\n");
+  assert.match(full, /ESPECIALISTA EM VENDAS/);
+  assert.match(full, /ENTENDER.*QUALIFICAR/s);
+  assert.match(full, /nunca um chatbot de FAQ/);
+  assert.match(full, /Prioridade das informações/);
+  assert.match(full, /base de conhecimento fornecida/);
+  assert.match(full, /memória da conversa/);
+});
+
+test("generator: base de conhecimento usada como ARGUMENTOS comerciais + link de conversão", () => {
+  const messages = buildCommercialReplyMessages(
+    { agent: { name: "Vendedor" }, business: { name: "SAVYRON" } },
+    { history: [{ role: "user", content: "quanto custa o corte?" }] },
+    analysis({ intent: "question", next_action: "ANSWER_QUESTION" }),
+    [{ title: "Corte", content: "Corte custa R$25." }],
+  );
+  const full = messages.map((m) => m.content).join("\n");
+  assert.match(full, /ARGUMENTOS comerciais/);
+  assert.match(full, /link de produto\/vitrine\/agendamento/);
+  assert.match(full, /Corte custa R\$25/);
+});
+
+test("generator: conduta de vendas — intenção de compra conduz à conversão, sem CTA artificial", () => {
+  assert.match(GENERATOR_CONDUCT, /ESPECIALISTA EM VENDAS/);
+  assert.match(GENERATOR_CONDUCT, /conduza à conversão/);
+  assert.match(GENERATOR_CONDUCT, /Trate objeções/);
+  assert.match(GENERATOR_CONDUCT, /próximo passo/);
+  assert.match(GENERATOR_CONDUCT, /sem CTA artificial/);
+  assert.match(GENERATOR_CONDUCT, /Use o nome do cliente com moderação/);
 });
