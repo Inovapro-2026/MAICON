@@ -701,25 +701,22 @@ adminRouter.patch(
       priceChanged = price !== Number(existing.price);
     }
 
-    // O checkout Cakto exibe o preço da OFERTA (pay.cakto.com.br/{offerId}),
-    // não o Plan.price. Ao salvar o plano, sincroniza a oferta Cakto:
-    // - preço mudou  -> falha BLOQUEIA (DB + gateway ficam consistentes);
-    // - preço igual  -> falha só é logada (não bloqueia edições de outros
-    //   campos, mas ainda corrige estado dessincronizado).
+    // A Cakto é o gateway legado (checkout Cakto→Stripe). O gateway atual do
+    // SAVYRON é o AbacatePay (PIX manual), então a sincronização da oferta
+    // Cakto NUNCA bloqueia a edição do plano: se falhar (ex.: preço mínimo de
+    // R$ 5,00 da Cakto) o erro é apenas logado e o Plan/features seguem salvos.
     if (body.price !== undefined && existing.cakto_offer_id && isCaktoConfigured()) {
       const priceToSync = Number(data.price);
       if (priceToSync > 0) {
         try {
           await updateCaktoOfferPrice(existing.cakto_offer_id, priceToSync);
         } catch (error) {
-          if (priceChanged) throw error;
-          logger.warn(
-            "Falha ao sincronizar oferta Cakto (preço inalterado)",
-            {
-              offerId: existing.cakto_offer_id,
-              error: (error as Error).message,
-            },
-          );
+          logger.warn("Falha ao sincronizar oferta Cakto (não bloqueante)", {
+            offerId: existing.cakto_offer_id,
+            price: priceToSync,
+            priceChanged,
+            error: (error as Error).message,
+          });
         }
       }
     }

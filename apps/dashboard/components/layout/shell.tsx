@@ -15,6 +15,7 @@ interface BillingStatus {
   business: { status: string };
   is_expired: boolean;
   cakto_configured: boolean;
+  abacatepay_configured: boolean;
 }
 
 /**
@@ -45,8 +46,16 @@ export function DashboardShell({
   }, []);
 
   const renew = async () => {
+    // Com AbacatePay configurada, o PIX é gerado inline em /settings/plano.
+    if (billing.data?.abacatepay_configured) {
+      router.push("/settings/plano");
+      return;
+    }
     try {
-      const res = await request<{ url: string }>("billing/checkout", { method: "POST", body: {} });
+      const res = await request<{ url: string }>("billing/checkout", {
+        method: "POST",
+        body: {},
+      });
       if (res?.url) window.location.href = res.url;
     } catch {
       router.push("/settings/plano");
@@ -73,17 +82,24 @@ export function DashboardShell({
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
               <Crown className="h-7 w-7" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-[#0F172A]">Seu plano expirou</h2>
+            <h2 className="mb-2 text-xl font-bold text-[#0F172A]">
+              Seu plano expirou
+            </h2>
             <p className="mb-6 text-sm text-[#64748B]">
-              Seu plano profissional expirou. Para continuar utilizando o SAVYRON e
-              não perder suas campanhas e dados, realize a renovação agora.
+              Seu plano profissional expirou. Para continuar utilizando o
+              SAVYRON e não perder suas campanhas e dados, realize a renovação
+              agora.
             </p>
             <div className="space-y-2">
               <Button onClick={() => void renew()} className="w-full">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Renovar Assinatura
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => router.push("/settings/plano")}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => router.push("/settings/plano")}
+              >
                 Gerenciar meu plano
               </Button>
             </div>
@@ -93,4 +109,3 @@ export function DashboardShell({
     </div>
   );
 }
-

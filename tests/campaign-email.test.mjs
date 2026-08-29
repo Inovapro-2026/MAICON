@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { resolveChannelDispatch, resolveEmailContent } = await import(
+const { resolveChannelDispatch, resolveEmailContent, resolveWaFirstMessage } = await import(
   '@prospector/worker/dist/services/campaign-channels.js'
 );
 const { renderMessageTemplate, validateCampaignEmailConfig, EMAIL_CONFIG_REQUIRED_MSG } = await import(
@@ -82,6 +82,33 @@ test('WHATSAPP nunca despacha e-mail; EMAIL nunca despacha WhatsApp (destinatár
   const cap = { whatsapp: 10, email: 10 };
   assert.deepEqual(resolveChannelDispatch('WHATSAPP', LEAD_FULL, cap), { whatsapp: true, email: false });
   assert.deepEqual(resolveChannelDispatch('EMAIL', LEAD_FULL, cap), { whatsapp: false, email: true });
+});
+
+test('resolveWaFirstMessage sem configuração usa a mensagem padrão de abordagem', () => {
+  const out = resolveWaFirstMessage({ wa_first_message: null }, { business_name: 'Clinica Bem Viver' });
+  assert.equal(out, 'Oi, tudo bem? Falo com o responsável pelo Clinica Bem Viver?');
+  assert.equal(
+    resolveWaFirstMessage({ wa_first_message: '' }, { business_name: null }),
+    'Oi, tudo bem? Falo com o responsável pelo estabelecimento?'
+  );
+});
+
+test('resolveWaFirstMessage usa a mensagem configurada com variáveis renderizadas', () => {
+  const out = resolveWaFirstMessage(
+    { wa_first_message: 'Olá {{nome}}, falo da {{empresa}}. Entre em contato por {{telefone}} ou {{email}}.' },
+    LEAD_FULL
+  );
+  assert.equal(
+    out,
+    'Olá Ana Souza, falo da Clinica Bem Viver. Entre em contato por +5511999998888 ou ana@bemviver.com.br.'
+  );
+});
+
+test('resolveWaFirstMessage ignora configuração só de espaços (usa padrão)', () => {
+  assert.equal(
+    resolveWaFirstMessage({ wa_first_message: '   ' }, { business_name: null }),
+    'Oi, tudo bem? Falo com o responsável pelo estabelecimento?'
+  );
 });
 
 test('BOTH despacha os dois canais quando o lead tem telefone e e-mail', () => {

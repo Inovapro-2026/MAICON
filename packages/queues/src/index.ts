@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
   WEBHOOK_PROCESSING: "webhook-processing",
   PROSPECTION: "prospection",
   LEAD_ENRICHMENT: "lead-enrichment",
+  WHATSAPP_GROUP_EXTRACTION: "whatsapp-group-extraction",
   RETRY: "retry",
   DEAD_LETTER: "dead-letter",
 } as const;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Clock, Play, Pause, CheckCircle2, Send } from 'lucide-react';
 
 interface NextSendCountdownProps {
@@ -47,11 +47,18 @@ export function NextSendCountdown({
     };
   }, [targetAt, now]);
 
+  // Quando o contador chega a zero, dispara onZero() e continua re-disparando
+  // a cada 3s enquanto next_send_at nao avancou (o worker leva alguns segundos
+  // para gravar o novo valor no Redis apos processar o pump).
   useEffect(() => {
-    if (timeData?.isZero && isRunning && onZero) {
-      onZero();
-    }
-  }, [timeData?.isZero, isRunning, onZero]);
+    if (!timeData?.isZero || !isRunning) return;
+    if (onZero) onZero();
+    const retryTimer = setInterval(() => {
+      if (onZero) onZero();
+    }, 3000);
+    return () => clearInterval(retryTimer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeData?.isZero, isRunning]);
 
   // Compact variant (para listas ou tabelas)
   if (variant === 'compact') {

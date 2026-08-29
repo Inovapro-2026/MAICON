@@ -1,15 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Crown, CreditCard, CalendarClock, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Crown,
+  CreditCard,
+  CalendarClock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { DashboardShell } from "@/components/layout/shell";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PixCheckout } from "@/components/billing/pix-checkout";
 import { useToast } from "@/components/ui/toast";
 import { useApi, request } from "@/hooks/use-api";
 
 interface BillingStatus {
-  business: { id: string; name: string; slug: string; status: string };
+  business: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    suspension_reason?: string | null;
+  };
   subscription: {
     status: string;
     plan_name: string | null;
@@ -17,10 +30,12 @@ interface BillingStatus {
     expires_at: string | null;
     is_expired: boolean;
     cakto_checkout_url: string | null;
+    abacatepay_checkout_id: string | null;
   } | null;
   requires_payment: boolean;
   is_expired: boolean;
   cakto_configured: boolean;
+  abacatepay_configured: boolean;
 }
 
 function useCountdown(target: string | null): string {
@@ -41,16 +56,21 @@ export default function PlanosPage() {
   const { success, error: toastError } = useToast();
   const status = useApi<BillingStatus>(["billing-status"], "billing/status");
   const [renewing, setRenewing] = useState(false);
+  const [showPix, setShowPix] = useState(false);
 
   const data = status.data;
   const sub = data?.subscription ?? null;
   const expired = Boolean(data?.is_expired || sub?.is_expired);
   const active = Boolean(sub && sub.status === "ACTIVE" && !expired);
+  const usePix = Boolean(data?.abacatepay_configured);
 
   const renew = async () => {
     setRenewing(true);
     try {
-      const res = await request<{ url: string }>("billing/checkout", { method: "POST", body: {} });
+      const res = await request<{ url: string }>("billing/checkout", {
+        method: "POST",
+        body: {},
+      });
       if (res?.url) {
         window.location.href = res.url;
       } else {
@@ -77,7 +97,9 @@ export default function PlanosPage() {
     <DashboardShell title="Planos">
       <div className="mb-6">
         <h1 className="heading-strong text-xl">Planos</h1>
-        <p className="text-sm text-zinc-500">Gerencie sua assinatura e renovação</p>
+        <p className="text-sm text-zinc-500">
+          Gerencie sua assinatura e renovação
+        </p>
       </div>
 
       <div className="mx-auto max-w-xl">
@@ -109,7 +131,9 @@ export default function PlanosPage() {
               {sub?.plan_price ? (
                 <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600">
                   R$ {sub.plan_price.toFixed(2).replace(".", ",")}
-                  {sub.plan_name?.toLowerCase().includes("mensal") ? "" : "/mês"}
+                  {sub.plan_name?.toLowerCase().includes("mensal")
+                    ? ""
+                    : "/mês"}
                 </span>
               ) : null}
             </div>
@@ -119,14 +143,18 @@ export default function PlanosPage() {
                 <CalendarClock className="h-5 w-5 shrink-0 text-zinc-500" />
                 <div>
                   <div className="text-xs text-zinc-500">Renovação em</div>
-                  <div className="font-semibold text-zinc-900">{formattedExpiry}</div>
+                  <div className="font-semibold text-zinc-900">
+                    {formattedExpiry}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50/60 p-4">
                 <CreditCard className="h-5 w-5 shrink-0 text-zinc-500" />
                 <div>
                   <div className="text-xs text-zinc-500">Status do período</div>
-                  <div className={`font-semibold ${expired ? "text-red-600" : "text-emerald-600"}`}>
+                  <div
+                    className={`font-semibold ${expired ? "text-red-600" : "text-emerald-600"}`}
+                  >
                     {countdown || "—"}
                   </div>
                 </div>
@@ -135,19 +163,43 @@ export default function PlanosPage() {
 
             {expired ? (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-                Seu plano expirou. Para continuar usando o SAVYRON e não perder suas
-                campanhas e dados, renove sua assinatura agora.
+                Seu plano expirou. Para continuar usando o SAVYRON e não perder
+                suas campanhas e dados, renove sua assinatura agora.
               </div>
             ) : null}
 
-            <Button onClick={() => void renew()} loading={renewing} className="mt-5 w-full">
-              <CreditCard className="mr-2 h-4 w-4" />
-              {expired ? "Renovar Assinatura" : "Gerenciar Pagamento"}
-            </Button>
-            <p className="mt-2 text-center text-[11px] text-zinc-500">
-              O pagamento é feito com segurança (PIX recorrente ou cartão). O acesso é
-              renovado automaticamente após a confirmação.
-            </p>
+            {expired && usePix ? (
+              <div className="mt-5">
+                <PixCheckout
+                  title="Renove via PIX"
+                  onPaid={() => status.refetch()}
+                />
+              </div>
+            ) : !showPix ? (
+              <>
+                <Button
+                  onClick={() =>
+                    usePix ? setShowPix(true) : void renew()
+                  }
+                  loading={renewing}
+                  className="mt-5 w-full"
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  {expired ? "Renovar Assinatura" : "Gerenciar Pagamento"}
+                </Button>
+                <p className="mt-2 text-center text-[11px] text-zinc-500">
+                  O pagamento é feito com segurança via PIX. O acesso renovado é
+                  liberado automaticamente após a confirmação.
+                </p>
+              </>
+            ) : (
+              <div className="mt-5">
+                <PixCheckout
+                  title="Pagamento via PIX"
+                  onPaid={() => status.refetch()}
+                />
+              </div>
+            )}
           </div>
         </Card>
 

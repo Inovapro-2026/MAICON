@@ -79,6 +79,27 @@ export function createControlServer(): Express {
     });
   });
 
+  /**
+   * GET /whatsapp/groups — grupos em que a empresa participa (aba WhatsApp da
+   * Prospecção). Usa a MESMA sessão Baileys; nunca abre conexão paralela.
+   */
+  app.get("/whatsapp/groups", async (req: Request, res) => {
+    const businessId = (req.query.businessId as string) || undefined;
+    try {
+      const groups = await getWhatsAppManager(businessId).listGroups();
+      res.json({ success: true, businessId: businessId ?? null, data: groups });
+    } catch (error) {
+      logger.warn("Falha ao listar grupos do WhatsApp", {
+        business_id: businessId,
+        error: (error as Error).message,
+      });
+      res.status(400).json({
+        success: false,
+        error: { code: "WHATSAPP_ERROR", message: (error as Error).message },
+      });
+    }
+  });
+
   app.post("/whatsapp/connect", async (req: Request, res) => {
     const businessId = (req.body.businessId as string | undefined) || undefined;
     const status = await getWhatsAppManager(businessId).connect();

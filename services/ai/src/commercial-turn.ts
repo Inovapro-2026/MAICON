@@ -479,7 +479,7 @@ async function summarizeReplyToFit(
       maxTokens: 300,
       timeoutMs: 20000,
       temperature: 0.3,
-      provider: "openai",
+      provider: "nvidia",
     },
   );
   const summarized = result.text.trim();
@@ -525,7 +525,7 @@ async function generateValidatedReply(
       maxTokens: options.maxTokens ?? 600,
       timeoutMs: options.timeoutMs ?? 45000,
       temperature: 0.6,
-      provider: "openai",
+      provider: "nvidia",
     });
     const text = result.text.trim();
     if (!text) throw new Error("resposta vazia do provedor");
@@ -622,7 +622,7 @@ async function analyzeConversation(
         timeoutMs: Math.min(options.timeoutMs ?? 20000, 20000),
         temperature: 0,
         jsonMode: true,
-        provider: "openai",
+        provider: "nvidia",
       },
     );
     const parsed = extractJsonObject(result.text);

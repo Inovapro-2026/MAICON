@@ -2,20 +2,28 @@
 
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Upload } from "lucide-react";
+import { Search, Upload, MessageCircle } from "lucide-react";
 import { DashboardShell } from "@/components/layout/shell";
 import { ProspectTab } from "@/components/prospect/prospect-tab";
 import { ImportTab } from "@/components/prospect/import-tab";
+import { WhatsAppTab } from "@/components/prospect/whatsapp-tab";
 
 function ProspectHub() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tab = searchParams.get("tab");
 
-  const active = tab === "import" ? "import" : "prospect";
+  const active =
+    tab === "import" ? "import" : tab === "whatsapp" ? "whatsapp" : "prospect";
 
-  const setTab = (next: "prospect" | "import") => {
-    router.replace(next === "import" ? "/prospect?tab=import" : "/prospect");
+  const setTab = (next: "prospect" | "import" | "whatsapp") => {
+    router.replace(
+      next === "import"
+        ? "/prospect?tab=import"
+        : next === "whatsapp"
+          ? "/prospect?tab=whatsapp"
+          : "/prospect",
+    );
   };
 
   return (
@@ -41,9 +49,25 @@ function ProspectHub() {
         >
           <Upload className="h-4 w-4" /> Importação manual
         </button>
+        <button
+          onClick={() => setTab("whatsapp")}
+          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 ${
+            active === "whatsapp"
+              ? "bg-[#6366F1] text-white shadow-xs"
+              : "border border-[#E6E8F0] bg-white text-[#475569] hover:bg-slate-50 hover:text-[#0F172A]"
+          }`}
+        >
+          <MessageCircle className="h-4 w-4" /> WhatsApp
+        </button>
       </div>
 
-      {active === "prospect" ? <ProspectTab /> : <ImportTab />}
+      {active === "prospect" ? (
+        <ProspectTab />
+      ) : active === "whatsapp" ? (
+        <WhatsAppTab />
+      ) : (
+        <ImportTab />
+      )}
     </>
   );
 }

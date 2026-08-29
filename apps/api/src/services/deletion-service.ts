@@ -183,3 +183,203 @@ export async function clearImportedLeads(
 
   return { deleted: ids.length };
 }
+
+/**
+ * Apaga os leads criados por UMA extração de grupos do WhatsApp da empresa.
+ * Restrito a OWNER/BUSINESS_ADMIN (validado na rota).
+ *
+ * Comportamento conservador (protege a base existente e as demais extrações):
+ *  - Remove os vínculos (WhatsAppGroupLead) desta extração para TODOS os leads
+ *    dela — a tabela "Leads extraídos" da extração é limpa.
+ *  - Exclui (hard-delete; cascade remove mensagens, conversas, campaign leads,
+ *    opt-outs e gerações de IA) apenas os leads criados pela própria extração
+ *    (source WHATSAPP_GROUP) que NÃO estejam vinculados a outra extração.
+ *  - Leads pré-existentes da base (WEB/CSV/MANUAL...) e leads compartilhados
+ *    com outra extração são apenas desvinculados — nunca apagados.
+ */
+export async function clearWhatsAppExtractionLeads(
+  businessId: string,
+  extractionId: string,
+  actor?: AuditActor,
+  deps?: DeletionDeps
+): Promise<{ leads_deleted: number; unlinked: number }> {
+  const { db, writeAudit: audit } = resolveDeps(deps);
+
+  const extraction = await db.whatsAppGroupExtraction.findFirst({
+    where: { id: extractionId, business_id: businessId },
+    select: { id: true, status: true, sources: { select: { id: true } } },
+  });
+  if (!extraction) throw ApiError.notFound('Extração não encontrada.');
+  if (extraction.status === 'PENDING' || extraction.status === 'RUNNING') {
+    throw ApiError.badRequest(
+      'Não é possível limpar os leads enquanto a extração está em andamento.'
+    );
+  }
+
+  const sourceIds = extraction.sources.map((s) => s.id);
+  if (sourceIds.length === 0) return { leads_deleted: 0, unlinked: 0 };
+
+  const links = await db.whatsAppGroupLead.findMany({
+    where: { business_id: businessId, source_id: { in: sourceIds } },
+    select: { id: true, lead_id: true },
+  });
+  if (links.length === 0) return { leads_deleted: 0, unlinked: 0 };
+
+  const linkIds = links.map((l) => l.id);
+  const leadIds = [...new Set(links.map((l) => l.lead_id))];
+
+  // Leads vinculados a fontes de OUTRAS extrações não podem ser apagados.
+  const shared = await db.whatsAppGroupLead.findMany({
+    where: {
+      business_id: businessId,
+      lead_id: { in: leadIds },
+      source_id: { notIn: sourceIds },
+    },
+    select: { lead_id: true },
+  });
+  const sharedLeadIds = new Set(shared.map((s) => s.lead_id));
+
+  // Somente leads criados pela própria extração e não compartilhados.
+  const deletableIds = leadIds.filter((id) => !sharedLeadIds.has(id));
+  const deletable = deletableIds.length
+    ? await db.lead.findMany({
+        where: {
+          business_id: businessId,
+          id: { in: deletableIds },
+          source: 'WHATSAPP_GROUP',
+        },
+        select: { id: true },
+      })
+    : [];
+  const deletableLeadIds = new Set(deletable.map((l) => l.id));
+
+  await db.$transaction([
+    db.whatsAppGroupLead.deleteMany({
+      where: { business_id: businessId, id: { in: linkIds } },
+    }),
+    db.lead.deleteMany({
+      where: { business_id: businessId, id: { in: [...deletableLeadIds] } },
+    }),
+  ]);
+
+  const unlinked = leadIds.filter((id) => !deletableLeadIds.has(id)).length;
+
+  void audit({
+    actor: actor?.sub,
+    businessId,
+    action: 'whatsapp_groups.leads_cleared',
+    entity: 'WhatsAppGroupExtraction',
+    entityId: extractionId,
+    metadata: {
+      extraction_id: extractionId,
+      leads_deleted: deletableLeadIds.size,
+      unlinked,
+    },
+  });
+
+  return { leads_deleted: deletableLeadIds.size, unlinked };
+}
+
+/**
+ * Exclui UMA extração de grupos do WhatsApp da empresa — inclusive o registro
+ * de histórico. Restrito a OWNER/BUSINESS_ADMIN (validado na rota).
+ *
+ * Mesmo comportamento conservador do clearWhatsAppExtractionLeads (protege a
+ * base existente e as demais extrações):
+ *  - Remove vínculos (WhatsAppGroupLead) e fontes da extração;
+ *  - Hard-delete apenas os leads criados pela própria extração (source
+ *    WHATSAPP_GROUP) e NÃO compartilhados com outra extração;
+ *  - Leads pré-existentes da base ou compartilhados são apenas desvinculados;
+ *  - Remove o registro WhatsAppGroupExtraction (histórico da tabela).
+ */
+export async function deleteWhatsAppExtraction(
+  businessId: string,
+  extractionId: string,
+  actor?: AuditActor,
+  deps?: DeletionDeps
+): Promise<{ leads_deleted: number; unlinked: number }> {
+  const { db, writeAudit: audit } = resolveDeps(deps);
+
+  const extraction = await db.whatsAppGroupExtraction.findFirst({
+    where: { id: extractionId, business_id: businessId },
+    select: { id: true, status: true, sources: { select: { id: true } } },
+  });
+  if (!extraction) throw ApiError.notFound('Extração não encontrada.');
+  if (extraction.status === 'PENDING' || extraction.status === 'RUNNING') {
+    throw ApiError.badRequest(
+      'Não é possível excluir a extração enquanto ela está em andamento.'
+    );
+  }
+
+  const sourceIds = extraction.sources.map((s) => s.id);
+  let leads_deleted = 0;
+  let unlinked = 0;
+
+  if (sourceIds.length > 0) {
+    const links = await db.whatsAppGroupLead.findMany({
+      where: { business_id: businessId, source_id: { in: sourceIds } },
+      select: { id: true, lead_id: true },
+    });
+    if (links.length > 0) {
+      const linkIds = links.map((l) => l.id);
+      const leadIds = [...new Set(links.map((l) => l.lead_id))];
+
+      // Leads vinculados a fontes de OUTRAS extrações não podem ser apagados.
+      const shared = await db.whatsAppGroupLead.findMany({
+        where: {
+          business_id: businessId,
+          lead_id: { in: leadIds },
+          source_id: { notIn: sourceIds },
+        },
+        select: { lead_id: true },
+      });
+      const sharedLeadIds = new Set(shared.map((s) => s.lead_id));
+
+      // Somente leads criados pela própria extração e não compartilhados.
+      const deletableIds = leadIds.filter((id) => !sharedLeadIds.has(id));
+      const deletable = deletableIds.length
+        ? await db.lead.findMany({
+            where: {
+              business_id: businessId,
+              id: { in: deletableIds },
+              source: 'WHATSAPP_GROUP',
+            },
+            select: { id: true },
+          })
+        : [];
+      const deletableLeadIds = new Set(deletable.map((l) => l.id));
+
+      if (deletableLeadIds.size > 0) {
+        await db.lead.deleteMany({
+          where: { business_id: businessId, id: { in: [...deletableLeadIds] } },
+        });
+      }
+      await db.whatsAppGroupLead.deleteMany({
+        where: { business_id: businessId, id: { in: linkIds } },
+      });
+
+      leads_deleted = deletableLeadIds.size;
+      unlinked = leadIds.filter((id) => !deletableLeadIds.has(id)).length;
+    }
+  }
+
+  await db.$transaction([
+    db.whatsAppGroupSource.deleteMany({
+      where: { business_id: businessId, extraction_id: extractionId },
+    }),
+    db.whatsAppGroupExtraction.deleteMany({
+      where: { business_id: businessId, id: extractionId },
+    }),
+  ]);
+
+  void audit({
+    actor: actor?.sub,
+    businessId,
+    action: 'whatsapp_groups.extraction_deleted',
+    entity: 'WhatsAppGroupExtraction',
+    entityId: extractionId,
+    metadata: { extraction_id: extractionId, leads_deleted, unlinked },
+  });
+
+  return { leads_deleted, unlinked };
+}

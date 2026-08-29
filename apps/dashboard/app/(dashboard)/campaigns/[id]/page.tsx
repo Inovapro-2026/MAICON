@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Play, Pause, Square, RotateCcw, Trash2, Mail, Eye } from 'lucide-react';
+import { Play, Pause, Square, RotateCcw, Trash2, Mail, Eye, MessageCircle } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/shell';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ interface CampaignDetail {
     channel_mode: 'WHATSAPP' | 'EMAIL' | 'BOTH';
     email_subject: string | null;
     email_body: string | null;
+    wa_first_message: string | null;
     next_send_at: string | null;
   };
   stats: {
@@ -101,17 +102,22 @@ export default function CampaignDetailPage() {
   const [emailBody, setEmailBody] = useState('');
   const [savingEmail, setSavingEmail] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [waFirstMessage, setWaFirstMessage] = useState('');
+  const [savingWaMessage, setSavingWaMessage] = useState(false);
+  const [waPreviewOpen, setWaPreviewOpen] = useState(false);
 
   const campaign = detail.data?.campaign;
   const stats = detail.data?.stats;
   const needsEmailConfig = campaign?.channel_mode === 'EMAIL' || campaign?.channel_mode === 'BOTH';
+  const needsWaConfig = campaign?.channel_mode === 'WHATSAPP' || campaign?.channel_mode === 'BOTH';
 
   // Sincroniza o formulário de e-mail com a campanha carregada (sem sobrescrever
   // enquanto o usuário digita: só reseta quando os valores do servidor mudam).
   useEffect(() => {
     setEmailSubject(detail.data?.campaign.email_subject ?? '');
     setEmailBody(detail.data?.campaign.email_body ?? '');
-  }, [detail.data?.campaign.id, detail.data?.campaign.email_subject, detail.data?.campaign.email_body]);
+    setWaFirstMessage(detail.data?.campaign.wa_first_message ?? '');
+  }, [detail.data?.campaign.id, detail.data?.campaign.email_subject, detail.data?.campaign.email_body, detail.data?.campaign.wa_first_message]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['campaign', id] });
@@ -176,6 +182,22 @@ export default function CampaignDetailPage() {
       toastError(e instanceof Error ? e.message : 'Falha ao atualizar');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveWaMessage = async () => {
+    setSavingWaMessage(true);
+    try {
+      await request(`campaigns/${id}`, {
+        method: 'PATCH',
+        body: { wa_first_message: waFirstMessage.trim() },
+      });
+      success(waFirstMessage.trim() ? 'Mensagem de abordagem (WhatsApp) salva' : 'Mensagem de abordagem (WhatsApp) removida — voltou ao padrão');
+      invalidate();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : 'Falha ao salvar mensagem');
+    } finally {
+      setSavingWaMessage(false);
     }
   };
 
@@ -307,6 +329,47 @@ export default function CampaignDetailPage() {
           </p>
         </Card>
 
+        {needsWaConfig ? (
+          <Card>
+            <CardHeader
+              title="Mensagem de abordagem (WhatsApp)"
+              subtitle="Primeiro contato enviado por WhatsApp para cada lead — vale para os próximos envios da fila"
+            />
+            <div className="space-y-3">
+              <Textarea
+                label="Mensagem"
+                value={waFirstMessage}
+                onChange={(e) => setWaFirstMessage(e.target.value)}
+                placeholder={'Digite a primeira mensagem de abordagem...\n\nEx.: Olá {{nome}}, tudo bem? Falo com o responsável pela {{empresa}}?'}
+                rows={4}
+              />
+              <p className="text-[11px] text-[#64748B]">
+                Variáveis disponíveis: {'{{nome}}'} · {'{{empresa}}'} · {'{{email}}'} · {'{{telefone}}'} — preenchidas com os dados de cada lead no momento do envio.
+              </p>
+              {waFirstMessage.trim() ? (
+                <p className="text-[11px] font-semibold text-amber-600">
+                  Mensagem personalizada ativa. Para voltar ao padrão, limpe o campo e salve.
+                </p>
+              ) : (
+                <p className="text-[11px] text-[#64748B]">
+                  Em branco, a campanha usa a mensagem padrão:{' '}
+                  <span className="font-medium text-[#0F172A]">
+                    "Oi, tudo bem? Falo com o responsável pelo estabelecimento?"
+                  </span>
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setWaPreviewOpen(true)} disabled={!waFirstMessage.trim()}>
+                  <Eye className="h-4 w-4 mr-1.5" /> Pré-visualizar
+                </Button>
+                <Button onClick={() => void saveWaMessage()} loading={savingWaMessage}>
+                  <MessageCircle className="h-4 w-4 mr-1.5" /> Salvar mensagem
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
         {needsEmailConfig ? (
           <Card>
             <CardHeader
@@ -429,6 +492,34 @@ export default function CampaignDetailPage() {
               <div className="rounded-xl border border-[#E6E8F0] bg-white p-3">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Mensagem</div>
                 <pre className="mt-1 whitespace-pre-wrap font-sans text-sm text-[#334155]">{renderPreview(emailBody, sample)}</pre>
+              </div>
+              <p className="text-[11px] text-[#94A3B8]">
+                Prévia gerada com dados de exemplo{leads.data?.items[0]?.lead.name ? ` (${leads.data.items[0].lead.name})` : ''}. A mensagem salva não é alterada.
+              </p>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      <Modal
+        open={waPreviewOpen}
+        onClose={() => setWaPreviewOpen(false)}
+        title="Pré-visualizar mensagem de WhatsApp"
+        footer={
+          <Button variant="outline" onClick={() => setWaPreviewOpen(false)}>
+            Fechar
+          </Button>
+        }
+      >
+        {(() => {
+          const sample =
+            leads.data?.items[0]?.lead ??
+            ({ name: 'Maria Silva', business_name: 'Empresa Exemplo', email: 'maria@exemplo.com.br', phone: '+55 11 99999-0000' } as const);
+          return (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#E6E8F0] bg-white p-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Mensagem</div>
+                <pre className="mt-1 whitespace-pre-wrap font-sans text-sm text-[#334155]">{renderPreview(waFirstMessage, sample)}</pre>
               </div>
               <p className="text-[11px] text-[#94A3B8]">
                 Prévia gerada com dados de exemplo{leads.data?.items[0]?.lead.name ? ` (${leads.data.items[0].lead.name})` : ''}. A mensagem salva não é alterada.

@@ -21,6 +21,8 @@ const deletionService = read("apps/api/src/services/deletion-service.ts");
 const inboxRoute = read("apps/api/src/routes/inbox.ts");
 const leadsRoute = read("apps/api/src/routes/leads.ts");
 const emailsRoute = read("apps/api/src/routes/emails.ts");
+const whatsappGroupsRoute = read("apps/api/src/routes/whatsapp-groups.ts");
+const whatsappTab = read("apps/dashboard/components/prospect/whatsapp-tab.tsx");
 const sidebar = read("apps/dashboard/components/layout/sidebar.tsx");
 const bottomNav = read("apps/dashboard/components/layout/bottom-nav.tsx");
 const inboxPage = read("apps/dashboard/app/(dashboard)/inbox/page.tsx");
@@ -69,7 +71,13 @@ test("deletion-service: não usa soft-delete (hard-delete documentado)", () => {
 });
 
 test("deletion-service: toda ação registra em AuditLog", () => {
-  const actions = ["conversation.deleted", "conversations.cleared", "leads.imported.cleared"];
+  const actions = [
+    "conversation.deleted",
+    "conversations.cleared",
+    "leads.imported.cleared",
+    "whatsapp_groups.leads_cleared",
+    "whatsapp_groups.extraction_deleted",
+  ];
   for (const action of actions) {
     assert.ok(deletionService.includes(action), `deve auditar ${action}`);
   }
@@ -88,6 +96,75 @@ test("rotas: exclusão em massa restrita a OWNER/BUSINESS_ADMIN", () => {
 test("rotas: DELETE /conversations e DELETE /leads/imported existem", () => {
   assert.ok(inboxRoute.includes("deleteAllConversations"));
   assert.ok(leadsRoute.includes("clearImportedLeads"));
+});
+
+test("extração WhatsApp: limpar leads é destrutivo, restrito e auditado", () => {
+  assert.ok(
+    whatsappGroupsRoute.includes('"/extractions/:id/leads"'),
+    "rota DELETE de limpeza de leads da extração existe",
+  );
+  assert.ok(
+    whatsappGroupsRoute.includes('requireRole(["OWNER", "BUSINESS_ADMIN"])'),
+    "restrita a OWNER/BUSINESS_ADMIN",
+  );
+  assert.ok(
+    whatsappGroupsRoute.includes("clearWhatsAppExtractionLeads"),
+    "delega a exclusão central (isolamento multi-tenant + auditoria)",
+  );
+});
+
+test("extração WhatsApp: excluir extração é destrutivo, restrito e auditado", () => {
+  assert.ok(
+    whatsappGroupsRoute.includes('whatsappGroupsRouter.delete(') &&
+      whatsappGroupsRoute.includes('"/extractions/:id",'),
+    "rota DELETE de exclusão da extração existe",
+  );
+  assert.ok(
+    whatsappGroupsRoute.includes(
+      "deleteWhatsAppExtraction(businessId, req.params.id",
+    ),
+    "delega a exclusão central (isolamento multi-tenant + auditoria)",
+  );
+  assert.ok(
+    deletionService.includes("whatsAppGroupExtraction.deleteMany"),
+    "remove o registro de histórico",
+  );
+  assert.ok(
+    deletionService.includes("whatsAppGroupSource.deleteMany"),
+    "remove as fontes da extração",
+  );
+  assert.ok(
+    deletionService.includes(
+      "Não é possível excluir a extração enquanto ela está em andamento."
+    ),
+    "bloqueia exclusão de extração em andamento",
+  );
+});
+
+test("extração WhatsApp: UI exige confirmação reforçada antes de limpar leads", () => {
+  assert.ok(whatsappTab.includes('confirmText="EXCLUIR"'), "exige digitar EXCLUIR");
+  assert.ok(whatsappTab.includes('"Limpar leads"'), 'botão "Limpar leads" existe');
+  assert.ok(
+    whatsappTab.includes("whatsapp/groups/extractions/${selectedExtraction.id}/leads"),
+    "chama o endpoint de limpeza",
+  );
+  assert.ok(
+    whatsappTab.includes("queryClient.invalidateQueries"),
+    "invalida a lista ao limpar",
+  );
+});
+
+test("extração WhatsApp: UI tem excluir por linha (ao lado de Ver) com confirmação", () => {
+  assert.ok(whatsappTab.includes('<Trash2 className="h-3.5 w-3.5" /> Excluir'));
+  assert.ok(whatsappTab.includes("setDeleteTarget(ext)"));
+  assert.ok(
+    whatsappTab.includes("whatsapp/groups/extractions/${deleteTarget.id}"),
+    "chama o endpoint de exclusão da extração",
+  );
+  assert.ok(
+    whatsappTab.includes("setDeleteTarget(null)"),
+    "fecha o modal ao excluir",
+  );
 });
 
 test("rotas de e-mails: isoladas por business_id (multi-tenant)", () => {

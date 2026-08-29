@@ -3,9 +3,8 @@ import { createLogger } from '@prospector/logger';
 import { MessageStatus } from '@prospector/types';
 import { QUEUE_NAMES } from '@prospector/queues';
 import { brasiliaWindow, isInsideWindow, startOfBrasiliaDay } from '@prospector/utils';
-import { buildFirstContactMessage } from '@prospector/ai';
 import { getWorkerQueue } from '../queues';
-import { resolveChannelDispatch, resolveEmailContent } from '../services/campaign-channels';
+import { resolveChannelDispatch, resolveEmailContent, resolveWaFirstMessage } from '../services/campaign-channels';
 import { redis, PUMP_RUN_KEY, NEXT_SEND_KEY } from '../services/redis';
 
 const logger = createLogger('worker.campaign');
@@ -185,7 +184,7 @@ export async function processCampaignPump(job: { id?: string; data: PumpJobData 
       },
     });
 
-    const message = buildFirstContactMessage(lead.business_name);
+    const message = resolveWaFirstMessage(campaign, lead);
 
     if (willWhatsapp) {
       whatsappCapacity -= 1;

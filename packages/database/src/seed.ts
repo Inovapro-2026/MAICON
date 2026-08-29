@@ -150,6 +150,8 @@ async function main(): Promise<void> {
   // Prospecção web (busca automática de leads) — habilitada APENAS no plano
   // Empresa. A validação é feita por feature do plano (nunca hardcodando o slug).
   const plansWithProspeccaoWeb = new Set(["enterprise"]);
+  // Extração de contatos de grupos do WhatsApp — Empresa (mesmo plano da prospecção web).
+  const plansWithWhatsAppGroups = new Set(["enterprise"]);
 
   for (const planData of defaultPlans) {
     const plan = await prisma.plan.upsert({
@@ -198,6 +200,23 @@ async function main(): Promise<void> {
         plan_id: plan.id,
         feature: "prospeccao_web",
         enabled: webEnabled,
+        limit: null,
+      },
+    });
+    // Extração de grupos do WhatsApp: só no plano Empresa.
+    const whatsappGroupsEnabled = plansWithWhatsAppGroups.has(planData.slug);
+    await prisma.planFeature.upsert({
+      where: {
+        plan_id_feature: {
+          plan_id: plan.id,
+          feature: "whatsapp_group_extraction",
+        },
+      },
+      update: { enabled: whatsappGroupsEnabled, limit: null },
+      create: {
+        plan_id: plan.id,
+        feature: "whatsapp_group_extraction",
+        enabled: whatsappGroupsEnabled,
         limit: null,
       },
     });

@@ -70,6 +70,7 @@ campaignsRouter.post(
         channel_mode: channelMode,
         email_subject: typeof req.body.email_subject === 'string' && req.body.email_subject.trim() ? req.body.email_subject.trim() : null,
         email_body: typeof req.body.email_body === 'string' && req.body.email_body.trim() ? req.body.email_body.trim() : null,
+        wa_first_message: typeof req.body.wa_first_message === 'string' && req.body.wa_first_message.trim() ? req.body.wa_first_message.trim() : null,
         status: 'PAUSED',
       },
     });
@@ -192,6 +193,9 @@ campaignsRouter.patch(
     }
     if (req.body.email_body !== undefined) {
       data.email_body = typeof req.body.email_body === 'string' && req.body.email_body.trim() ? req.body.email_body.trim() : null;
+    }
+    if (req.body.wa_first_message !== undefined) {
+      data.wa_first_message = typeof req.body.wa_first_message === 'string' && req.body.wa_first_message.trim() ? req.body.wa_first_message.trim() : null;
     }
 
     const campaign = await prisma.campaign.update({ where: { id }, data });

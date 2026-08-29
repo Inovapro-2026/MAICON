@@ -5,9 +5,15 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PixCheckout } from "@/components/billing/pix-checkout";
 
 interface BillingStatus {
-  business: { id: string; name: string; status: string };
+  business: {
+    id: string;
+    name: string;
+    status: string;
+    suspension_reason?: string | null;
+  };
   subscription: {
     id: string;
     status: string;
@@ -17,6 +23,7 @@ interface BillingStatus {
     stripe_customer_id: string | null;
     stripe_subscription_id: string | null;
     cakto_checkout_url: string | null;
+    abacatepay_checkout_id: string | null;
   } | null;
   last_payment: {
     id: string;
@@ -25,11 +32,13 @@ interface BillingStatus {
     value: number;
     stripe_payment_intent_id: string | null;
     cakto_order_id: string | null;
+    abacatepay_checkout_id: string | null;
   } | null;
   requires_payment: boolean;
   stripe_configured: boolean;
   stripe_publishable_key: string | null;
   cakto_configured: boolean;
+  abacatepay_configured: boolean;
 }
 
 interface StripeCheckout {
@@ -108,7 +117,11 @@ export default function PaymentPage() {
     try {
       const s = await api<BillingStatus>("/api/proxy/billing/status");
       setStatus(s);
-      if (s.business.status === "SUSPENDED") {
+      // Suspensão por vencimento de assinatura leva direto ao fluxo de renovação.
+      const suspendedExpired =
+        s.business.status === "SUSPENDED" &&
+        s.business.suspension_reason === "subscription_expired";
+      if (s.business.status === "SUSPENDED" && !suspendedExpired) {
         setError("Sua conta está suspensa. Fale com o suporte.");
         setMode("pay");
         return;
@@ -181,11 +194,16 @@ export default function PaymentPage() {
       </div>
       <div className="w-full max-w-md">
         <h1 className="mb-2 text-center font-display text-2xl font-bold text-zinc-900">
-          Assinatura pendente
+          {status?.business.status === "SUSPENDED" &&
+          status.business.suspension_reason === "subscription_expired"
+            ? "Assinatura vencida"
+            : "Assinatura pendente"}
         </h1>
         <p className="mb-6 text-center text-sm text-zinc-500">
           {status
-            ? `Sua empresa ${status.business.name} aguarda o pagamento para ser ativada.`
+            ? status.business.status === "SUSPENDED"
+              ? `A assinatura de ${status.business.name} venceu. Faça o pagamento para reativar o acesso.`
+              : `Sua empresa ${status.business.name} aguarda o pagamento para ser ativada.`
             : "Verificando sua assinatura..."}
         </p>
 
@@ -255,6 +273,12 @@ export default function PaymentPage() {
                   Ativar acesso
                 </Button>
               </div>
+            ) : status.abacatepay_configured ? (
+              <PixCheckout
+                onPaid={() => {
+                  void loadStatus();
+                }}
+              />
             ) : (
               <div className="space-y-3">
                 <div className="rounded-xl bg-white px-4 py-3 text-sm text-zinc-700">
@@ -276,7 +300,12 @@ export default function PaymentPage() {
                       : "Você voltou do pagamento. Estamos aguardando a confirmação do banco — pode levar alguns segundos."}
                   </div>
                 ) : null}
-                <Button variant="outline" className="w-full" onClick={() => void checkNow()} loading={checkingNow}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => void checkNow()}
+                  loading={checkingNow}
+                >
                   Já paguei — verificar pagamento
                 </Button>
                 <p className="text-center text-[11px] text-zinc-500">

@@ -75,6 +75,20 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
     return;
   }
 
+  // Valida se o número é usuário registrado do WhatsApp. Números não registrados
+  // (fixos/inexistentes) até produzem echo fromMe=true, mas NADA chega ao
+  // destinatário — por isso o painel mostrava "Enviado" sem entrega real.
+  if (!(await waManager.isOnWhatsApp(phone))) {
+    logger.warn('Número não é usuário do WhatsApp; envio marcado como erro', { lead_id: leadId, phone });
+    await markMessageFailed(messageId, 'Número não registrado no WhatsApp');
+    await prisma.campaignLead.updateMany({
+      where: { lead_id: leadId, ...(businessId ? { business_id: businessId } : {}) },
+      data: { status: 'ERROR' },
+    });
+    await prisma.lead.update({ where: { id: leadId }, data: { status: 'ERROR' } });
+    return;
+  }
+
   try {
     const externalId = await waManager.sendText(phone, message, remoteJid);
     await updateMessageStatus(messageId, 'DELIVERED', externalId);

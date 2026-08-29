@@ -971,3 +971,106 @@ máquina de onboarding removida (`conversation-machine.ts`, `opening.ts`,
 - `message-dedup.test.mjs` e `ai-modes.test.mjs` ajustados (onboarding removido,
   `generateCommercialTurn`).
 - **229 testes verdes**; typecheck (packages + api/worker/dashboard) OK; build OK.
+
+---
+
+## 13. Causa Raiz: Correções CSS não refletidas em produção (2026-08-25)
+
+### Problema
+Quatro correções consecutivas no CSS dos cards de inbox (nomes quebrando
+caractere por caractere no mobile) foram reportadas como concluídas com
+gates passando, mas **nunca apareceram na tela real** em produção.
+
+### Causa Raiz
+O script `scripts/build-all.sh` **não incluía o build do dashboard** (só
+construía `apps/api` e `apps/worker`). Quando o build do dashboard era
+feito manualmente (`cd apps/dashboard && npm run build`), o `postbuild.sh`
+não era executado — e sem ele, os assets estáticos (`.next/static/`) **não
+eram copiados para o diretório `.next/standalone/`**.
+
+O pm2 executa o dashboard a partir de `.next/standalone/apps/dashboard/`
+(conforme `ecosystem.config.js`), mas sem o postbuild, esse diretório
+continuava servindo os **chunks e CSS de um build anterior**. O
+`BUILD_ID` no standalone era diferente do BUILD_ID no `.next/` principal,
+confirmando que o servidor estava desatualizado.
+
+### Fluxo corrigido
+1. **`scripts/build-all.sh`**: agora inclui `apps/dashboard` (next build +
+   postbuild.sh) no ciclo de build completo.
+2. **`apps/dashboard/scripts/postbuild.sh`**: já existia e estava correto;
+   o problema era que nunca era chamado.
+3. **Deploy**: após `npm run build`, o diretório standalone reflete a
+   última versão do código. `pm2 restart prospector-dashboard` recarrega
+   o processo.
+
+### Lição
+- `typecheck` + `lint` + `build` **sem `pm2 restart`** não é deploy.
+- `next build` sem `postbuild.sh` **não atualiza** o standalone.
+- A verificação de deploy deve incluir: (1) comparar `BUILD_ID` servido
+  vs. `BUILD_ID` no disco; (2) confirmar que o HTML/CSS servido contém
+  as classes esperadas; (3) screenshot real em viewport mobile.
+---
+
+## 14. Prospecção — Extração de contatos de grupos do WhatsApp (2026-08-27)
+
+### O que foi feito
+Nova origem de lead `WHATSAPP_GROUP` (terceira aba da Prospecção, "/prospect?tab=whatsapp").
+O usuário marca grupos da MESMA sessão Baileys já conectada na empresa, ajusta opções,
+confirma responsabilidade legal e extrai. Os contatos viram leads `PENDING` com
+`source: WHATSAPP_GROUP` para revisão — **a extração nunca envia mensagens**.
+
+### Fluxo
+1. Dashboard lista grupos via `GET /whatsapp/groups/list` (proxy API → worker → `manager.listGroups()`).
+2. `POST /whatsapp/groups/extract` valida feature de plano, papel, checkbox legal e cria
+   `WhatsAppGroupExtraction` (PENDING) + enfileira BullMQ `WHATSAPP_GROUP_EXTRACTION`.
+3. Worker (`whatsapp-group-extraction.processor.ts`): baixa os participantes via
+   `fetchGroupMetadata`, aplica `extractContacts` (excluir admins / ignorar o próprio /
+   dedup por telefone / resolver LID), deduplica contra a base por `fingerprint_phone`,
+   cria leads, grava `WhatsAppGroupSource` + `WhatsAppGroupLead` (vínculo grupo→lead),
+   opcionalmente enriquece (LEAD_ENRICHMENT) e, no destino `campaign`, associa à
+   campanha da empresa — **que nasce PAUSED** (regra de 1 campanha por empresa).
+4. Progresso publicado em realtime (`whatsapp_group_progress`) e persistido em contadores
+   (encontrados/únicos/duplicados/c-telefone/enriquecidos/qualificados).
+
+### Salvaguardas legais (WhatsApp ToS / LGPD)
+- `confirmLegal: true` obrigatório no POST (validado no servidor, nunca só na UI).
+- Função restrita a OWNER/BUSINESS_ADMIN (`requireRole`).
+- Feature de plano `whatsapp_group_extraction` (plano Empresa) via `checkFeatureAccess`
+  (+ bypass para PLATFORM_ADMIN), mais `requireActiveSubscription`.
+- 1 extração ativa por empresa (429).
+- Campanha criada/associada fica PAUSED — o envio só ocorre depois de revisão/ativação
+  manual; opt-outs continuam respeitados no `campaign.processor`.
+- Auditoria: `whatsapp_groups.extraction_started` com ator, nº de grupos e destino.
+
+### Decisões de arquitetura
+- **Mesma sessão Baileys**: `listGroups()`/`fetchGroupMetadata()` usam a conexão já
+  existente do manager por business — nunca abre conexão paralela.
+- **Lógica pura testável**: `services/whatsapp/src/groups/extractor.ts` (`extractContacts`,
+  `phoneFromParticipantJid`, `isGroupOrBroadcastJid`, `isAdminParticipant`) sem dependência
+  de Baileys/banco.
+- **Dedup sempre por telefone**: fingerprint único por empresa (reaproveita `Lead`).
+- **Contadores**: `found` = pós-exclusões; `unique` = únicos; `duplicates` = found − unique;
+  `phone` = únicos com telefone; `qualified` = phone; `enriched` ≈ 0 (integrantes de grupo
+  raramente têm site, mas o caminho LEAD_ENRICHMENT está pronto).
+
+### Banco
+- `Lead.source` ganhou `WHATSAPP_GROUP` (ALTER TYPE ADD VALUE).
+- Novos: `WhatsAppGroupExtraction`, `WhatsAppGroupSource` (uma linha por grupo/extração),
+  `WhatsAppGroupLead` (m2m `@@unique([source_id, lead_id])`).
+- Migração: `packages/database/prisma/migrations/20260827000000_whatsapp_group_extraction/migration.sql`
+  (ainda **não aplicada** em produção — aplicar com `db:migrate` antes do deploy).
+
+### Backend / Frontend
+- API: `apps/api/src/routes/whatsapp-groups.ts` (list/extract/extractions/extractions/:id/leads),
+  registrado em `/whatsapp/groups` no `app.ts`; realtime type ampliado.
+- Worker: rota `GET /whatsapp/groups` no `server.ts`; worker registrado para
+  `WHATSAPP_GROUP_EXTRACTION` (concurrency 1); realtime type ampliado.
+- Dashboard: `components/prospect/whatsapp-tab.tsx` + terceira aba em
+  `app/(dashboard)/prospect/page.tsx`; `lib/realtime.ts` ampliado.
+
+### Testes e gates
+- Novos: `tests/whatsapp-groups.test.mjs` (9 casos da lógica pura — E.164, grupos/broadcast/
+  LID, admins, dedup, próprios, resumo). **9 verdes**.
+- Gates: `typecheck` (packages/services/apps OK), `lint` OK, `npm run build` OK (inclui next build
+  do dashboard + postbuild). Testes existentes: 429 pass / 11 fail — **falhas pré-existentes e
+  sem relação** (guias do "Meu negócio", tokens de UI e abas "responded/sent" do inbox).

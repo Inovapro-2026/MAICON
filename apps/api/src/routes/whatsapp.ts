@@ -11,7 +11,7 @@ export const whatsappRouter = Router();
 whatsappRouter.use(requireAuth, requireBusiness);
 
 /** Proxy para o worker, que detém a conexão Baileys. */
-async function proxyToWorker(path: string, req: Request, method = 'GET'): Promise<unknown> {
+export async function proxyToWorker(path: string, req: Request, method = 'GET'): Promise<unknown> {
   const businessId = req.user?.businessId;
   let url = `${config.app.workerBaseUrl}${path}`;
   const body = method === 'GET' ? undefined : JSON.stringify({ ...(req.body ?? {}), businessId });

@@ -12,6 +12,13 @@ import {
   isCaktoWebhookConfigured,
 } from "../services/cakto";
 import { handleCaktoWebhookEvent } from "../services/cakto-billing";
+import {
+  isAbacatepayWebhookConfigured,
+  isAbacatepayWebhookSecretValid,
+  isAbacatepaySignatureValid,
+  AbacatepayWebhookPayload,
+} from "../services/abacatepay";
+import { handleAbacatepayWebhookEvent } from "../services/abacatepay-billing";
 
 const logger = createLogger("api.webhooks");
 
@@ -252,6 +259,171 @@ webhooksRouter.post(
         logger.error("Falha ao processar evento Cakto", {
           event,
           dataId,
+          error,
+        });
+      }
+    })();
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Webhook AbacatePay — valida SAAS via query param (?webhookSecret=) e MUST
+// assinatura HMAC-SHA256 (x-webhook-signature) sobre o corpo RAW; deduplica por
+// payload.id; processa eventos de billing. Só ativa conta com confirmação real
+// (transparent.completed / checkout.completed).
+// ---------------------------------------------------------------------------
+
+let abacatepayEventCache = new Map<string, number>();
+const ABACATEPAY_EVENT_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+async function isAbacatepayEventProcessed(eventId: string): Promise<boolean> {
+  const cached = abacatepayEventCache.get(eventId);
+  if (cached && Date.now() - cached < ABACATEPAY_EVENT_CACHE_TTL_MS)
+    return true;
+  const found = await prisma.auditLog.findFirst({
+    where: {
+      entity: "AbacatepayWebhookEvent",
+      entity_id: eventId,
+      action: "abacatepay.event_processed",
+    },
+  });
+  return Boolean(found);
+}
+
+async function markAbacatepayEventProcessed(eventId: string): Promise<void> {
+  abacatepayEventCache.set(eventId, Date.now());
+  await prisma.auditLog
+    .create({
+      data: {
+        actor: "abacatepay-webhook",
+        action: "abacatepay.event_processed",
+        entity: "AbacatepayWebhookEvent",
+        entity_id: eventId,
+      },
+    })
+    .catch(() => {});
+}
+
+/** Faz o parse do corpo (pode ser Buffer do express.raw ou objeto JSON). */
+function parseRawWebhookBody(raw: unknown): Record<string, unknown> | null {
+  if (!raw) return null;
+  if (Buffer.isBuffer(raw)) {
+    try {
+      return JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object") return raw as Record<string, unknown>;
+  return null;
+}
+
+/**
+ * POST /webhooks/abacatepay — recebe eventos da AbacatePay (PIX manual).
+ * A rota pública do nginx /api/webhooks/abacatepay aponta para cá.
+ */
+webhooksRouter.post(
+  "/abacatepay",
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!isAbacatepayWebhookConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "NOT_CONFIGURED",
+          message: "AbacatePay não configurado",
+        },
+      });
+    }
+
+    const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+    const body = parseRawWebhookBody(rawBody ?? req.body);
+
+    if (!body) {
+      logger.warn("Webhook AbacatePay com corpo inválido", { ip: req.ip });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Corpo inválido" },
+      });
+    }
+
+    const event = String(body.event ?? "");
+    const payload = body as unknown as AbacatepayWebhookPayload;
+    const eventId = typeof body.id === "string" ? body.id : "";
+
+    // 1ª camada: secret na query string (?webhookSecret=...) — timing-safe.
+    if (!isAbacatepayWebhookSecretValid(req.query.webhookSecret)) {
+      logger.warn("Webhook AbacatePay com secret inválido", {
+        ip: req.ip,
+        event,
+      });
+      return res.status(401).json({
+        success: false,
+        error: { code: "UNAUTHORIZED", message: "unauthorized" },
+      });
+    }
+
+    // 2ª camada: assinatura HMAC-SHA256 (x-webhook-signature) sobre o corpo RAW.
+    const signature = String(req.headers["x-webhook-signature"] ?? "");
+    if (!signature) {
+      logger.warn("Webhook AbacatePay sem assinatura HMAC", {
+        ip: req.ip,
+        event,
+      });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Assinatura HMAC ausente" },
+      });
+    }
+    const rawBuf =
+      rawBody ?? Buffer.from(JSON.stringify(req.body ?? {}), "utf8");
+    if (!isAbacatepaySignatureValid(rawBuf, signature)) {
+      logger.warn("Webhook AbacatePay com assinatura HMAC inválida", {
+        ip: req.ip,
+        event,
+      });
+      return res.status(401).json({
+        success: false,
+        error: { code: "UNAUTHORIZED", message: "Assinatura inválida" },
+      });
+    }
+
+    // Deduplicação por payload.id (obrigatória — retentativas podem duplicar).
+    if (eventId && (await isAbacatepayEventProcessed(eventId))) {
+      return ok(res, { received: true, duplicate: true });
+    }
+
+    // Persiste o recebimento ANTES do processamento (deduplicação segura).
+    await prisma.auditLog
+      .create({
+        data: {
+          actor: "abacatepay-webhook",
+          action: "abacatepay.event_received",
+          entity: "AbacatepayWebhookEvent",
+          entity_id: eventId || "unknown",
+          metadata: {
+            event,
+            devMode: Boolean(body.devMode),
+            checkout_id:
+              (body.data as Record<string, unknown> | undefined)?.id ?? null,
+          },
+        },
+      })
+      .catch(() => {});
+
+    res.json({ success: true, data: { received: true } });
+
+    // Processamento assíncrono (200 imediato; AbacatePay reenvia em 5xx/timeout).
+    void (async () => {
+      try {
+        const handled = await handleAbacatepayWebhookEvent(event, payload);
+        if (!handled) {
+          logger.info("Evento AbacatePay não tratado", { event, eventId });
+        }
+        if (eventId) await markAbacatepayEventProcessed(eventId);
+      } catch (error) {
+        logger.error("Falha ao processar evento AbacatePay", {
+          event,
+          eventId,
           error,
         });
       }

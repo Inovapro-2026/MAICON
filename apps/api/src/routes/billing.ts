@@ -9,13 +9,13 @@ import {
   StripeNotConfiguredError,
 } from "../services/stripe-billing";
 import { getPublishableKey, isStripeConfigured } from "../services/stripe";
+import { createCaktoCheckout } from "../services/cakto-billing";
+import { isCaktoConfigured, CaktoNotConfiguredError } from "../services/cakto";
+import { createAbacatepayPixForBusiness } from "../services/abacatepay-billing";
 import {
-  createCaktoCheckout,
-} from "../services/cakto-billing";
-import {
-  isCaktoConfigured,
-  CaktoNotConfiguredError,
-} from "../services/cakto";
+  isAbacatepayConfigured,
+  AbacatePayNotConfiguredError,
+} from "../services/abacatepay";
 import { writeAudit } from "../services/audit";
 
 const logger = createLogger("api.billing");
@@ -54,7 +54,7 @@ billingRouter.get(
     // Vencimento: assinatura ativa com período final no passado = expirada.
     const isExpired = Boolean(
       subscription?.current_period_end &&
-        subscription.current_period_end.getTime() < Date.now(),
+      subscription.current_period_end.getTime() < Date.now(),
     );
 
     return ok(res, {
@@ -63,6 +63,7 @@ billingRouter.get(
         name: business.name,
         slug: business.slug,
         status: business.status,
+        suspension_reason: business.suspension_reason,
       },
       subscription: subscription
         ? {
@@ -71,7 +72,9 @@ billingRouter.get(
             plan_name: subscription.plan_name,
             plan_price:
               currentPlanPrice ??
-              (subscription.plan_price ? Number(subscription.plan_price) : null),
+              (subscription.plan_price
+                ? Number(subscription.plan_price)
+                : null),
             current_period_end: subscription.current_period_end,
             expires_at: subscription.current_period_end,
             is_expired: isExpired,
@@ -79,6 +82,7 @@ billingRouter.get(
             stripe_subscription_id: subscription.stripe_subscription_id,
             cakto_subscription_id: subscription.cakto_subscription_id,
             cakto_checkout_url: subscription.cakto_checkout_url,
+            abacatepay_checkout_id: subscription.abacatepay_checkout_id,
           }
         : null,
       last_payment: lastPayment
@@ -90,6 +94,7 @@ billingRouter.get(
             created_at: lastPayment.created_at,
             stripe_payment_intent_id: lastPayment.stripe_payment_intent_id,
             cakto_order_id: lastPayment.cakto_order_id,
+            abacatepay_checkout_id: lastPayment.abacatepay_checkout_id,
           }
         : null,
       requires_payment: business.status === "PENDING_PAYMENT",
@@ -97,21 +102,27 @@ billingRouter.get(
       stripe_configured: isStripeConfigured(),
       stripe_publishable_key: getPublishableKey(),
       cakto_configured: isCaktoConfigured(),
+      abacatepay_configured: isAbacatepayConfigured(),
     });
   }),
 );
 
 /**
  * POST /billing/checkout — monta o link de pagamento para a empresa.
- * Usa o Cakto (link fixo pré-preenchido, PIX recorrente) quando configurado;
- * caso contrário, cai para o Checkout Stripe (legado). Idempotente.
+ * Prioridade: AbacatePay (PIX embutido) -> Cakto (link fixo) -> Stripe (legado).
+ * O AbacatePay também é criado por /billing/abacatepay/pix (PIX inline); o
+ * checkout à esquerda serve as telas que precisam de URL redirecionável.
  */
 billingRouter.post(
   "/checkout",
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = req.user!.businessId!;
 
-    // Cakto é o gateway preferido (novo).
+    // AbacatePay é o gateway preferido (novo): PIX manual pelo /abacatepay/pix.
+    // Aqui mantemos o checkout legado (Stripe/Cakto) quando o PIX inline não é
+    // usado pela tela — ver /billing/abacatepay/pix.
+
+    // Cakto é o gateway intermediário (PIX recorrente legado).
     if (isCaktoConfigured()) {
       try {
         const result = await createCaktoCheckout(businessId);
@@ -121,7 +132,11 @@ billingRouter.post(
           action: "payment.checkout_url_created",
           entity: "Payment",
           entityId: result.paymentId,
-          metadata: { provider: "cakto", amount: result.amount, offer: result.offerId },
+          metadata: {
+            provider: "cakto",
+            amount: result.amount,
+            offer: result.offerId,
+          },
         });
         return ok(res, result);
       } catch (error) {
@@ -144,6 +159,44 @@ billingRouter.post(
       return ok(res, result);
     } catch (error) {
       if (error instanceof StripeNotConfiguredError) throw error;
+      throw ApiError.badRequest((error as Error).message);
+    }
+  }),
+);
+
+/**
+ * POST /billing/abacatepay/pix — gera (ou reutiliza) o PIX embutido da empresa.
+ * Retorna brCode (copia-e-cola) e brCodeBase64 (QR) para renderização inline,
+ * além de amount/expiresAt/checkoutId para exibição e polling.
+ */
+billingRouter.post(
+  "/abacatepay/pix",
+  asyncHandler(async (req: Request, res: Response) => {
+    const businessId = req.user!.businessId!;
+
+    if (!isAbacatepayConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "NOT_CONFIGURED",
+          message: "AbacatePay não configurado",
+        },
+      });
+    }
+
+    try {
+      const result = await createAbacatepayPixForBusiness(businessId);
+      void writeAudit({
+        actor: req.user!.sub,
+        businessId,
+        action: "payment.checkout_url_created",
+        entity: "Payment",
+        entityId: result.paymentId,
+        metadata: { provider: "abacatepay", amount: result.amount },
+      });
+      return ok(res, result);
+    } catch (error) {
+      if (error instanceof AbacatePayNotConfiguredError) throw error;
       throw ApiError.badRequest((error as Error).message);
     }
   }),

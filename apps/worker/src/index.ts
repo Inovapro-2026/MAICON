@@ -14,10 +14,13 @@ import { processConversationLearning } from "./jobs/conversation-learning.proces
 import { processWebhook } from "./jobs/webhook.processor";
 import { processProspection } from "./jobs/prospect.processor";
 import { processLeadEnrichment } from "./jobs/lead-enrichment.processor";
+import { processWhatsAppGroupExtraction } from "./jobs/whatsapp-group-extraction.processor";
 import { processRetry } from "./jobs/retry.processor";
 import { processDeadLetter } from "./jobs/dead-letter.processor";
 import { startWhatsAppRuntime } from "./whatsapp/runtime";
 import { startControlServer } from "./server";
+import { campaignWatchdog } from "./services/campaign-watchdog";
+import { subscriptionExpiryWatchdog } from "./services/subscription-watchdog";
 
 const logger = createLogger("worker");
 
@@ -35,7 +38,10 @@ function registerWorkers(): void {
   );
   workers.push(createWorker(QUEUE_NAMES.AI_RESPONSE, processAIResponse));
   workers.push(
-    createWorker(QUEUE_NAMES.CONVERSATION_LEARNING, processConversationLearning),
+    createWorker(
+      QUEUE_NAMES.CONVERSATION_LEARNING,
+      processConversationLearning,
+    ),
   );
   workers.push(createWorker(QUEUE_NAMES.WEBHOOK_PROCESSING, processWebhook));
   // Prospecção: processo dedicado do worker (nunca no HTTP), com concorrência própria.
@@ -48,6 +54,15 @@ function registerWorkers(): void {
     createWorker(QUEUE_NAMES.LEAD_ENRICHMENT, processLeadEnrichment, {
       concurrency: config.prospector.scrapyConcurrency,
     }),
+  );
+  workers.push(
+    createWorker(
+      QUEUE_NAMES.WHATSAPP_GROUP_EXTRACTION,
+      processWhatsAppGroupExtraction,
+      {
+        concurrency: 1,
+      },
+    ),
   );
   workers.push(createWorker(QUEUE_NAMES.RETRY, processRetry));
   workers.push(createWorker(QUEUE_NAMES.DEAD_LETTER, processDeadLetter));
@@ -68,6 +83,8 @@ async function bootstrap(): Promise<void> {
   registerWorkers();
   startControlServer(config.ports.worker);
   await startWhatsAppRuntime();
+  campaignWatchdog.start();
+  subscriptionExpiryWatchdog.start();
 
   logger.info("Worker SAVYRON iniciado", {
     env: config.env,
@@ -76,6 +93,8 @@ async function bootstrap(): Promise<void> {
 
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`Recebido ${signal} — encerrando worker`);
+    campaignWatchdog.stop();
+    subscriptionExpiryWatchdog.stop();
     await Promise.all(workers.map((w) => w.close()));
     await prisma.$disconnect();
     process.exit(0);

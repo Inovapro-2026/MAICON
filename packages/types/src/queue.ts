@@ -83,3 +83,9 @@ export interface DelayedCampaignJob {
   campaignId: string;
   runId: string;
 }
+
+/** Payload da extração de contatos de grupos do WhatsApp (worker). */
+export interface WhatsAppGroupExtractionJob {
+  extractionId: string;
+  businessId: string;
+}

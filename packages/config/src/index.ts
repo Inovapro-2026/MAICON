@@ -42,11 +42,16 @@ export const config = {
   },
 
   ai: {
-    // OpenAI é o provedor PRIMÁRIO; Groq fica como fallback (falha/limite).
+    // NVIDIA NIM é o provedor PRIMÁRIO; Groq e OpenRouter ficam como fallback.
+    nvidiaApiKey: optional("NVIDIA_API_KEY"),
+    nvidiaModel: optional("NVIDIA_MODEL", "moonshotai/kimi-k3"),
+    nvidiaBaseUrl: optional("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
     openaiApiKey: optional("OPENAI_API_KEY"),
     openaiModel: optional("OPENAI_MODEL", "gpt-4o-mini"),
     groqApiKey: optional("GROQ_API_KEY"),
     groqModel: optional("GROQ_MODEL", "llama-3.1-8b-instant"),
+    openrouterApiKey: optional("OPENROUTER_API_KEY"),
+    openrouterModel: optional("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"),
     timeoutMs: int("AI_TIMEOUT_MS", 30000),
     maxMessageLength: int("AI_MAX_MESSAGE_LENGTH", 600),
     /**
@@ -96,6 +101,19 @@ export const config = {
     clientSecret: optional("CAKTO_CLIENT_SECRET"),
     webhookSecret: optional("CAKTO_WEBHOOK_SECRET"),
     baseUrl: optional("CAKTO_API_BASE_URL", "https://api.cakto.com.br"),
+  },
+
+  abacatepay: {
+    apiKey: optional("ABACATEPAY_API_KEY"),
+    webhookSecret: optional("ABACATEPAY_WEBHOOK_SECRET"),
+    webhookEndpoint: optional(
+      "ABACATEPAY_WEBHOOK_ENDPOINT",
+      "https://crm.inovapro.cloud/api/webhooks/abacatepay",
+    ),
+    apiBaseUrl: optional(
+      "ABACATEPAY_API_BASE_URL",
+      "https://api.abacatepay.com/v2",
+    ),
   },
 
   whatsapp: {
@@ -175,11 +193,11 @@ export const config = {
         "APIFY_ACTOR_GOOGLE_MAPS",
         "compass/google-maps-extractor",
       ),
-      actorInstagram: optional("APIFY_ACTOR_INSTAGRAM", "apify/instagram-scraper"),
-      maxCrawledPlacesPerSearch: int(
-        "APIFY_MAX_CRAWLED_PLACES_PER_SEARCH",
-        20,
+      actorInstagram: optional(
+        "APIFY_ACTOR_INSTAGRAM",
+        "apify/instagram-scraper",
       ),
+      maxCrawledPlacesPerSearch: int("APIFY_MAX_CRAWLED_PLACES_PER_SEARCH", 20),
       maxInstagramProfiles: int("APIFY_MAX_INSTAGRAM_PROFILES", 30),
       requestTimeoutMs: int("APIFY_REQUEST_TIMEOUT_MS", 120000),
       pollIntervalMs: int("APIFY_POLL_INTERVAL_MS", 5000),

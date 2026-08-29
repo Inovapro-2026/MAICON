@@ -14,7 +14,8 @@ export type RealtimeEventType =
   | "new_message_received"
   | "ai_response_generated"
   | "status_changed"
-  | "prospecting_progress";
+  | "prospecting_progress"
+  | "whatsapp_group_progress";
 
 export interface ProspectingProgressEvent {
   searched?: number;
@@ -26,6 +27,10 @@ export interface ProspectingProgressEvent {
   saved?: number;
   errors?: number;
   targetQuantity?: number;
+  /** Extração de grupos do WhatsApp: únicos, com telefone, enriquecidos. */
+  unique?: number;
+  phone?: number;
+  enriched?: number;
 }
 
 export interface RealtimeEventMessage {
@@ -35,6 +40,10 @@ export interface RealtimeEventMessage {
   timestamp: string;
   businessId?: string;
   prospectingRunId?: string;
+  /** Identifica a extração de grupo quando type === 'whatsapp_group_progress'. */
+  extractionId?: string;
+  /** Erro quando type === 'whatsapp_group_progress' e a extração falhou. */
+  error?: string;
   progress?: ProspectingProgressEvent;
   payload?: {
     content?: string;

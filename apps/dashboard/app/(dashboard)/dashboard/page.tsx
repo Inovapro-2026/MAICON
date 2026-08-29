@@ -219,7 +219,7 @@ export default function DashboardPage() {
             <MetricCard
               icon={Users}
               label="Total de Leads"
-              value={metrics.data?.leads_imported || metrics.data?.leads_available || 33}
+              value={metrics.data?.leads_imported ?? metrics.data?.leads_available ?? 0}
               tone="blue"
               badge="+12%"
               hint="Todos os leads da fila"
@@ -227,7 +227,7 @@ export default function DashboardPage() {
             <MetricCard
               icon={Hourglass}
               label="Pendentes"
-              value={metrics.data?.leads_available ?? 31}
+              value={metrics.data?.leads_available ?? 0}
               tone="amber"
               badge="+8%"
               hint="Aguardando envio"
@@ -235,7 +235,7 @@ export default function DashboardPage() {
             <MetricCard
               icon={Send}
               label="Enviados"
-              value={metrics.data?.messages_sent_today ?? 1}
+              value={metrics.data?.messages_sent_today ?? 0}
               tone="emerald"
               badge="+100%"
               hint="Mensagens enviadas"
@@ -243,7 +243,7 @@ export default function DashboardPage() {
             <MetricCard
               icon={MessageSquareReply}
               label="Respostas"
-              value={metrics.data?.responses_received ?? 1}
+              value={metrics.data?.responses_received ?? 0}
               tone="purple"
               badge="+100%"
               hint="Receberam resposta"

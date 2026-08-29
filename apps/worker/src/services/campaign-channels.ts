@@ -1,4 +1,5 @@
 import { renderMessageTemplate } from '@prospector/utils';
+import { buildFirstContactMessage } from '@prospector/ai';
 
 export type ChannelMode = 'WHATSAPP' | 'EMAIL' | 'BOTH';
 
@@ -35,6 +36,26 @@ export function resolveChannelDispatch(
 export interface CampaignEmailConfig {
   email_subject?: string | null;
   email_body?: string | null;
+}
+
+export interface CampaignWhatsAppConfig {
+  wa_first_message?: string | null;
+}
+
+/**
+ * Primeira mensagem de WhatsApp da campanha para um lead.
+ * Usa SEMPRE a mensagem configurada pelo usuário (com variáveis {{nome}},
+ * {{empresa}}, {{email}}, {{telefone}} renderizadas) quando presente; sem
+ * configuração → usa a mensagem padrão de abordagem (buildFirstContactMessage).
+ * Nunca retorna vazio.
+ */
+export function resolveWaFirstMessage(
+  campaign: CampaignWhatsAppConfig,
+  lead: { name?: string | null; business_name?: string | null; email?: string | null; phone?: string | null }
+): string {
+  const custom = campaign.wa_first_message?.trim();
+  if (custom) return renderMessageTemplate(custom, lead);
+  return buildFirstContactMessage(lead.business_name ?? null);
 }
 
 /**

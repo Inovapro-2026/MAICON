@@ -10,4 +10,9 @@ for dir in apps/api apps/worker; do
   (cd "$ROOT/$dir" && npm run build)
 done
 
+echo "==> Construindo dashboard (Next.js standalone)..."
+(cd "$ROOT/apps/dashboard" && npm run build)
+echo "  -> postbuild: copiando static/ para standalone..."
+bash "$ROOT/apps/dashboard/scripts/postbuild.sh"
+
 echo "==> Build completo."

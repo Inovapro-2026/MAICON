@@ -10,7 +10,8 @@ export type RealtimeEventType =
   | "new_message_received"
   | "ai_response_generated"
   | "status_changed"
-  | "prospecting_progress";
+  | "prospecting_progress"
+  | "whatsapp_group_progress";
 
 /** Progresso de uma run de prospecção (espelha ProspectionProgress + meta). */
 export interface ProspectingProgressEvent {
@@ -23,6 +24,10 @@ export interface ProspectingProgressEvent {
   saved?: number;
   errors?: number;
   targetQuantity?: number;
+  /** Extração de grupos do WhatsApp: únicos, com telefone, enriquecidos. */
+  unique?: number;
+  phone?: number;
+  enriched?: number;
 }
 
 export interface RealtimeEventMessage {
@@ -33,6 +38,10 @@ export interface RealtimeEventMessage {
   businessId?: string;
   /** Identifica a run de prospecção quando type === 'prospecting_progress'. */
   prospectingRunId?: string;
+  /** Identifica a extração de grupo quando type === 'whatsapp_group_progress'. */
+  extractionId?: string;
+  /** Erro quando type === 'whatsapp_group_progress' e a extração falhou. */
+  error?: string;
   progress?: ProspectingProgressEvent;
   payload?: {
     content?: string;
@@ -44,6 +53,23 @@ export interface RealtimeEventMessage {
     /** Técnica comercial usada pelo Motor Comercial na última resposta. */
     technique_used?: string;
     notification?: Record<string, unknown>;
+  };
+}
+
+/** Monta um evento de progresso de extração de grupos do WhatsApp. */
+export function buildWhatsAppGroupProgressEvent(params: {
+  businessId: string;
+  extractionId: string;
+  progress?: ProspectingProgressEvent;
+  error?: string;
+}): RealtimeEventMessage {
+  return {
+    type: "whatsapp_group_progress",
+    businessId: params.businessId,
+    extractionId: params.extractionId,
+    ...(params.error ? { error: params.error } : {}),
+    ...(params.progress ? { progress: params.progress } : {}),
+    timestamp: new Date().toISOString(),
   };
 }
 

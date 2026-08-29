@@ -56,6 +56,8 @@ export const LeadSource = {
   CSV: 'CSV',
   MANUAL: 'MANUAL',
   TEST: 'TEST',
+  WEB: 'WEB',
+  WHATSAPP_GROUP: 'WHATSAPP_GROUP',
 } as const;
 
 export type LeadSource = (typeof LeadSource)[keyof typeof LeadSource];

@@ -205,10 +205,16 @@ export class WhatsAppConnection extends EventEmitter {
     if (!this.socket || this.state !== 'connected') {
       throw new Error('WhatsApp não conectado');
     }
-    const jid = (phoneE164 && this.toJid(phoneE164)) || remoteJid;
-    if (!jid) {
+    // Resolução canônica: consulta o diretório USync do WhatsApp para obter
+    // o JID exato que o servidor conhece. Isso resolve o problema do 9º dígito
+    // brasileiro: +5533998086852 pode ser registrado como 553398086852@s.whatsapp.net.
+    // Sem isso, Baileys aceita localmente (echo fromMe=true) mas o WhatsApp
+    // server nunca entrega ao aparelho destinatário.
+    const rawJid = (phoneE164 && this.toJid(phoneE164)) || remoteJid;
+    if (!rawJid) {
       throw new Error('Sem destinatário para enviar mensagem');
     }
+    const jid = await this.resolveCanonicalJid(rawJid);
     const parts = buildOutgoingParts(text);
     if (parts.length === 0) {
       throw new Error('Mensagem vazia após normalização de links');
@@ -243,12 +249,38 @@ export class WhatsAppConnection extends EventEmitter {
   }
 
   /**
+   * Confere se um número é usuário registrado do WhatsApp (USync directory).
+   *
+   * Números não registrados (fixos/inexistentes) aceitam a mensagem no servidor
+   * do remetente (echo fromMe=true) mas nunca chegam a nenhum aparelho — é o
+   * caso de "marca como Enviado mas não entrega". Este check evita esse falso
+   * positivo. Falha aberta: se o diretório responder erro, assume existente.
+   */
+  async isOnWhatsApp(phoneE164: string): Promise<boolean> {
+    const digits = String(phoneE164 ?? '').replace(/\D/g, '');
+    if (!digits || digits.length < 8) return true;
+    if (!this.socket || this.state !== 'connected') return false;
+    try {
+      const results = await this.socket.onWhatsApp(digits);
+      const entry = Array.isArray(results) ? results[0] : undefined;
+      return Boolean(entry?.exists);
+    } catch (error) {
+      logger.warn('Falha ao consultar diretório WhatsApp; assumindo existente', {
+        phone: digits,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return true;
+    }
+  }
+
+  /**
    * Resolve um JID LID (@lid) para o número de telefone real usando o mapa
    * LID→PN mantido pelo Baileys v7. Retorna os dígitos (ex.: 5511978197645)
    * ou null se não for um LID / não resolvível.
    */
   async resolvePhoneFromLid(lidJid: string): Promise<string | null> {
     if (!lidJid?.includes('@lid')) return null;
+    // 1) Tabela lid-mapping do Baileys (SIGNAL, preenchida após mapear pares).
     try {
       const pn = await this.socket?.signalRepository?.lidMapping?.getPNForLID(lidJid);
       if (pn) {
@@ -257,6 +289,36 @@ export class WhatsAppConnection extends EventEmitter {
       }
     } catch (error) {
       logger.warn('Falha ao resolver LID→telefone', { lid_jid: lidJid, error });
+    }
+    // 2) Fallback: contatos sincronizados — o store guarda o par (lid, phoneNumber).
+    try {
+      const store = this.socket?.store;
+      const contacts =
+        store?.contacts && typeof store.contacts.get === 'function'
+          ? store.contacts
+          : null;
+      if (contacts) {
+        for (const [id, c] of contacts) {
+          const contactId = String(id);
+          const contact = c as {
+            id?: string;
+            lid?: string;
+            phoneNumber?: string;
+          };
+          const target = contact?.id ?? contactId;
+          const isMatch =
+            contact?.lid === lidJid || target === lidJid;
+          if (isMatch) {
+            const pnJid = contact?.phoneNumber || (contact?.lid === lidJid ? target : undefined);
+            if (pnJid) {
+              const digits = String(pnJid).split('@')[0].split(':')[0];
+              if (/^\d{8,15}$/.test(digits)) return digits;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn('Falha ao resolver LID pelo store de contatos', { lid_jid: lidJid, error });
     }
     return null;
   }
@@ -270,6 +332,49 @@ export class WhatsAppConnection extends EventEmitter {
     } catch {
       return false;
     }
+  }
+
+  /** Telefone E.164 do número logado (próprio contato a ignorar na extração). */
+  getOwnPhone(): string | null {
+    const raw = this.connectedPhone;
+    if (!raw) return null;
+    const digits = raw.replace(/\D/g, '');
+    return digits ? `+${digits}` : null;
+  }
+
+  /**
+   * Lista os grupos em que a empresa participa (para a tela de seleção).
+   * `platform/listGroups` no worker usa a MESMA conexão Baileys (nunca abre
+   * uma segunda conexão por empresa).
+   */
+  async listGroups(): Promise<import('../groups/extractor').WhatsAppGroupSummary[]> {
+    if (!this.socket || this.state !== 'connected') {
+      throw new Error('WhatsApp não conectado');
+    }
+    const groups = (await this.socket.groupFetchAllParticipating?.()) ?? {};
+    return Object.entries(groups as Record<string, any>)
+      .map(([jid, meta]) => ({
+        jid,
+        subject:
+          typeof meta?.subject === 'string' && meta.subject
+            ? meta.subject
+            : jid,
+        size:
+          typeof meta?.size === 'number'
+            ? meta.size
+            : Array.isArray(meta?.participants)
+              ? meta.participants.length
+              : null,
+      }))
+      .sort((a, b) => a.subject.localeCompare(b.subject));
+  }
+
+  /** Metadados completos de um grupo (participantes, nome, tamanho). */
+  async fetchGroupMetadata(jid: string): Promise<any> {
+    if (!this.socket || this.state !== 'connected') {
+      throw new Error('WhatsApp não conectado');
+    }
+    return this.socket.groupMetadata(jid);
   }
 
   // ---------------------------------------------------------------
@@ -529,6 +634,34 @@ export class WhatsAppConnection extends EventEmitter {
   private toJid(phoneE164: string): string {
     const digits = phoneE164.replace(/\D/g, '');
     return `${digits}@s.whatsapp.net`;
+  }
+
+  /**
+   * Resolve o JID canônico de um número via diretório USync do WhatsApp.
+   * Essencial para números brasileiros: o 9 dígito pode ou não estar presente
+   * no JID real do destinatário. onWhatsApp() retorna o JID exato que o
+   * servidor WhatsApp conhece. Se a consulta falhar, usa o JID original.
+   */
+  private async resolveCanonicalJid(jid: string): Promise<string> {
+    if (!this.socket || this.state !== 'connected') return jid;
+    try {
+      const phoneDigits = jid.split('@')[0];
+      const results = await this.socket.onWhatsApp(phoneDigits);
+      const entry = Array.isArray(results) ? results[0] : undefined;
+      if (entry?.exists && entry.jid) {
+        const canonical = entry.jid;
+        if (canonical !== jid) {
+          logger.info('JID canonico resolvido (9 digito)', { original: jid, canonical });
+        }
+        return canonical;
+      }
+    } catch (error) {
+      logger.warn('Falha ao resolver JID canonico; usando JID original', {
+        jid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return jid;
   }
 
   private setStatus(state: WhatsAppConnectionState): void {

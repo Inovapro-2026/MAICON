@@ -3,17 +3,18 @@ export interface ChatMessage {
   content: string;
 }
 
-/** Provedores de IA suportados. OpenAI é o primário; Groq fica como fallback. */
-export type ProviderName = "openai" | "groq";
+/** Provedores de IA suportados. NVIDIA é o primário; Groq e OpenRouter ficam como fallback. */
+export type ProviderName = "openai" | "groq" | "openrouter" | "nvidia";
 
 export interface GenerateOptions {
   maxTokens?: number;
   temperature?: number;
+  topP?: number;
   timeoutMs?: number;
   /** Solicita resposta em JSON estruturado (response_format json_object). */
   jsonMode?: boolean;
   /**
-   * Provedor preferido para esta chamada (padrão: openai). Se não configurado
+   * Provedor preferido para esta chamada (padrão: groq). Se não configurado
    * ou falhar, o gerenciador cai para os demais provedores (fallback).
    */
   provider?: ProviderName;

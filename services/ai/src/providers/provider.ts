@@ -7,6 +7,25 @@ import {
 } from "../types";
 
 /**
+ * Remove raciocínio interno do modelo reasoning (ex.: qwen/qwen3.8-27b).
+ * Suporta dois formatos observados no Groq:
+ *  1) "<think>... raciocínio ...</think>" seguido da resposta real.
+ *  2) "\n thinking\n... raciocínio ...\n response\n" seguido da resposta real.
+ */
+function cleanReasoning(raw: string): string {
+  if (!raw) return "";
+  let t = raw;
+  if (/<thinking>/i.test(t) || /<think>/i.test(t)) {
+    t = t.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "");
+    const close = t.lastIndexOf("</think>");
+    if (close !== -1) t = t.slice(close + "</think>".length);
+  }
+  const r = t.indexOf("\n response\n");
+  if (r !== -1) t = t.slice(r + "\n response\n".length);
+  return t.replace(/^[\s\n]+/, "").replace(/\n*$/, "").replace(/```/g, "").trim();
+}
+
+/**
  * Base comum para provedores compatíveis com a API OpenAI
  * (OpenAI e Groq). Implementa chamada HTTP com fetch nativo.
  */
@@ -55,7 +74,8 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
             model: this.model,
             messages,
             max_tokens: options.maxTokens ?? 500,
-            temperature: options.temperature ?? 0.7,
+            temperature: options.temperature ?? 0.6,
+            ...(options.topP !== undefined ? { top_p: options.topP } : { top_p: 0.95 }),
             ...(options.jsonMode
               ? { response_format: { type: "json_object" } }
               : {}),
@@ -94,7 +114,10 @@ export abstract class OpenAICompatibleProvider implements LLMProvider {
         };
 
         const message = data.choices?.[0]?.message;
-        const text = message?.content?.trim() ?? "";
+        // Remove blocos de raciocínio interno que modelos reasoning (ex.: qwen)
+        // incluem no content — o cliente só vê a resposta final. Suporta dois
+        // formatos: "<think>...</think>" e "\n thinking\n ... \n response\n".
+        const text = cleanReasoning(message?.content ?? "");
 
         // O campo `reply` SÓ pode vir do conteúdo final destinado ao usuário.
         // reasoning / reasoning_content / analysis são internos e NUNCA são usados.

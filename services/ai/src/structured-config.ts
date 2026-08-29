@@ -181,7 +181,7 @@ export async function generateStructuredAIConfig(
           content: "Gere o JSON estruturado de configuração do agente.",
         },
       ],
-      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'openai' },
+      { maxTokens: 700, jsonMode: true, timeoutMs: 25000, provider: 'nvidia' },
     );
     const parsed = extractJsonObject(result.text);
     const config = normalizeStructuredConfig(parsed, input);

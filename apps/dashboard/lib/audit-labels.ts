@@ -29,6 +29,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
 
   "cakto.event_processed": "Evento Cakto processado",
   "cakto.event_received": "Evento Cakto recebido",
+  "abacatepay.event_processed": "Evento AbacatePay processado",
+  "abacatepay.event_received": "Evento AbacatePay recebido",
   "stripe.event_processed": "Evento Stripe processado",
   "stripe.event_received": "Evento Stripe recebido",
   "payment.checkout_session_created": "Checkout Stripe criado",
@@ -39,6 +41,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "payment.refunded": "Pagamento estornado",
   "subscription.cancelled_by_gateway": "Assinatura cancelada pelo gateway",
   "subscription.created": "Assinatura criada",
+  "subscription.expired_by_watchdog": "Assinatura expirada (watchdog)",
   "subscription.renewal_refused": "Renovação de assinatura recusada",
   "subscription.renewed": "Assinatura renovada",
   "subscription.status_synced": "Status da assinatura sincronizado",
@@ -61,6 +64,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "conversation.deleted": "Conversa excluída",
   "conversations.cleared": "Conversas limpas",
   "leads.imported.cleared": "Leads importados limpos",
+  "whatsapp_groups.leads_cleared": "Leads de extração WhatsApp limpos",
+  "whatsapp_groups.extraction_deleted": "Extração WhatsApp excluída",
 };
 
 /** Frase exibida para uma action; fallback = código técnico (nunca quebra). */
@@ -77,7 +82,11 @@ export function auditTone(action: string): string {
     action.startsWith("admin.subscription.")
   )
     return "text-sky-600";
-  if (action.startsWith("cakto.") || action.startsWith("stripe."))
+  if (
+    action.startsWith("cakto.") ||
+    action.startsWith("stripe.") ||
+    action.startsWith("abacatepay.")
+  )
     return "text-blue-600";
   if (
     action.startsWith("admin.user.") ||
@@ -94,7 +103,8 @@ export function auditTone(action: string): string {
   if (
     action.startsWith("conversation.") ||
     action.startsWith("conversations.") ||
-    action.startsWith("leads.")
+    action.startsWith("leads.") ||
+    action.startsWith("whatsapp_groups.")
   )
     return "text-red-600";
   return "text-emerald-600";
@@ -179,7 +189,7 @@ export function describeAuditMeta(
     case "admin.user.updated": {
       if (Array.isArray(m?.fields)) {
         const labels = (m.fields as unknown[])
-          .map((f) => (typeof f === "string" ? FIELD_LABELS[f] ?? f : null))
+          .map((f) => (typeof f === "string" ? (FIELD_LABELS[f] ?? f) : null))
           .filter(Boolean) as string[];
         if (labels.length) lines.push(`Campos alterados: ${labels.join(", ")}`);
       }
@@ -188,9 +198,7 @@ export function describeAuditMeta(
     case "admin.business.status_changed": {
       const status = str(m?.status) ?? str(m?.to);
       if (status) {
-        lines.push(
-          `Status alterado para ${STATUS_LABELS[status] ?? status}`,
-        );
+        lines.push(`Status alterado para ${STATUS_LABELS[status] ?? status}`);
       }
       break;
     }
@@ -226,9 +234,14 @@ export function describeAuditMeta(
       break;
     }
     case "conversations.cleared":
-    case "leads.imported.cleared": {
+    case "leads.imported.cleared":
+    case "whatsapp_groups.leads_cleared":
+    case "whatsapp_groups.extraction_deleted": {
       const n = m?.deleted ?? m?.leads_deleted ?? m?.conversations_deleted;
       if (typeof n === "number") lines.push(`${n} itens excluídos`);
+      const unlinked = m?.unlinked;
+      if (typeof unlinked === "number" && unlinked > 0)
+        lines.push(`${unlinked} desvinculados`);
       break;
     }
     default:

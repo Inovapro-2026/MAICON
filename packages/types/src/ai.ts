@@ -14,7 +14,7 @@ export interface AIGeneration {
   created_at: string;
 }
 
-export type AIProviderName = 'openai' | 'groq';
+export type AIProviderName = 'openai' | 'groq' | 'openrouter' | 'nvidia';
 
 export interface AICompletionResult {
   text: string;

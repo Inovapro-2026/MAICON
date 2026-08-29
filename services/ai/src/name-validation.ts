@@ -174,7 +174,7 @@ export const defaultClassifier: NameClassifier = async (raw: string): Promise<bo
       { role: 'system', content: NAME_CLASSIFICATION_SYSTEM_PROMPT },
       { role: 'user', content: buildNameClassificationUserMessage(raw) },
     ],
-    { maxTokens: 5, temperature: 0, timeoutMs: 8000, provider: 'openai' }
+    { maxTokens: 5, temperature: 0, timeoutMs: 8000, provider: 'nvidia' }
   );
   const answer = result.text.trim().toLowerCase();
   if (/^(n[aã]o|nao)\b/.test(answer)) return false;

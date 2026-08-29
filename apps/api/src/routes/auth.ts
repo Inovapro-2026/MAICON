@@ -66,12 +66,10 @@ authRouter.post(
     const { email, password } = req.body ?? {};
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { code: "BAD_REQUEST", message: "Informe e-mail e senha" },
-        });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Informe e-mail e senha" },
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -81,15 +79,13 @@ authRouter.post(
       logger.warn("Login falhou: usuário não encontrado", {
         email: String(email).toLowerCase(),
       });
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: {
-            code: "INVALID_CREDENTIALS",
-            message: "Credenciais inválidas",
-          },
-        });
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Credenciais inválidas",
+        },
+      });
     }
 
     if (user.active === false) {
@@ -97,29 +93,25 @@ authRouter.post(
         email: user.email,
         userId: user.id,
       });
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: {
-            code: "ACCOUNT_DISABLED",
-            message: "Conta desativada. Fale com o suporte.",
-          },
-        });
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: "ACCOUNT_DISABLED",
+          message: "Conta desativada. Fale com o suporte.",
+        },
+      });
     }
 
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
       logger.warn("Login falhou: senha incorreta", { email: user.email });
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: {
-            code: "INVALID_CREDENTIALS",
-            message: "Credenciais inválidas",
-          },
-        });
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Credenciais inválidas",
+        },
+      });
     }
 
     const businesses = await loadBusinessList(user.id);
@@ -151,6 +143,7 @@ authRouter.post(
             slug: active.slug,
             role: active.role,
             status: active.status,
+            suspension_reason: active.suspension_reason,
           }
         : null,
       must_change_password: user.must_change_password,
@@ -167,34 +160,28 @@ authRouter.post(
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user)
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
-        });
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
+      });
 
     const valid = await verifyPassword(
       String(current_password ?? ""),
       user.password_hash,
     );
     if (!valid) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { code: "BAD_REQUEST", message: "Senha atual incorreta" },
-        });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Senha atual incorreta" },
+      });
     }
 
     const strengthError = validatePasswordStrength(String(new_password ?? ""));
     if (strengthError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { code: "BAD_REQUEST", message: strengthError },
-        });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: strengthError },
+      });
     }
 
     const newHash = await hashPassword(new_password);
@@ -225,12 +212,10 @@ authRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
     if (!user)
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
-        });
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
+      });
 
     const businesses = await loadBusinessList(user.id);
 
@@ -276,22 +261,18 @@ authRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const businessId = String(req.body?.business_id ?? "");
     if (!businessId) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: { code: "BAD_REQUEST", message: "Informe business_id" },
-        });
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Informe business_id" },
+      });
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
     if (!user)
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
-        });
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Usuário não encontrado" },
+      });
 
     const ctx = await resolveBusinessContext(user.id, businessId);
     if (!ctx) {
@@ -299,15 +280,13 @@ authRouter.post(
         userId: user.id,
         businessId,
       });
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: {
-            code: "FORBIDDEN",
-            message: "Você não pertence a esta empresa",
-          },
-        });
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Você não pertence a esta empresa",
+        },
+      });
     }
 
     const token = await signToken({

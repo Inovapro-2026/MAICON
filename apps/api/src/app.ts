@@ -11,6 +11,7 @@ import { dashboardRouter } from "./routes/dashboard";
 import { inboxRouter } from "./routes/inbox";
 import { reportsRouter } from "./routes/reports";
 import { whatsappRouter } from "./routes/whatsapp";
+import { whatsappGroupsRouter } from "./routes/whatsapp-groups";
 import { webhooksRouter } from "./routes/webhooks";
 import { billingRouter } from "./routes/billing";
 import { adminRouter } from "./routes/admin";
@@ -37,11 +38,21 @@ export function createApp(): Express {
       credentials: true,
     }),
   );
-  // Captura o body bruto APENAS no webhook do Stripe (necessário para validar a
-  // assinatura usando o payload exato como string). Escopo por caminho para não
-  // impedir o express.json() de parsear o body nos demais endpoints.
+  // Captura o body bruto APENAS nos webhooks que validam assinatura (Stripe e
+  // AbacatePay) — necessário para conferir o HMAC usando o payload exato como
+  // string. Escopo por caminho para não impedir o express.json() nos demais.
   app.use(
     "/webhooks/stripe",
+    express.raw({
+      type: "*/*",
+      limit: "10mb",
+      verify: (req: Request, _res, buf, encoding) => {
+        if (buf?.length) (req as Request & { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
+  app.use(
+    "/webhooks/abacatepay",
     express.raw({
       type: "*/*",
       limit: "10mb",
@@ -75,6 +86,7 @@ export function createApp(): Express {
   app.use("/conversations", inboxRouter);
   app.use("/reports", reportsRouter);
   app.use("/whatsapp", whatsappRouter);
+  app.use("/whatsapp/groups", whatsappGroupsRouter);
   app.use("/webhooks", webhooksRouter);
   app.use("/billing", billingRouter);
   app.use("/admin", adminRouter);
@@ -85,7 +97,6 @@ export function createApp(): Express {
   app.use("/notifications", notificationsRouter);
 
   app.use((_req, res) => {
-
     res.status(404).json({
       success: false,
       error: { code: "NOT_FOUND", message: "Rota não encontrada" },

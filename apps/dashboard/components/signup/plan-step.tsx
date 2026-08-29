@@ -151,7 +151,7 @@ export function PlanStep({
         Criar conta e seguir para o pagamento
       </Button>
       <p className="text-center text-xs text-zinc-500">
-        Pagamento seguro via Stripe (PIX ou cartão) · Cancele quando quiser
+        Pagamento seguro via PIX · Cancele quando quiser
       </p>
       {error ? (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">

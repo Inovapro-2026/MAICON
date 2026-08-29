@@ -77,6 +77,14 @@ enum LeadSource {
   MANUAL
   TEST
   WEB
+  WHATSAPP_GROUP
+}
+
+enum WhatsAppGroupExtractionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 enum OptOutChannel {
@@ -165,6 +173,13 @@ model Business {
   name         String
   slug         String          @unique
   status       BusinessStatus  @default(TRIAL)
+  /**
+   * Motivo da suspensão automática (quando Business.status = SUSPENDED).
+   * Valores: "subscription_expired" (vencimento sem pagamento) ou null.
+   * Permite distinguir suspensão por billing (login -> /payment) de suspensão
+   * manual pelo admin (login bloqueado).
+   */
+  suspension_reason String?
   legal_name   String?
   trade_name   String?
   cnpj         String?
@@ -198,6 +213,9 @@ model Business {
   sales_conversation_insights SalesConversationInsight[]
   commercial_strategies CommercialStrategy[]
   notifications Notification[]
+  whatsapp_group_extractions WhatsAppGroupExtraction[]
+  whatsapp_group_sources WhatsAppGroupSource[]
+  whatsapp_group_leads WhatsAppGroupLead[]
 
   @@index([status])
 }
@@ -297,6 +315,7 @@ model Lead {
   opt_outs         OptOut[]
   ai_generations   AIGeneration[]
   prospection_run  ProspectionRun?  @relation(fields: [prospection_run_id], references: [id], onDelete: SetNull)
+  whatsapp_group_leads WhatsAppGroupLead[]
 
   @@index([status])
   @@index([email])
@@ -346,6 +365,8 @@ model Campaign {
   /** Mensagem de e-mail configurada pelo usuário (canais EMAIL e BOTH). */
   email_subject        String?
   email_body           String?
+  /** Primeira mensagem de abordagem do WhatsApp (opcional). Vazio = padrão. */
+  wa_first_message     String?
   created_at           DateTime       @default(now())
   updated_at           DateTime       @updatedAt
 
@@ -353,6 +374,7 @@ model Campaign {
   campaign_leads CampaignLead[]
   messages      Message[]
   prospection_runs ProspectionRun[]
+  whatsapp_group_extractions WhatsAppGroupExtraction[]
 
   @@index([business_id])
   @@index([business_id, status])
@@ -420,6 +442,90 @@ model ProspectionRun {
 
   @@index([business_id])
   @@index([business_id, created_at])
+}
+
+// ===================== EXTRAÇÃO DE CONTATOS (GRUPOS WHATSAPP) =====================
+// Fluxo multi-tenant: a extração é enfileirada no BullMQ e executada no worker
+// (mesma sessão Baileys da empresa — nunca abre conexão paralela). A extração
+// JAMAIS envia mensagens: os contatos vão para revisão/leads antes de qualquer
+// campanha. `whatsapp_groups_consent` registra a aceitação do checkbox de
+// responsabilidade legal (obrigatório antes da primeira extração).
+
+model WhatsAppGroupExtraction {
+  id                 String                       @id @default(cuid())
+  business_id        String
+  status             WhatsAppGroupExtractionStatus @default(PENDING)
+  /** JIDs dos grupos selecionados (Baileys). */
+  group_ids          String[]
+  remove_duplicates  Boolean                      @default(true)
+  ignore_own_contact Boolean                      @default(true)
+  exclude_admins     Boolean                      @default(false)
+  auto_enrich        Boolean                      @default(false)
+  /** "leads" | "enrich" | "campaign" — destino dos contatos extraídos. */
+  destination        String                       @default("leads")
+  /** Contatos encontrados (soma de participantes dos grupos, após exclusões). */
+  found_count        Int                          @default(0)
+  /** Contatos únicos (por telefone) após deduplicação. */
+  unique_count       Int                          @default(0)
+  /** Participantes já existentes nos leads da empresa (duplicados). */
+  duplicate_count    Int                          @default(0)
+  /** Únicos com telefone válido. */
+  phone_count        Int                          @default(0)
+  /** Únicos com site (candidatos a enriquecimento via Scrapy). */
+  enriched_count     Int                          @default(0)
+  /** Únicos com telefone e qualificados para campanha. */
+  qualified_count    Int                          @default(0)
+  campaign_id        String?
+  error_message      String?
+  started_at         DateTime?
+  completed_at       DateTime?
+  created_at         DateTime                     @default(now())
+  updated_at         DateTime                     @updatedAt
+
+  business Business                    @relation(fields: [business_id], references: [id])
+  campaign Campaign?                   @relation(fields: [campaign_id], references: [id], onDelete: SetNull)
+  sources  WhatsAppGroupSource[]
+
+  @@index([business_id])
+  @@index([business_id, created_at])
+}
+
+model WhatsAppGroupSource {
+  id                String   @id @default(cuid())
+  business_id       String
+  extraction_id     String?
+  /** Nome do grupo exibido no painel. */
+  group_name        String
+  /** Identificador do grupo no WhatsApp/Baileys (JID @g.us). */
+  group_identifier  String
+  participant_count Int      @default(0)
+  extracted_at      DateTime @default(now())
+
+  extraction WhatsAppGroupExtraction? @relation(fields: [extraction_id], references: [id], onDelete: SetNull)
+  business   Business                 @relation(fields: [business_id], references: [id])
+  leads      WhatsAppGroupLead[]
+
+  @@unique([extraction_id, group_identifier])
+  @@index([business_id])
+  @@index([extraction_id])
+  @@index([group_identifier])
+}
+
+model WhatsAppGroupLead {
+  id          String   @id @default(cuid())
+  business_id String
+  source_id   String
+  lead_id     String
+  is_admin    Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  source   WhatsAppGroupSource @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  lead     Lead                 @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  business Business             @relation(fields: [business_id], references: [id])
+
+  @@unique([source_id, lead_id])
+  @@index([lead_id])
+  @@index([business_id])
 }
 
 // ============================= MENSAGENS =============================
@@ -677,6 +783,9 @@ model Subscription {
   cakto_product_id     String?
   cakto_offer_id       String?
   cakto_checkout_url   String?
+  // AbacatePay (gateway atual — PIX manual, sem recorrência automática).
+  abacatepay_customer_id String?
+  abacatepay_checkout_id String?
   current_period_start DateTime?
   current_period_end  DateTime?
   trial_ends_at       DateTime?
@@ -697,6 +806,7 @@ model Subscription {
   @@index([stripe_customer_id])
   @@index([stripe_subscription_id])
   @@index([cakto_subscription_id])
+  @@index([abacatepay_checkout_id])
 }
 
 model Payment {
@@ -711,6 +821,9 @@ model Payment {
   cakto_order_id     String?
   cakto_ref_id       String?
   cakto_event        String?
+  // AbacatePay (gateway atual — PIX manual, sem recorrência automática).
+  abacatepay_checkout_id String?
+  abacatepay_event       String?
   method             PaymentMethod @default(PIX)
   status             PaymentStatus @default(PENDING)
   value              Decimal       @db.Decimal(10, 2)
@@ -731,6 +844,7 @@ model Payment {
   @@unique([stripe_payment_intent_id])
   @@unique([stripe_checkout_session_id])
   @@unique([cakto_order_id])
+  @@unique([abacatepay_checkout_id])
 }
 
 model EmailVerification {
