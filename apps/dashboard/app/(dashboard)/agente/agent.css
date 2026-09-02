@@ -1,0 +1,135 @@
+/* ==========================================================================
+   AGENTE DE VOZ — TEMA FUTURISTA SAVYRON (Escopado exclusivamente a /agente)
+   ========================================================================== */
+
+.agent-page-viewport {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 7rem);
+  background: radial-gradient(circle at 50% 30%, #080B35 0%, #05082A 45%, #02051C 100%);
+  color: #FFFFFF;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(2, 5, 28, 0.8), inset 0 0 100px rgba(8, 11, 53, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Starfield Animation */
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.star-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: starTwinkle infinite ease-in-out;
+}
+
+/* Voice Orb Animations */
+@keyframes orbPulseIdle {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 30px rgba(99, 102, 241, 0.5),
+      0 0 60px rgba(139, 92, 246, 0.3),
+      inset 0 0 40px rgba(15, 23, 42, 0.9);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 0 45px rgba(99, 102, 241, 0.7),
+      0 0 80px rgba(139, 92, 246, 0.45),
+      inset 0 0 30px rgba(15, 23, 42, 0.8);
+  }
+}
+
+@keyframes orbRingExpand {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+@keyframes micWaveRipple {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+    border-color: rgba(99, 102, 241, 0.6);
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+    border-color: rgba(168, 85, 247, 0);
+  }
+}
+
+/* Glassmorphism utility */
+.agent-glass-card {
+  background: rgba(10, 15, 55, 0.65);
+  border: 1px solid rgba(100, 100, 255, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 0 15px rgba(99, 102, 241, 0.08);
+}
+
+.agent-glass-button {
+  background: rgba(15, 23, 60, 0.65);
+  border: 1px solid rgba(120, 120, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agent-glass-button:hover {
+  background: rgba(30, 41, 90, 0.85);
+  border-color: rgba(140, 140, 255, 0.5);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+}
+
+/* Neon Text Glow */
+.neon-text-blue {
+  color: #60A5FA;
+  text-shadow: 0 0 12px rgba(96, 165, 250, 0.6), 0 0 25px rgba(59, 130, 246, 0.4);
+}
+
+.neon-text-purple {
+  color: #C084FC;
+  text-shadow: 0 0 12px rgba(192, 132, 252, 0.6), 0 0 25px rgba(168, 85, 247, 0.4);
+}
+
+.neon-text-cyan {
+  color: #38BDF8;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.6), 0 0 25px rgba(14, 165, 233, 0.4);
+}
+
+/* Custom scrollbar within agent conversation */
+.agent-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.agent-scrollbar::-webkit-scrollbar-track {
+  background: rgba(8, 11, 53, 0.3);
+}
+.agent-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+}
+.agent-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}

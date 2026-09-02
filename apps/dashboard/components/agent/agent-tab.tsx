@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Mic, Loader2, AudioLines, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   useMicrophone,
@@ -9,63 +9,63 @@ import {
   MicDiagnostic,
 } from "@/hooks/use-microphone";
 
-type AgentStatus = "idle" | "listening" | "processing" | "speaking" | "error";
+import { StarField } from "./star-field";
+import { VoiceOrb, VoiceState } from "./voice-orb";
+import { AgentStatus } from "./agent-status";
+import { ConversationList, ChatMessage } from "./conversation-bubble";
+import { VoiceControls } from "./voice-controls";
+import { ConnectionStatus } from "./connection-status";
+import { LanguageSelector } from "./language-selector";
 
-interface ChatTurn {
-  role: "user" | "assistant";
-  content: string;
-}
-
-const STATUS_LABEL: Record<AgentStatus, string> = {
-  idle: "Toque para ligar",
-  listening: "Ouvindo…",
-  processing: "Pensando…",
-  speaking: "Falando…",
-  error: "Microfone indisponível",
-};
-
-// VAD: limiar de energia (RMS) e silêncio necessário para encerrar a fala.
-const VOICE_THRESHOLD = 0.012;
-// Janela de silêncio exigida para considerar a fala encerrada. Valor maior
-// evita cortar pausas naturais no meio de frases (respiração, hesitação).
-const SILENCE_MS = 1800;
-const VAD_INTERVAL_MS = 150;
-// Duração mínima de fala real antes que silêncio possa contar como "fim" —
-// impede que uma pausa logo no início da frase seja lida como encerramento.
-const MIN_SPEECH_MS = 350;
-// Validação anti-falso-positivo (processamento de silêncio/ruído):
-// - duração mínima de fala capturada (voiced frames × intervalo);
-// - pico de energia (RMS) mínimo — descarta silêncio e ruído de fundo baixo.
-const MIN_REAL_SPEECH_MS = 350;
-const MIN_PEAK_RMS = 0.02;
+// --- Configurações Calibradas de VAD (Detecção de Atividade de Voz) ---
+// Limiar de energia (RMS) para detectar voz humana real (calibrado para microfones comuns e sensíveis)
+const VOICE_THRESHOLD = 0.007;
+// Janela de silêncio contínuo necessária para considerar a fala finalizada (1.4 segundos)
+const SILENCE_MS = 1400;
+// Intervalo de verificação do VAD em milissegundos
+const VAD_INTERVAL_MS = 100;
+// Quantidade mínima de frames com voz (> VOICE_THRESHOLD) antes de aceitar encerramento por silêncio (~200ms)
+const MIN_VOICED_FRAMES = 2;
+// Duração máxima de captura contínua antes de encerrar automaticamente por segurança (20s)
+const MAX_RECORDING_MS = 20000;
 
 export function AgentTab() {
   const { error: toastError } = useToast();
   const { diagnostic, requestPermission, refresh } = useMicrophone();
-  const [status, setStatus] = useState<AgentStatus>("idle");
-  const [micDiagnostic, setMicDiagnostic] = useState<MicDiagnostic | null>(
-    null,
-  );
+
+  // Estados principais
+  const [status, setStatus] = useState<VoiceState>("idle");
+  const [sessionActive, setSessionActive] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [frequencyData, setFrequencyData] = useState<number[]>([0.2, 0.3, 0.5, 0.7, 0.5, 0.3, 0.2]);
+
+  const [micDiagnostic, setMicDiagnostic] = useState<MicDiagnostic | null>(null);
   const [transcript, setTranscript] = useState("");
-  const [history, setHistory] = useState<ChatTurn[]>([]);
+  const [history, setHistory] = useState<ChatMessage[]>([]);
   const [lastAssistant, setLastAssistant] = useState("");
   const [usingBrowserVoice, setUsingBrowserVoice] = useState(false);
 
+  // Refs de controle de áudio e gravação
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const historyRef = useRef<ChatTurn[]>([]);
-  const statusRef = useRef<AgentStatus>("idle");
+  const historyRef = useRef<ChatMessage[]>([]);
+  const statusRef = useRef<VoiceState>("idle");
   const speakingRef = useRef(false);
-
-  // Modo contínuo — ciclo ligado/desligado + VAD.
   const sessionActiveRef = useRef(false);
+  const isMutedRef = useRef(false);
+
+  // Web Audio API para VAD e visualização em tempo real
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const ttsAnalyserRef = useRef<AnalyserNode | null>(null);
   const vadTimerRef = useRef<number | null>(null);
-  // Estatísticas de energia coletadas pelo VAD na janela de gravação atual.
-  // Usadas para validar que houve FALA REAL antes de chamar STT/LLM.
+  const animFrameRef = useRef<number | null>(null);
+  const recordingStartTimeRef = useRef<number>(0);
+
+  // Estatísticas da fala atual
   const vadStatsRef = useRef<{
     voicedFrames: number;
     totalFrames: number;
@@ -75,22 +75,34 @@ export function AgentTab() {
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
+
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
 
-  // Acompanha o diagnóstico inicial do hook (sem solicitar permissão).
+  useEffect(() => {
+    sessionActiveRef.current = sessionActive;
+  }, [sessionActive]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
   useEffect(() => {
     if (diagnostic) setMicDiagnostic(diagnostic);
   }, [diagnostic]);
 
-  // Cleanup ao desmontar / sair da aba: encerra a sessão e libera o microfone.
+  // Limpeza completa ao desmontar o componente
   useEffect(() => {
     return () => {
       sessionActiveRef.current = false;
       stopVad();
       stopPlayback();
       stopStream();
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
       if (audioContextRef.current) {
         void audioContextRef.current.close().catch(() => undefined);
         audioContextRef.current = null;
@@ -106,21 +118,13 @@ export function AgentTab() {
     audioChunksRef.current = [];
   }, []);
 
-  /** Interrompe o loop de VAD e "surdеia" o contexto de áudio (PROCESSING/FALANDO). */
   const stopVad = useCallback(() => {
     if (vadTimerRef.current !== null) {
       window.clearInterval(vadTimerRef.current);
       vadTimerRef.current = null;
     }
-    if (
-      audioContextRef.current &&
-      audioContextRef.current.state === "running"
-    ) {
-      void audioContextRef.current.suspend();
-    }
   }, []);
 
-  /** Retoma o contexto de áudio antes de voltar a ouvir. */
   const resumeAudioContext = useCallback(async () => {
     if (
       audioContextRef.current &&
@@ -130,7 +134,6 @@ export function AgentTab() {
     }
   }, []);
 
-  /** Para qualquer reprodução de áudio (TTS) em andamento. */
   const stopPlayback = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -142,7 +145,51 @@ export function AgentTab() {
     speakingRef.current = false;
   }, []);
 
-  /** Fala usando a síntese nativa do navegador (fallback quando ElevenLabs falha). */
+  /** Loop de animação contínua de áudio (60fps) */
+  const startAudioMeter = useCallback(() => {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+    }
+
+    const updateMeter = () => {
+      const isSpeakingTTS = speakingRef.current;
+      const targetAnalyser = isSpeakingTTS
+        ? ttsAnalyserRef.current || analyserRef.current
+        : analyserRef.current;
+
+      if (targetAnalyser && audioContextRef.current?.state === "running") {
+        const floatData = new Float32Array(targetAnalyser.fftSize);
+        targetAnalyser.getFloatTimeDomainData(floatData);
+
+        let sum = 0;
+        for (let i = 0; i < floatData.length; i++) {
+          sum += floatData[i] * floatData[i];
+        }
+        const rms = Math.sqrt(sum / floatData.length);
+        const normalizedLevel = Math.min(1, rms * 8);
+        setAudioLevel(normalizedLevel);
+
+        // Frequências para barras centrais
+        const freqData = new Uint8Array(targetAnalyser.frequencyBinCount);
+        targetAnalyser.getByteFrequencyData(freqData);
+        const step = Math.floor(freqData.length / 8);
+        const bars: number[] = [];
+        for (let i = 1; i <= 7; i++) {
+          const val = freqData[i * step] / 255;
+          bars.push(val);
+        }
+        setFrequencyData(bars);
+      } else {
+        setAudioLevel((prev) => Math.max(0, prev * 0.85));
+      }
+
+      animFrameRef.current = requestAnimationFrame(updateMeter);
+    };
+
+    animFrameRef.current = requestAnimationFrame(updateMeter);
+  }, []);
+
+  /** Fallback: Fala usando síntese nativa do navegador (Web Speech API) */
   const speakWithBrowser = useCallback((text: string): Promise<void> => {
     return new Promise((resolve) => {
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -161,7 +208,7 @@ export function AgentTab() {
 
         speakingRef.current = true;
         setUsingBrowserVoice(true);
-        setStatus("speaking");
+        setStatus("agent-speaking");
 
         utterance.onend = () => {
           speakingRef.current = false;
@@ -179,6 +226,7 @@ export function AgentTab() {
     });
   }, []);
 
+  /** Reproduz áudio TTS (ElevenLabs com fallback para navegador) */
   const speak = useCallback(
     async (text: string): Promise<void> => {
       if (speakingRef.current) return;
@@ -191,7 +239,6 @@ export function AgentTab() {
 
         const contentType = res.headers.get("content-type") ?? "";
         if (!res.ok || contentType.includes("application/json")) {
-          // Falha ou fallback sinalizado pelo backend → voz nativa do navegador
           await speakWithBrowser(text);
           return;
         }
@@ -203,7 +250,22 @@ export function AgentTab() {
           audioRef.current = audio;
           speakingRef.current = true;
           setUsingBrowserVoice(false);
-          setStatus("speaking");
+          setStatus("agent-speaking");
+
+          // Conecta o áudio do TTS ao analisador para fazer o VoiceOrb reagir ao som da IA
+          if (audioContextRef.current && audioContextRef.current.state === "running") {
+            try {
+              const ttsSource = audioContextRef.current.createMediaElementSource(audio);
+              const ttsAnalyser = audioContextRef.current.createAnalyser();
+              ttsAnalyser.fftSize = 256;
+              ttsSource.connect(ttsAnalyser);
+              ttsAnalyser.connect(audioContextRef.current.destination);
+              ttsAnalyserRef.current = ttsAnalyser;
+            } catch {
+              // noop se já conectado
+            }
+          }
+
           audio.onended = () => {
             speakingRef.current = false;
             URL.revokeObjectURL(url);
@@ -224,7 +286,7 @@ export function AgentTab() {
     [speakWithBrowser],
   );
 
-  /** Encerra a fala do usuário: para o VAD e processa o áudio capturado. */
+  /** Encerra fala do usuário e envia gravação para processamento */
   const finishUtterance = useCallback(() => {
     stopVad();
     const recorder = mediaRecorderRef.current;
@@ -233,39 +295,78 @@ export function AgentTab() {
     }
   }, [stopVad]);
 
-  /** Loop de VAD: monitora a energia do áudio e detecta o fim da fala. */
+  /** Loop VAD calibrado com Float32Array */
   const startVad = useCallback(() => {
     const analyser = analyserRef.current;
     if (!analyser) return;
     stopVad();
+
     vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    recordingStartTimeRef.current = Date.now();
+    const floatData = new Float32Array(analyser.fftSize);
     let silenceStart: number | null = null;
 
     const interval = window.setInterval(() => {
-      analyser.getByteTimeDomainData(dataArray);
+      if (isMutedRef.current) return;
+
+      analyser.getFloatTimeDomainData(floatData);
       let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const v = (dataArray[i] - 128) / 128;
-        sum += v * v;
+      for (let i = 0; i < floatData.length; i++) {
+        sum += floatData[i] * floatData[i];
       }
-      const rms = Math.sqrt(sum / dataArray.length);
+      const rms = Math.sqrt(sum / floatData.length);
       const stats = vadStatsRef.current;
       stats.totalFrames += 1;
+
+      // Telemetria detalhada no console para diagnóstico de voz
+      if (stats.totalFrames % 5 === 0 && rms > 0.003) {
+        console.log("[SAVYRON VAD]", {
+          rms: rms.toFixed(4),
+          peakRms: stats.peakRms.toFixed(4),
+          voicedFrames: stats.voicedFrames,
+          status: statusRef.current,
+        });
+      }
+
       if (rms > VOICE_THRESHOLD) {
         stats.voicedFrames += 1;
         if (rms > stats.peakRms) stats.peakRms = rms;
         silenceStart = null;
+
+        // Atualiza estado visual para fala do usuário
+        if (statusRef.current === "listening") {
+          setStatus("user-speaking");
+        }
       } else {
         if (silenceStart === null) silenceStart = Date.now();
-        // Só encerra a fala se já houver fala real suficiente capturada —
-        // uma pausa logo no início da frase não pode ser lida como fim.
-        const speechMs = stats.voicedFrames * VAD_INTERVAL_MS;
+
+        // Se o usuário falou o suficiente e fez pausa, encerra e processa
         if (
-          speechMs >= MIN_SPEECH_MS &&
+          stats.voicedFrames >= MIN_VOICED_FRAMES &&
           Date.now() - silenceStart >= SILENCE_MS
         ) {
+          console.log("[SAVYRON VAD] Fim de fala detectado por silêncio:", {
+            voicedFrames: stats.voicedFrames,
+            peakRms: stats.peakRms,
+          });
           finishUtterance();
+          return;
+        }
+
+        // Volta visualmente para "listening" durante pausas curtas
+        if (statusRef.current === "user-speaking" && stats.voicedFrames === 0) {
+          setStatus("listening");
+        }
+      }
+
+      // Watchdog de segurança: encerra gravação se ultrapassar o tempo máximo
+      if (Date.now() - recordingStartTimeRef.current >= MAX_RECORDING_MS) {
+        if (stats.voicedFrames >= MIN_VOICED_FRAMES) {
+          finishUtterance();
+        } else {
+          // Apenas silêncio por 20s — reinicia a janela de gravação sem travar
+          vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
+          recordingStartTimeRef.current = Date.now();
         }
       }
     }, VAD_INTERVAL_MS);
@@ -273,11 +374,10 @@ export function AgentTab() {
     vadTimerRef.current = interval;
   }, [finishUtterance, stopVad]);
 
-  /** Volta para o estado OUVINDO após a resposta (modo contínuo). */
+  /** Volta para o estado OUVINDO em modo contínuo */
   const resumeListeningRef = useRef<() => void>(() => undefined);
 
-  // Padrões de transcrição sem conteúdo real (silêncio/ruído alucinado pelo
-  // STT). Não passam para o LLM — só voltam a ouvir em silêncio.
+  // Padrões de ruído sem fala real
   const NOISE_ONLY_PATTERN = /^[\s.,!?;:…'"()\-–—]+$/;
 
   const processAudio = useCallback(async () => {
@@ -286,12 +386,15 @@ export function AgentTab() {
       return;
     }
 
-    // Validação de fala real ANTES de qualquer processamento (STT/LLM).
-    // Sem duração mínima de fala nem pico de energia, o trecho capturado é
-    // silêncio ou ruído baixo → descarta e volta a ouvir, sem resposta.
     const stats = vadStatsRef.current;
-    const speechMs = stats.voicedFrames * VAD_INTERVAL_MS;
-    if (speechMs < MIN_REAL_SPEECH_MS || stats.peakRms < MIN_PEAK_RMS) {
+    console.log("[SAVYRON VAD] Processando áudio capturado:", {
+      chunks: audioChunksRef.current.length,
+      voicedFrames: stats.voicedFrames,
+      peakRms: stats.peakRms,
+    });
+
+    // Se não houve quase nenhuma fala detectada (ruído ambiente puro), não envia
+    if (stats.voicedFrames < 1) {
       audioChunksRef.current = [];
       if (sessionActiveRef.current) resumeListeningRef.current?.();
       return;
@@ -304,31 +407,37 @@ export function AgentTab() {
       });
       const form = new FormData();
       form.append("audio", blob, "recording.webm");
+
       const res = await fetch("/api/proxy/agent/transcribe", {
         method: "POST",
         body: form,
       });
       const data = await res.json();
+
       if (!res.ok || !data.success) {
         await speak("Desculpa, não consegui entender. Pode repetir?");
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
+
       const userText = (data.data?.text ?? "").trim();
+      console.log("[SAVYRON STT] Transcrição recebida:", userText);
+
       if (!userText || NOISE_ONLY_PATTERN.test(userText)) {
-        // Sem fala transcrita — volta a ouvir em silêncio, sem responder.
+        // Silêncio ou ruído sem palavras — volta a ouvir suavemente
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
+
       setTranscript(userText);
-      const nextHistory = [
+      const nextHistory: ChatMessage[] = [
         ...historyRef.current,
-        { role: "user" as const, content: userText },
+        { role: "user", content: userText },
       ].slice(-20);
       historyRef.current = nextHistory;
       setHistory(nextHistory);
 
-      // LLM + function calling
+      // Chamada LLM + Function Calling
       const chatRes = await fetch("/api/proxy/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -337,6 +446,7 @@ export function AgentTab() {
           history: nextHistory.slice(0, -1),
         }),
       });
+
       const chatData = await chatRes.json();
       if (!chatRes.ok || !chatData.success) {
         await speak(
@@ -345,6 +455,7 @@ export function AgentTab() {
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
+
       const reply = (chatData.data?.text ?? "").trim();
       if (!reply) {
         await speak(
@@ -353,18 +464,21 @@ export function AgentTab() {
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
-      const finalHistory = [
+
+      const finalHistory: ChatMessage[] = [
         ...historyRef.current,
-        { role: "assistant" as const, content: reply },
+        { role: "assistant", content: reply },
       ].slice(-20);
       historyRef.current = finalHistory;
       setHistory(finalHistory);
       setLastAssistant(reply);
+
       await speak(reply);
 
-      // Modo contínuo: volta a ouvir automaticamente após a resposta.
+      // Retoma a escuta automaticamente após a fala do agente
       if (sessionActiveRef.current) resumeListeningRef.current?.();
-    } catch {
+    } catch (err) {
+      console.error("[SAVYRON AGENTE Erro no processamento]", err);
       await speak(
         "Tive um problema ao processar sua solicitação. Tenta de novo em instantes.",
       );
@@ -372,13 +486,14 @@ export function AgentTab() {
     }
   }, [speak]);
 
-  /** Volta para o estado OUVINDO — recria o recorder e inicia VAD. */
+  /** Retoma a escuta no modo contínuo */
   const resumeListening = useCallback(() => {
-    if (!streamRef.current) return;
+    if (!streamRef.current || !sessionActiveRef.current) return;
     setStatus("listening");
     setTranscript("");
     audioChunksRef.current = [];
     vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
+
     const recorder = new MediaRecorder(streamRef.current);
     mediaRecorderRef.current = recorder;
     recorder.ondataavailable = (e) => {
@@ -392,34 +507,37 @@ export function AgentTab() {
     startVad();
   }, [resumeAudioContext, startVad, processAudio]);
 
-  // Sincroniza o ref para evitar ciclo de dependência.
   resumeListeningRef.current = resumeListening;
 
-  /**
-   * Liga a sessão (primeiro toque). Cria o stream + Analyser para VAD e
-   * começa a ouvir. Em chamadas seguintes dentro da sessão, reutiliza o stream.
-   */
+  /** Inicia a sessão de conversa */
   const beginListening = useCallback(async () => {
-    if (!sessionActiveRef.current) return;
-    setStatus("listening");
+    setStatus("connecting");
+    setSessionActive(true);
+    sessionActiveRef.current = true;
     setTranscript("");
     audioChunksRef.current = [];
     vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
+
     try {
       if (!streamRef.current) {
         const diag = await requestPermission();
         setMicDiagnostic(diag);
         if (!diag.available || diag.permission === "denied") {
+          setSessionActive(false);
           sessionActiveRef.current = false;
           setStatus("error");
           return;
         }
+
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
         });
         streamRef.current = stream;
 
-        // Analyser para VAD (energia do sinal de áudio).
         const AudioCtx =
           window.AudioContext ||
           (window as unknown as { webkitAudioContext: typeof AudioContext })
@@ -429,13 +547,15 @@ export function AgentTab() {
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 512;
         source.connect(analyser);
+
         audioContextRef.current = ctx;
         analyserRef.current = analyser;
       }
-      // AudioContext novo começa "suspended" — sem resume() o analyser devolve
-      // silêncio e o VAD nunca detecta fala (fica preso em "Ouvindo…").
-      await resumeAudioContext();
 
+      await resumeAudioContext();
+      startAudioMeter();
+
+      setStatus("listening");
       const recorder = new MediaRecorder(streamRef.current);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
@@ -443,7 +563,6 @@ export function AgentTab() {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
       recorder.onstop = () => {
-        // Só processa se a sessão segue ligada (não processar ao desligar).
         if (sessionActiveRef.current) void processAudio();
       };
       recorder.start();
@@ -470,6 +589,7 @@ export function AgentTab() {
                 ? "NOT_READABLE"
                 : "UNKNOWN",
       });
+      setSessionActive(false);
       sessionActiveRef.current = false;
       setStatus("error");
       toastError("Não foi possível acessar o microfone.");
@@ -479,15 +599,18 @@ export function AgentTab() {
     toastError,
     micDiagnostic,
     resumeAudioContext,
+    startAudioMeter,
     processAudio,
     startVad,
   ]);
 
-  /** Desliga a sessão imediatamente, em qualquer estado, liberando o microfone. */
+  /** Encerra a sessão imediatamente */
   const stopSession = useCallback(() => {
+    setSessionActive(false);
     sessionActiveRef.current = false;
     stopVad();
     stopPlayback();
+
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state === "recording") {
       try {
@@ -497,18 +620,31 @@ export function AgentTab() {
       }
     }
     stopStream();
+
     if (audioContextRef.current) {
       void audioContextRef.current.close().catch(() => undefined);
       audioContextRef.current = null;
       analyserRef.current = null;
     }
+
     setStatus("idle");
     setTranscript("");
+    setIsMuted(false);
   }, [stopVad, stopPlayback, stopStream]);
 
+  /** Alterna mudo do microfone */
+  const toggleMute = useCallback(() => {
+    if (!streamRef.current) return;
+    const nextMuted = !isMuted;
+    streamRef.current.getAudioTracks().forEach((t) => {
+      t.enabled = !nextMuted;
+    });
+    setIsMuted(nextMuted);
+  }, [isMuted]);
+
+  /** Clique no botão central do microfone */
   const handlePress = useCallback(() => {
     if (!sessionActiveRef.current) {
-      sessionActiveRef.current = true;
       void beginListening();
     } else {
       stopSession();
@@ -516,11 +652,10 @@ export function AgentTab() {
   }, [beginListening, stopSession]);
 
   const handleRetry = useCallback(() => {
-    sessionActiveRef.current = true;
     void beginListening();
   }, [beginListening]);
 
-  // Estados de erro com orientação específica.
+  // Tratamento de erros de microfone
   const errorInfo = micDiagnostic ? micErrorAction(micDiagnostic) : null;
   const showErrorCard =
     status === "error" && errorInfo && !micDiagnostic?.available;
@@ -530,161 +665,87 @@ export function AgentTab() {
     micDiagnostic?.permission === "insecure";
 
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center px-4">
-      {micDisabled && status !== "error" ? (
-        <MicUnsupported
-          diagnostic={micDiagnostic}
-          onRetry={() => void refresh()}
-        />
-      ) : (
-        <>
-          <div className="relative flex items-center justify-center">
-            {/* Ondas do estado "ouvindo" */}
-            {status === "listening" ? (
-              <div className="absolute flex h-64 items-center justify-center gap-1.5">
-                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-                  <span
-                    key={i}
-                    className="agent-wave-bar w-1.5 rounded-full bg-[#6366F1]"
-                    style={{ animationDelay: `${i * 0.12}s` }}
-                  />
-                ))}
-              </div>
-            ) : null}
+    <div className="agent-page-viewport relative flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+      {/* 1. Fundo Espacial com Estrelas e Nebulosa */}
+      <StarField />
 
-            {/* Pulso do estado "falando" */}
-            {status === "speaking" ? (
-              <>
-                <span className="absolute h-40 w-40 animate-ping rounded-full bg-[#6366F1]/15" />
-                <span
-                  className="absolute h-32 w-32 animate-ping rounded-full bg-[#6366F1]/10"
-                  style={{ animationDelay: "0.3s" }}
-                />
-              </>
-            ) : null}
-
-            {/* Loader do estado "processando" */}
-            {status === "processing" ? (
-              <div className="absolute flex h-40 w-40 items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-[#6366F1]/70" />
-              </div>
-            ) : null}
-
-            {/* Botão do microfone */}
-            <button
-              type="button"
+      {/* 2. Conteúdo Principal */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center max-w-4xl mx-auto w-full pt-4 pb-2">
+        {micDisabled && status !== "error" ? (
+          <MicUnsupported
+            diagnostic={micDiagnostic}
+            onRetry={() => void refresh()}
+          />
+        ) : (
+          <>
+            {/* Voice Orb Neon Central */}
+            <VoiceOrb
+              state={status}
+              audioLevel={audioLevel}
+              frequencyData={frequencyData}
               onClick={() => void handlePress()}
-              disabled={micDisabled}
-              aria-label={STATUS_LABEL[status]}
-              title={
-                sessionActiveRef.current
-                  ? "Toque para desligar"
-                  : "Toque para ligar"
-              }
-              className={`group relative z-10 flex h-28 w-28 items-center justify-center rounded-full shadow-xl transition-all duration-200 ${
-                status === "listening"
-                  ? "scale-105 bg-[#6366F1] shadow-[0_0_60px_rgba(99,102,241,0.5)]"
-                  : status === "speaking"
-                    ? "bg-[#10B981] shadow-[0_0_50px_rgba(16,185,129,0.4)]"
-                    : status === "error"
-                      ? "bg-[#EF4444] shadow-[0_0_40px_rgba(239,68,68,0.35)]"
-                      : "bg-[#6366F1] hover:scale-105 hover:bg-[#4F46E5]"
-              } disabled:cursor-not-allowed`}
-            >
-              {status === "listening" ? (
-                <AudioLines className="h-11 w-11 animate-pulse text-white" />
-              ) : status === "processing" ? (
-                <Loader2 className="h-11 w-11 animate-spin text-white" />
-              ) : status === "speaking" ? (
-                <AudioLines className="h-11 w-11 text-white" />
-              ) : status === "error" ? (
-                <Mic className="h-11 w-11 text-white" />
-              ) : (
-                <Mic className="h-11 w-11 text-white" />
-              )}
-            </button>
-          </div>
+            />
 
-          <div className="mt-10 text-center">
-            <div
-              className={`text-lg font-semibold ${
-                status === "listening"
-                  ? "text-[#6366F1]"
-                  : status === "speaking"
-                    ? "text-[#10B981]"
-                    : status === "error"
-                      ? "text-[#EF4444]"
-                      : "text-[#0F172A]"
-              }`}
-            >
-              {STATUS_LABEL[status]}
-            </div>
-            <p className="mt-1 max-w-sm text-sm text-[#64748B]">
-              {sessionActiveRef.current ? (
-                <>
-                  Converse à vontade — toque no microfone de novo para desligar.
-                </>
-              ) : (
-                <>
-                  Toque no microfone para ligar. Fale livremente: várias
-                  perguntas em sequência, sem tocar de novo. Toque de novo para
-                  desligar.
-                </>
-              )}
-            </p>
-          </div>
+            {/* Texto de Status */}
+            <AgentStatus state={status} sessionActive={sessionActive} />
 
-          {/* Card de erro específico com orientação */}
-          {showErrorCard && errorInfo ? (
-            <div className="mt-6 w-full max-w-sm rounded-2xl border border-red-200 bg-red-50 p-5 text-center">
-              <div className="text-sm font-semibold text-red-700">
-                {errorInfo.title}
-              </div>
-              <p className="mt-1 text-sm text-red-600">{errorInfo.message}</p>
-              <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleRetry()}
-                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {errorInfo.actionLabel}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Indicador discreto: voz do navegador em uso (fallback) */}
-          {usingBrowserVoice && status !== "error" ? (
-            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              Voz do navegador
-            </div>
-          ) : null}
-
-          {/* Transcrição e resposta recentes */}
-          {transcript || lastAssistant ? (
-            <div className="mt-8 w-full max-w-md space-y-2">
-              {transcript ? (
-                <div className="rounded-2xl rounded-bl-md bg-[#6366F1]/10 px-4 py-3 text-sm text-[#0F172A]">
-                  <span className="mr-2 text-[11px] font-bold uppercase text-[#6366F1]">
-                    Você
-                  </span>
-                  {transcript}
+            {/* Card de Erro Específico com Orientação */}
+            {showErrorCard && errorInfo && (
+              <div className="mt-6 w-full max-w-sm rounded-2xl border border-red-500/30 bg-red-950/40 p-5 text-center backdrop-blur-md shadow-xl">
+                <div className="text-sm font-semibold text-red-300">
+                  {errorInfo.title}
                 </div>
-              ) : null}
-              {lastAssistant ? (
-                <div className="rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-[#0F172A] ring-1 ring-[#E6E8F0]">
-                  <span className="mr-2 text-[11px] font-bold uppercase text-[#10B981]">
-                    Agente
-                  </span>
-                  {lastAssistant}
+                <p className="mt-1 text-xs text-red-400">{errorInfo.message}</p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleRetry()}
+                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {errorInfo.actionLabel}
+                  </button>
                 </div>
-              ) : null}
+              </div>
+            )}
+
+            {/* Fallback indicador: Voz do navegador */}
+            {usingBrowserVoice && status !== "error" && (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full agent-glass-card px-3 py-1 text-[11px] font-medium text-amber-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Voz do navegador (fallback)
+              </div>
+            )}
+
+            {/* Conversa em Glassmorphism */}
+            <ConversationList
+              history={history}
+              transcript={transcript}
+              lastAssistant={lastAssistant}
+            />
+
+            {/* Controles de Voz (Microfone, Mute, Encerrar) */}
+            <div className="mt-6 w-full">
+              <VoiceControls
+                state={status}
+                sessionActive={sessionActive}
+                isMuted={isMuted}
+                audioLevel={audioLevel}
+                onToggleMute={toggleMute}
+                onToggleMic={handlePress}
+                onEndCall={stopSession}
+                disabled={micDisabled}
+              />
             </div>
-          ) : null}
-        </>
-      )}
+          </>
+        )}
+      </div>
+
+      {/* 3. Barra Inferior com Indicadores (Status de Conexão + Idioma) */}
+      <div className="relative z-10 flex items-center justify-between w-full pt-2 border-t border-white/5 text-xs">
+        <ConnectionStatus state={status} sessionActive={sessionActive} />
+        <LanguageSelector />
+      </div>
     </div>
   );
 }
@@ -699,18 +760,18 @@ function MicUnsupported({
 }) {
   const info = diagnostic ? micErrorAction(diagnostic) : null;
   return (
-    <div className="max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700">
-      <div className="text-base font-semibold">
+    <div className="max-w-sm rounded-2xl agent-glass-card p-6 text-center text-sm text-amber-200 shadow-2xl">
+      <div className="text-base font-semibold text-amber-300">
         {info?.title ?? "Acesso ao microfone indisponível"}
       </div>
-      <p className="mt-1">
+      <p className="mt-2 text-xs text-amber-200/80 leading-relaxed">
         {info?.message ??
           "O acesso ao microfone exige um navegador atualizado e uma conexão segura (HTTPS)."}
       </p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 transition-colors cursor-pointer"
       >
         <RotateCcw className="h-4 w-4" /> Verificar novamente
       </button>
