@@ -26,9 +26,13 @@ interface BillingStatus {
 export function DashboardShell({
   title,
   children,
+  hideHeader = false,
+  fullBleed = false,
 }: {
   title: string;
   children: React.ReactNode;
+  hideHeader?: boolean;
+  fullBleed?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -63,16 +67,22 @@ export function DashboardShell({
   };
 
   return (
-    <div className="dashboard-wrapper">
+    <div className={`dashboard-wrapper ${fullBleed ? "!bg-[#02051C]" : ""}`}>
       <Sidebar />
       <div className="flex min-h-screen flex-col lg:pl-64">
-        <Topbar title={title} />
+        {!hideHeader && <Topbar title={title} />}
         <OfflineBanner />
-        <main className="dashboard-dark-theme flex-1 pb-20 lg:pb-8">
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-8">
+        {fullBleed ? (
+          <main className="flex-1 flex flex-col w-full min-h-screen p-0 pb-20 lg:pb-0 overflow-x-hidden">
             {children}
-          </div>
-        </main>
+          </main>
+        ) : (
+          <main className="dashboard-dark-theme flex-1 pb-20 lg:pb-8">
+            <div className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-8">
+              {children}
+            </div>
+          </main>
+        )}
         <BottomNav />
       </div>
 

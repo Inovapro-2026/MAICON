@@ -4,7 +4,7 @@ import "./agent.css";
 
 export default function AgentPage() {
   return (
-    <DashboardShell title="Agente">
+    <DashboardShell title="Agente" hideHeader fullBleed>
       <AgentTab />
     </DashboardShell>
   );

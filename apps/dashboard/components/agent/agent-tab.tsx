@@ -11,6 +11,7 @@ import {
 
 import { StarField } from "./star-field";
 import { VoiceOrb, VoiceState } from "./voice-orb";
+import { AgentHeader } from "./agent-header";
 import { AgentStatus } from "./agent-status";
 import { ConversationList, ChatMessage } from "./conversation-bubble";
 import { VoiceControls } from "./voice-controls";
@@ -665,12 +666,15 @@ export function AgentTab() {
     micDiagnostic?.permission === "insecure";
 
   return (
-    <div className="agent-page-viewport relative flex flex-col justify-between p-4 sm:p-6 lg:p-8">
+    <div className="agent-page-viewport relative flex flex-col justify-between min-h-screen w-full">
       {/* 1. Fundo Espacial com Estrelas e Nebulosa */}
       <StarField />
 
-      {/* 2. Conteúdo Principal */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center max-w-4xl mx-auto w-full pt-4 pb-2">
+      {/* 2. Header Integrado no Tema Escuro */}
+      <AgentHeader />
+
+      {/* 3. Conteúdo Principal */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center max-w-4xl mx-auto w-full px-4 pt-2 pb-2">
         {micDisabled && status !== "error" ? (
           <MicUnsupported
             diagnostic={micDiagnostic}
@@ -725,7 +729,7 @@ export function AgentTab() {
             />
 
             {/* Controles de Voz (Microfone, Mute, Encerrar) */}
-            <div className="mt-6 w-full">
+            <div className="mt-4 w-full">
               <VoiceControls
                 state={status}
                 sessionActive={sessionActive}
@@ -741,8 +745,8 @@ export function AgentTab() {
         )}
       </div>
 
-      {/* 3. Barra Inferior com Indicadores (Status de Conexão + Idioma) */}
-      <div className="relative z-10 flex items-center justify-between w-full pt-2 border-t border-white/5 text-xs">
+      {/* 4. Barra Inferior com Indicadores (Status de Conexão + Idioma) */}
+      <div className="relative z-10 flex items-center justify-between w-full px-4 sm:px-8 py-3 border-t border-white/5 text-xs">
         <ConnectionStatus state={status} sessionActive={sessionActive} />
         <LanguageSelector />
       </div>
