@@ -431,9 +431,10 @@ export function AgentTab() {
         source.connect(analyser);
         audioContextRef.current = ctx;
         analyserRef.current = analyser;
-      } else {
-        await resumeAudioContext();
       }
+      // AudioContext novo começa "suspended" — sem resume() o analyser devolve
+      // silêncio e o VAD nunca detecta fala (fica preso em "Ouvindo…").
+      await resumeAudioContext();
 
       const recorder = new MediaRecorder(streamRef.current);
       mediaRecorderRef.current = recorder;
