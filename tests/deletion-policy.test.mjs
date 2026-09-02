@@ -176,11 +176,10 @@ test("rotas de e-mails: isoladas por business_id (multi-tenant)", () => {
 // ---------------------------------------------------------------------------
 
 test("UI: menu lateral e título usam 'Mensagens', rota continua /inbox", () => {
-  assert.ok(sidebar.includes('label: "Mensagens"'));
-  assert.ok(bottomNav.includes('label: "Mensagens"'));
+  const navigation = read("apps/dashboard/lib/navigation.ts");
+  assert.ok(navigation.includes('label: "Mensagens"'));
+  assert.ok(navigation.includes('href: "/inbox"'), "rota interna não deve ser renomeada");
   assert.ok(inboxPage.includes('DashboardShell title="Mensagens"'));
-  assert.ok(sidebar.includes('href: "/inbox"'), "rota interna não deve ser renomeada");
-  assert.ok(bottomNav.includes('href: "/inbox"'), "rota interna não deve ser renomeada");
 });
 
 // ---------------------------------------------------------------------------

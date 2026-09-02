@@ -195,3 +195,21 @@
   transform: translateZ(24px);
 }
 
+/* Barras de onda do agente de voz (estado "ouvindo") */
+@keyframes agent-wave {
+  0%, 100% {
+    transform: scaleY(0.2);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.agent-wave-bar {
+  height: 56px;
+  transform-origin: center;
+  animation: agent-wave 1s ease-in-out infinite;
+}
+

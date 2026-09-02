@@ -1114,3 +1114,23 @@ model Notification {
   @@index([business_id, created_at])
 }
 
+// ============================= CHAVES DE API (PLATAFORMA) =============================
+
+model ApiKey {
+  id            String    @id @default(cuid())
+  provider      String    // 'elevenlabs' | 'groq' | 'openai'
+  label         String?   // rótulo opcional (ex.: "Chave principal")
+  key_encrypted String    // valor criptografado (AES-256-GCM)
+  key_hash      String    // sha256 do valor (busca/dedup sem descriptografar)
+  key_suffix    String    // últimos 4 caracteres (exibição na UI)
+  status        String    @default("ACTIVE") // 'ACTIVE' | 'EXHAUSTED'
+  priority      Int       @default(0)        // menor = preferencial
+  last_error    String?
+  used_at       DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@index([provider, status, priority])
+  @@index([key_hash])
+}
+

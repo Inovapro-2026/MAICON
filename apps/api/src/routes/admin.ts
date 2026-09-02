@@ -35,6 +35,12 @@ import {
   isCaktoConfigured,
   updateCaktoOfferPrice,
 } from "../services/cakto";
+import {
+  listApiKeys,
+  addApiKey,
+  removeApiKey,
+  ApiKeyProvider,
+} from "../services/api-keys";
 
 const logger = createLogger("api.admin");
 
@@ -1675,5 +1681,116 @@ adminRouter.delete(
       entityId: key,
     });
     return ok(res, { deleted: true });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Chaves de API (PLATFORM_ADMIN p/ escrita)
+// ---------------------------------------------------------------------------
+
+const API_KEY_PROVIDERS = ["elevenlabs", "groq", "openai"] as const;
+
+function parseProvider(value: unknown): ApiKeyProvider | null {
+  const v = String(value ?? "").toLowerCase().trim();
+  return (API_KEY_PROVIDERS as readonly string[]).includes(v)
+    ? (v as ApiKeyProvider)
+    : null;
+}
+
+/** GET /admin/api-keys?provider= — lista chaves de API (valores mascarados). */
+adminRouter.get(
+  "/api-keys",
+  asyncHandler(async (req: Request, res: Response) => {
+    const provider = req.query.provider ? parseProvider(req.query.provider) : undefined;
+    const keys = await listApiKeys(provider ?? undefined);
+    return ok(res, { keys });
+  }),
+);
+
+/** POST /admin/api-keys — cadastra nova chave (criptografada em repouso). */
+adminRouter.post(
+  "/api-keys",
+  adminWrite,
+  asyncHandler(async (req: Request, res: Response) => {
+    const provider = parseProvider(req.body?.provider);
+    if (!provider) throw ApiError.badRequest("Provedor inválido (elevenlabs, groq ou openai)");
+    const key = String(req.body?.key ?? "");
+    if (!key.trim()) throw ApiError.badRequest("Informe o valor da chave");
+    const label = req.body?.label ? String(req.body.label) : null;
+
+    let created: Awaited<ReturnType<typeof addApiKey>>;
+    try {
+      created = await addApiKey(provider, key, label);
+    } catch (error) {
+      throw ApiError.badRequest(error instanceof Error ? error.message : "Falha ao cadastrar chave");
+    }
+
+    void writeAudit({
+      actor: req.user!.sub,
+      action: "admin.api_key.created",
+      entity: "ApiKey",
+      entityId: created.id,
+      metadata: { provider, key_suffix: created.key_suffix, label: created.label },
+    });
+    logger.info("Chave de API adicionada pelo admin", {
+      provider,
+      key_suffix: created.key_suffix,
+      actor: req.user!.sub,
+    });
+    return ok(res, { key: created }, 201);
+  }),
+);
+
+/** PATCH /admin/api-keys/:id/status — ativa/reativa ou marca como esgotada. */
+adminRouter.patch(
+  "/api-keys/:id/status",
+  adminWrite,
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    const rawStatus = String(req.body?.status ?? "").toUpperCase();
+    if (rawStatus !== "ACTIVE" && rawStatus !== "EXHAUSTED") {
+      throw ApiError.badRequest("Status inválido (ACTIVE ou EXHAUSTED)");
+    }
+    const row = await prisma.apiKey.findUnique({ where: { id } });
+    if (!row) throw ApiError.notFound("Chave não encontrada");
+
+    await prisma.apiKey.update({
+      where: { id },
+      data: { status: rawStatus, ...(rawStatus === "ACTIVE" ? { last_error: null } : {}) },
+    });
+    void writeAudit({
+      actor: req.user!.sub,
+      action: "admin.api_key.status_changed",
+      entity: "ApiKey",
+      entityId: id,
+      metadata: { provider: row.provider, key_suffix: row.key_suffix, status: rawStatus },
+    });
+    return ok(res, { updated: true });
+  }),
+);
+
+/** DELETE /admin/api-keys/:id — remove chave (PLATFORM_ADMIN). */
+adminRouter.delete(
+  "/api-keys/:id",
+  adminWrite,
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    const row = await prisma.apiKey.findUnique({ where: { id } });
+    if (!row) throw ApiError.notFound("Chave não encontrada");
+
+    const removed = await removeApiKey(id);
+    void writeAudit({
+      actor: req.user!.sub,
+      action: "admin.api_key.deleted",
+      entity: "ApiKey",
+      entityId: id,
+      metadata: { provider: row.provider, key_suffix: row.key_suffix },
+    });
+    logger.info("Chave de API removida pelo admin", {
+      provider: row.provider,
+      key_suffix: row.key_suffix,
+      actor: req.user!.sub,
+    });
+    return ok(res, { deleted: removed });
   }),
 );

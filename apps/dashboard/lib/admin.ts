@@ -208,3 +208,14 @@ export interface SettingRow {
   value: string;
   updated_at?: string;
 }
+
+export interface AdminApiKey {
+  id: string;
+  provider: string;
+  label: string | null;
+  key_suffix: string;
+  status: string;
+  last_error: string | null;
+  used_at: string | null;
+  created_at: string;
+}

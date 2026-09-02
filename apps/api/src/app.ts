@@ -20,6 +20,7 @@ import { aiRouter } from "./routes/ai";
 import { emailsRouter } from "./routes/emails";
 import { clientsRouter } from "./routes/clients";
 import { notificationsRouter } from "./routes/notifications";
+import { agentRouter } from "./routes/agent";
 import { errorHandler } from "./middleware/error-handler";
 
 import { rateLimit } from "./middleware/rate-limit";
@@ -95,6 +96,7 @@ export function createApp(): Express {
   app.use("/emails", emailsRouter);
   app.use("/clients", clientsRouter);
   app.use("/notifications", notificationsRouter);
+  app.use("/agent", agentRouter);
 
   app.use((_req, res) => {
     res.status(404).json({

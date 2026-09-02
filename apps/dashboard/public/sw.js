@@ -7,7 +7,7 @@
    =========================================================================== */
 'use strict';
 
-const CACHE_NAME = 'savyron-v4';
+const CACHE_NAME = 'savyron-v6';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const PAGE_CACHE = `${CACHE_NAME}-pages`;
 const API_CACHE = `${CACHE_NAME}-api`;

@@ -34,11 +34,98 @@ export function detectDelimiter(content: string): string {
   return commas >= semis ? ',' : ';';
 }
 
+/** Detecta se o conteúdo é uma lista simples (um valor por linha), sem delimitadores CSV. */
+function detectSimpleList(content: string): string[] | null {
+  const lines = content
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+  const hasDelimiter = lines.some((l) => l.includes(',') || l.includes(';'));
+  if (hasDelimiter) return null;
+  return lines;
+}
+
+const isPhoneLike = (v: string): boolean => {
+  const digits = v.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 13;
+};
+
+const isEmailLike = (v: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+const SIMPLE_HEADER_KEYS: Record<string, 'phone' | 'email'> = {
+  telefone: 'phone',
+  phone: 'phone',
+  celular: 'phone',
+  cel: 'phone',
+  whatsapp: 'phone',
+  whats: 'phone',
+  fone: 'phone',
+  tel: 'phone',
+  mobile: 'phone',
+  cell: 'phone',
+  numero: 'phone',
+  email: 'email',
+  'e-mail': 'email',
+  mail: 'email',
+  correio: 'email',
+};
+
+const normalizeKeySimple = (s: string): string =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+
+/** Converte uma lista simples (só telefones ou só e-mails, um por linha) em registros de lead. */
+function parseSimpleList(content: string, options: ParseImportOptions = {}): ParseImportResult {
+  const lines = detectSimpleList(content) ?? [];
+  let start = 0;
+  let headerType: 'phone' | 'email' | null = null;
+  const firstKey = normalizeKeySimple(lines[0] ?? '');
+  if (SIMPLE_HEADER_KEYS[firstKey]) {
+    headerType = SIMPLE_HEADER_KEYS[firstKey];
+    start = 1;
+  }
+
+  const counts = { phone: 0, email: 0 };
+  for (let i = start; i < lines.length; i++) {
+    if (isPhoneLike(lines[i])) counts.phone += 1;
+    else if (isEmailLike(lines[i])) counts.email += 1;
+  }
+
+  const headers = ['telefone', 'email'];
+  const rows = lines.slice(start).map((v) => {
+    const isPh = isPhoneLike(v);
+    const isEm = isEmailLike(v);
+    if (isPh && !isEm) return [v, ''];
+    if (isEm && !isPh) return ['', v];
+    if (headerType === 'phone') return [v, ''];
+    if (headerType === 'email') return ['', v];
+    return counts.phone >= counts.email ? [v, ''] : ['', v];
+  });
+
+  const mapping = identifyColumns(headers);
+  const raw: RawLeadRecord[] = rows.map((row, idx) => {
+    const rec: RawLeadRecord = { rowIndex: start === 0 ? idx + 1 : idx + 2 };
+    headers.forEach((h, i) => {
+      if (h) rec[h] = row[i] ?? '';
+    });
+    return rec;
+  });
+  return buildResult(headers, mapping, raw, options);
+}
+
 /** Parseia conteúdo CSV/texto colado. */
 export function parseTextContent(
   content: string,
   options: ParseImportOptions = {}
 ): ParseImportResult {
+  // Lista simples: só números ou só e-mails, um por linha (sem cabeçalho nem colunas)
+  if (detectSimpleList(content)) {
+    return parseSimpleList(content, options);
+  }
   const delimiter = options.delimiter ?? detectDelimiter(content);
   const parsed = parseCsv(content, { delimiter, hasHeader: true });
   const mapping = identifyColumns(parsed.headers);

@@ -196,7 +196,7 @@ export function ImportTab() {
       <Card>
         <CardHeader
           title="Importação manual"
-          subtitle="Subir arquivo .csv / .xlsx ou colar o CSV. As colunas são identificadas automaticamente."
+          subtitle="Subir arquivo .csv / .xlsx ou colar texto. Você pode colar só números ou só e-mails, um por linha — sem precisar de nomes nem colunas."
           action={
             <Button variant="outline" size="sm" onClick={downloadSample}>
               <Download className="h-4 w-4" /> Modelo
@@ -244,7 +244,7 @@ export function ImportTab() {
         ) : (
           <Textarea
             placeholder={
-              "nome;telefone;email;empresa;cidade;estado\nBarbearia do João;11 98765-4321;contato@barbearia.com;Barbearia do João;São Paulo;SP"
+              "Apenas números (um por linha):\n11987654321\n21987654321\n\nou apenas e-mails (um por linha):\ncontato@barbearia.com\nmaria@salao.com\n\nou CSV completo:\nnome;telefone;email\nBarbearia do João;11 98765-4321;contato@barbearia.com"
             }
             value={text}
             onChange={(e) => setText(e.target.value)}

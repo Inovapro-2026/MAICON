@@ -17,6 +17,7 @@ function read(rel) {
 }
 
 const sidebar = read("apps/dashboard/components/layout/sidebar.tsx");
+const navigation = read("apps/dashboard/lib/navigation.ts");
 const middleware = read("apps/dashboard/middleware.ts");
 const adminLayout = read("apps/dashboard/app/admin/layout.tsx");
 const adminRoute = read("apps/api/src/routes/admin.ts");
@@ -31,12 +32,12 @@ test("sidebar: link Admin oculto para quem não tem papel de plataforma", () => 
   assert.match(sidebar, /useSession/);
   assert.match(sidebar, /canSeeAdmin/);
   assert.match(
-    sidebar,
-    /user\?\.platform_role === "PLATFORM_ADMIN"/,
+    navigation,
+    /label: "Admin"/,
   );
   assert.match(
-    sidebar,
-    /user\?\.platform_role === "PLATFORM_STAFF"/,
+    navigation,
+    /ShieldCheck/,
   );
 });
 

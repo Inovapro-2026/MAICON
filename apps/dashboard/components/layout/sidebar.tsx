@@ -4,54 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  Search,
-  Megaphone,
-  MessageSquare,
-  Users,
-  Mail,
-  BarChart3,
-  ShieldCheck,
-  Bot,
-  BookOpen,
-  FlaskConical,
-  Sparkles,
   ChevronDown,
-  Settings,
-  Crown,
   HelpCircle,
-  Zap,
-  Plug,
-  ScrollText,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useSession } from "@/hooks/use-session";
 import { useApi } from "@/hooks/use-api";
-
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/prospect", label: "Prospecção", icon: Search },
-  { href: "/campaigns", label: "Campanhas", icon: Megaphone },
-  { href: "/inbox", label: "Mensagens", icon: MessageSquare },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/emails", label: "E-mails enviados", icon: Mail },
-  { href: "/reports", label: "Relatórios", icon: BarChart3 },
-];
-
-const EMPRESA_NAV = [
-  { href: "/settings/empresa-ia", label: "Configuração da IA", icon: Bot },
-  { href: "/settings/plano", label: "Planos", icon: Crown },
-];
-
-const ADVANCED_NAV = [
-  { href: "/settings", label: "Integrações", icon: Plug },
-  { href: "/ai/knowledge", label: "Base de conhecimento", icon: BookOpen },
-  { href: "/ai/playground", label: "Testar IA", icon: FlaskConical },
-  { href: "/ai/prompt-guide", label: "Guia de prompts", icon: Sparkles },
-];
-
-const ADMIN_LINK = { href: "/admin", label: "Logs & Admin", icon: ShieldCheck };
-const SETTINGS_LINK = { href: "/settings", label: "Configurações", icon: Settings };
+import {
+  NAV_ITEMS,
+  EMPRESA_NAV,
+  ADVANCED_NAV,
+  ADMIN_NAV,
+  SETTINGS_NAV,
+  NavItem as NavItemDef,
+} from "@/lib/navigation";
 
 function NavItem({
   href,
@@ -62,7 +28,7 @@ function NavItem({
 }: {
   href: string;
   label: string;
-  icon: typeof LayoutDashboard;
+  icon: NavItemDef["icon"];
   pathname: string;
   navigateTo?: string;
 }) {
@@ -101,7 +67,7 @@ function AdvancedNav({
   items,
   pathname,
 }: {
-  items: { href: string; label: string; icon: typeof LayoutDashboard }[];
+  items: NavItemDef[];
   pathname: string;
 }) {
   const [open, setOpen] = useState(() => items.some((item) => pathname.startsWith(item.href)));
@@ -156,7 +122,7 @@ export function Sidebar() {
 
       {/* Navigation menu */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3.5 py-4">
-        {NAV.map((item) => (
+        {NAV_ITEMS.map((item) => (
           <NavItem
             key={item.href}
             {...item}
@@ -180,17 +146,17 @@ export function Sidebar() {
 
         {canSeeAdmin ? (
           <NavItem
-            href={ADMIN_LINK.href}
-            label={ADMIN_LINK.label}
-            icon={ADMIN_LINK.icon}
+            href={ADMIN_NAV.href}
+            label={ADMIN_NAV.label}
+            icon={ADMIN_NAV.icon}
             pathname={pathname}
           />
         ) : null}
 
         <NavItem
-          href={SETTINGS_LINK.href}
-          label={SETTINGS_LINK.label}
-          icon={SETTINGS_LINK.icon}
+          href={SETTINGS_NAV.href}
+          label={SETTINGS_NAV.label}
+          icon={SETTINGS_NAV.icon}
           pathname={pathname}
         />
       </nav>

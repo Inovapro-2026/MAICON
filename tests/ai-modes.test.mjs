@@ -23,6 +23,7 @@ function read(rel) {
 const assembler = read("services/ai/src/prompt-assembler.ts");
 const processor = read("apps/worker/src/jobs/ai-response.processor.ts");
 const sidebar = read("apps/dashboard/components/layout/sidebar.tsx");
+const navigation = read("apps/dashboard/lib/navigation.ts");
 const guide = read("apps/dashboard/app/(dashboard)/ai/prompt-guide/page.tsx");
 
 // ---------------------------------------------------------------------------
@@ -100,9 +101,9 @@ test("worker: detecta pergunta repetida (indicador de qualidade)", () => {
 // ---------------------------------------------------------------------------
 
 test("sidebar: item 'Guia de prompts' na seção IA", () => {
-  assert.match(sidebar, /\/ai\/prompt-guide/);
-  assert.match(sidebar, /label: "Guia de prompts"/);
-  assert.match(sidebar, /Sparkles/);
+  assert.match(navigation, /\/ai\/prompt-guide/);
+  assert.match(navigation, /label: "Guia de prompts"/);
+  assert.match(navigation, /Sparkles/);
 });
 
 test("guia: pré-preenche NOME DO NEGÓCIO/SEGMENTO com dados do Meu negócio", () => {

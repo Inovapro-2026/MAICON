@@ -19,6 +19,7 @@ function read(rel) {
 const mw = read("apps/api/src/middleware/active-subscription.ts");
 const billing = read("apps/api/src/routes/billing.ts");
 const sidebar = read("apps/dashboard/components/layout/sidebar.tsx");
+const navigation = read("apps/dashboard/lib/navigation.ts");
 const plano = read("apps/dashboard/app/(dashboard)/settings/plano/page.tsx");
 const shell = read("apps/dashboard/components/layout/shell.tsx");
 
@@ -44,9 +45,9 @@ test("plano: /billing/status expõe is_expired e expires_at", () => {
 });
 
 test("plano: sidebar tem item 'Planos' (ícone de coroa)", () => {
-  assert.match(sidebar, /href: "\/settings\/plano"/);
-  assert.match(sidebar, /label: "Planos"/);
-  assert.match(sidebar, /Crown/);
+  assert.match(navigation, /href: "\/settings\/plano"/);
+  assert.match(navigation, /label: "Planos"/);
+  assert.match(navigation, /Crown/);
 });
 
 test("plano: página tem status, contagem e botão de renovar", () => {

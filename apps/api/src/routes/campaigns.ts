@@ -334,7 +334,7 @@ function normalizeStartHour(value: unknown): number | null {
   return null;
 }
 
-async function schedulePump(campaignId: string, businessId?: string): Promise<void> {
+export async function schedulePump(campaignId: string, businessId?: string): Promise<void> {
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
   if (!campaign) return;
 
