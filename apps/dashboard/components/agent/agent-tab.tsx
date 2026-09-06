@@ -93,13 +93,6 @@ export function AgentTab() {
               </div>
             )}
 
-            {/* Conversa em Glassmorphism */}
-            <ConversationList
-              history={history}
-              transcript={transcript}
-              lastAssistant={lastAssistant}
-            />
-
             {/* Controles de Voz (Microfone, Mute, Encerrar) */}
             <div className="mt-4 w-full">
               <VoiceControls

@@ -275,6 +275,7 @@ export function useAgentConversation(): AgentConversationResult {
         return;
       }
       try {
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(normalizeForTTS(text));
         utterance.lang = "pt-BR";
         utterance.rate = 1;
@@ -288,16 +289,25 @@ export function useAgentConversation(): AgentConversationResult {
         setUsingBrowserVoice(true);
         setStatus("agent-speaking");
 
+        let finished = false;
         const cleanupTTS = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(safetyTimer);
           speakingRef.current = false;
           lastTtsEndTimeRef.current = Date.now();
           audioChunksRef.current = [];
           resolve();
         };
 
+        const safetyTimer = setTimeout(cleanupTTS, 15000);
+
         utterance.onend = cleanupTTS;
         utterance.onerror = cleanupTTS;
         window.speechSynthesis.speak(utterance);
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
       } catch {
         speakingRef.current = false;
         lastTtsEndTimeRef.current = Date.now();
@@ -356,7 +366,11 @@ export function useAgentConversation(): AgentConversationResult {
             }
           }
 
+          let finished = false;
           const cleanupAudio = () => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(safetyTimer);
             speakingRef.current = false;
             lastTtsEndTimeRef.current = Date.now();
             audioChunksRef.current = [];
@@ -364,12 +378,25 @@ export function useAgentConversation(): AgentConversationResult {
             resolve();
           };
 
+          const safetyTimer = setTimeout(cleanupAudio, 25000);
+
           audio.onended = cleanupAudio;
           audio.onerror = () => {
             cleanupAudio();
             void speakWithBrowser(text);
           };
-          void audio.play();
+
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              console.warn(
+                "[SAVYRON TTS] Falha ao reproduzir áudio MP3, usando fallback do navegador:",
+                err,
+              );
+              cleanupAudio();
+              void speakWithBrowser(text);
+            });
+          }
         });
       } catch {
         await speakWithBrowser(text);
@@ -453,11 +480,16 @@ export function useAgentConversation(): AgentConversationResult {
       const voiceRatio = totalEnergy > 15 ? voiceBandEnergy / totalEnergy : 0;
 
       // OBJETIVO 6 — NOISE GATE ADAPTATIVO
-      // Calibração do ruído ambiente nos primeiros 1.2 segundos após ativar o microfone
+      // Calibração do ruído ambiente com fuga imediata se o usuário já estiver falando
       if (isCalibratingRef.current) {
         if (now < calibrationEndTimeRef.current) {
-          calibrationSamplesRef.current.push(rms);
-          return;
+          // Se o usuário já começou a falar (rms > 0.018), encerra calibração imediatamente para não registrar fala como ruído
+          if (rms > 0.018) {
+            isCalibratingRef.current = false;
+          } else {
+            calibrationSamplesRef.current.push(rms);
+            return;
+          }
         } else {
           isCalibratingRef.current = false;
           if (calibrationSamplesRef.current.length > 0) {
@@ -466,7 +498,7 @@ export function useAgentConversation(): AgentConversationResult {
               calibrationSamplesRef.current.length;
             noiseFloorRef.current = Math.max(
               VAD_CONFIG.minThreshold,
-              Math.min(VAD_CONFIG.maxThreshold, avg * 1.15),
+              Math.min(0.015, avg * 1.1),
             );
             console.log(
               "[SAVYRON VAD] Calibração de ruído ambiente concluída:",
@@ -507,8 +539,8 @@ export function useAgentConversation(): AgentConversationResult {
 
         const candidateDuration = now - speechCandidateStartRef.current;
 
-        // OBJETIVO 7 — TEMPO MÍNIMO PARA CONSIDERAR FALA (320ms contínuos)
-        // Ignora picos repentinos de 50-150ms (palmas, teclado, cliques, batidas)
+        // OBJETIVO 7 — TEMPO MÍNIMO PARA CONSIDERAR FALA
+        // Ignora picos repentinos de <150ms (palmas, teclado, cliques, batidas)
         if (candidateDuration >= VAD_CONFIG.minSpeechDurationMs) {
           stats.voicedFrames += 1;
           if (rms > stats.peakRms) stats.peakRms = rms;
@@ -532,19 +564,16 @@ export function useAgentConversation(): AgentConversationResult {
           if (rms < speechStartThreshold) {
             noiseFloorRef.current = Math.max(
               VAD_CONFIG.minThreshold,
-              Math.min(
-                VAD_CONFIG.maxThreshold,
-                noiseFloorRef.current * 0.97 + rms * 0.03,
-              ),
+              Math.min(0.015, noiseFloorRef.current * 0.97 + rms * 0.03),
             );
           }
         }
 
         if (silenceStart === null) silenceStart = now;
 
-        // Se o usuário falou o suficiente e fez pausa, encerra e processa
+        // Se o usuário falou e fez pausa (silêncio consecutivo), encerra e processa
         if (
-          stats.voicedFrames >= 3 &&
+          stats.voicedFrames >= 1 &&
           now - silenceStart >= VAD_CONFIG.minSilenceDurationMs
         ) {
           console.log("[SAVYRON VAD] Fim de fala confirmado por silêncio:", {
@@ -563,7 +592,7 @@ export function useAgentConversation(): AgentConversationResult {
 
       // Watchdog de segurança: encerra gravação se ultrapassar o tempo máximo
       if (now - recordingStartTimeRef.current >= VAD_CONFIG.maxRecordingMs) {
-        if (stats.voicedFrames >= 3) {
+        if (stats.voicedFrames >= 1) {
           finishUtterance();
         } else {
           // Apenas silêncio — reinicia a janela de gravação sem travar
@@ -593,10 +622,10 @@ export function useAgentConversation(): AgentConversationResult {
       peakRms: stats.peakRms,
     });
 
-    // OBJETIVO 4 & 5: Descarte seguro de ruídos pontuais que não atingiram fala real
-    if (stats.voicedFrames < 3) {
+    // Descarte se não houve fala detectada
+    if (stats.voicedFrames < 1) {
       console.log(
-        "[SAVYRON VAD] Áudio descartado: voicedFrames insuficientes (ruído pontual):",
+        "[SAVYRON VAD] Áudio descartado: voicedFrames insuficientes:",
         stats.voicedFrames,
       );
       audioChunksRef.current = [];
@@ -714,7 +743,7 @@ export function useAgentConversation(): AgentConversationResult {
     recorder.onstop = () => {
       if (sessionActiveRef.current) void processAudio();
     };
-    recorder.start();
+    recorder.start(250);
     void resumeAudioContext();
     startVad();
   }, [resumeAudioContext, startVad, processAudio]);
@@ -791,7 +820,7 @@ export function useAgentConversation(): AgentConversationResult {
       recorder.onstop = () => {
         if (sessionActiveRef.current) void processAudio();
       };
-      recorder.start();
+      recorder.start(250);
       startVad();
     } catch (error) {
       if (token !== sessionTokenRef.current) return;
@@ -875,9 +904,17 @@ export function useAgentConversation(): AgentConversationResult {
     if (!sessionActiveRef.current) {
       void beginListening();
     } else {
+      // Se estava gravando e o usuário já falou algo, conclui e processa imediatamente
+      if (
+        mediaRecorderRef.current?.state === "recording" &&
+        vadStatsRef.current.voicedFrames > 0
+      ) {
+        finishUtterance();
+        return;
+      }
       stopSession();
     }
-  }, [beginListening, stopSession]);
+  }, [beginListening, finishUtterance, stopSession]);
 
   const handleRetry = useCallback(() => {
     void beginListening();

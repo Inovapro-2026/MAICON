@@ -10,29 +10,29 @@ export const MAX_RECORDING_MS = 20000;
 // Configuração central e adaptativa de VAD (Voice Activity Detection)
 export const VAD_CONFIG = {
   /** Duração mínima de fala contínua humana para disparar SPEECH_STARTED (250-400ms) */
-  minSpeechDurationMs: 320,
+  minSpeechDurationMs: 250,
   /** Silêncio consecutivo necessário para considerar fim da fala (hangover) */
-  minSilenceDurationMs: 1200,
+  minSilenceDurationMs: 1000,
   /** Período inicial de calibração do ruído de fundo ambiente */
-  calibrationDurationMs: 1200,
+  calibrationDurationMs: 1000,
   /** Intervalo de amostragem do VAD via AnalyserNode */
   vadIntervalMs: 80,
   /** Piso mínimo absoluto do limiar de energia (evita surdez em salas ultra silenciosas) */
   minThreshold: 0.005,
   /** Teto máximo do limiar adaptativo (evita surdez sob ruído persistente moderado) */
-  maxThreshold: 0.045,
+  maxThreshold: 0.025,
   /** Margem de energia acima do piso de ruído para iniciar detecção de fala (histerese alta) */
-  speechStartMargin: 0.012,
+  speechStartMargin: 0.008,
   /** Margem de energia acima do piso de ruído para sustentar fala ativa (histerese baixa) */
-  speechStopMargin: 0.005,
+  speechStopMargin: 0.003,
   /** Limite inferior da frequência fundamental e formantes de fala humana (Hz) */
   voiceBandLowHz: 150,
   /** Limite superior da frequência inteligível de voz humana (Hz) */
   voiceBandHighHz: 3400,
   /** Fração mínima de energia que deve estar na faixa de voz humana para não ser ruído */
-  voiceBandRatioMin: 0.35,
+  voiceBandRatioMin: 0.2,
   /** Watchdog máximo de gravação contínua (ms) */
-  maxRecordingMs: 20000,
+  maxRecordingMs: 25000,
 } as const;
 
 // Padrões de ruído sem fala real

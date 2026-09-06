@@ -100,13 +100,6 @@ export function AgentTabV2() {
             />
           ) : (
             <>
-              {/* Conversa em Glassmorphism (componentes compartilhados V1/V2) */}
-              <ConversationList
-                history={history}
-                transcript={transcript}
-                lastAssistant={lastAssistant}
-              />
-
               {/* Controles de Voz (Microfone, Mute, Encerrar) */}
               <div className="mt-1 w-full">
                 <VoiceControls

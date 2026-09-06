@@ -19,7 +19,10 @@ export function ConversationBubble({ message }: ConversationBubbleProps) {
   const timeString = useMemo(() => {
     if (message.timestamp) return message.timestamp;
     const now = new Date();
-    return now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return now.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }, [message.timestamp]);
 
   return (
@@ -32,9 +35,7 @@ export function ConversationBubble({ message }: ConversationBubbleProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1.5">
-            
-          </div>
+          <div className="flex items-center gap-2 mb-1.5"></div>
           <p className="text-sm sm:text-base text-[#F8FAFC] leading-relaxed font-normal">
             {message.content}
           </p>
@@ -58,26 +59,6 @@ export function ConversationList({
   transcript,
   lastAssistant,
 }: ConversationListProps) {
-  // Apenas a pergunta e resposta atual — quando uma nova chega, a anterior
-  // desaparece. Mantém altura fixa para não estender a página.
-  const activeItems: ChatMessage[] = useMemo(() => {
-    const items: ChatMessage[] = [];
-    if (transcript) {
-      items.push({ role: "user", content: transcript });
-    }
-    if (lastAssistant) {
-      items.push({ role: "assistant", content: lastAssistant });
-    }
-    return items;
-  }, [transcript, lastAssistant]);
-
-  if (activeItems.length === 0) return null;
-
-  return (
-    <div className="w-full max-w-xl mx-auto space-y-3 px-4 h-48 overflow-y-auto">
-      {activeItems.map((item, idx) => (
-        <ConversationBubble key={item.id ?? idx} message={item} />
-      ))}
-    </div>
-  );
+  // Textos de transcrição desativados na interface do agente
+  return null;
 }
