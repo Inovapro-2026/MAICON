@@ -23,11 +23,23 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
         <div className="relative w-12 h-12 flex items-center justify-center">
           <svg viewBox="0 0 48 48" className="w-full h-full overflow-visible">
             <defs>
-              <linearGradient id="searchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient
+                id="searchGrad"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#00f5ff" />
                 <stop offset="100%" stopColor="#6366f1" />
               </linearGradient>
-              <filter id="searchGlowHigh" x="-50%" y="-50%" width="200%" height="200%">
+              <filter
+                id="searchGlowHigh"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
                 <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
@@ -61,7 +73,9 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               cx="20"
               cy="20"
               r="10"
-              fill={active ? "rgba(0, 245, 255, 0.18)" : "rgba(56, 189, 248, 0.12)"}
+              fill={
+                active ? "rgba(0, 245, 255, 0.18)" : "rgba(56, 189, 248, 0.12)"
+              }
               className="transition-all duration-300"
             />
             <path
@@ -84,10 +98,40 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               className="transition-all duration-300"
             />
             {active && (
-              <g className="animate-spin-slow" style={{ transformOrigin: "20px 20px", animationDuration: "4s" }}>
-                <line x1="13" y1="20" x2="27" y2="20" stroke="#00f5ff" strokeWidth="1" opacity="0.9" />
-                <line x1="20" y1="13" x2="20" y2="27" stroke="#00f5ff" strokeWidth="1" opacity="0.9" />
-                <circle cx="20" cy="20" r="5" fill="none" stroke="#38bdf8" strokeWidth="0.8" strokeDasharray="2 2" />
+              <g
+                className="animate-spin-slow"
+                style={{
+                  transformOrigin: "20px 20px",
+                  animationDuration: "4s",
+                }}
+              >
+                <line
+                  x1="13"
+                  y1="20"
+                  x2="27"
+                  y2="20"
+                  stroke="#00f5ff"
+                  strokeWidth="1"
+                  opacity="0.9"
+                />
+                <line
+                  x1="20"
+                  y1="13"
+                  x2="20"
+                  y2="27"
+                  stroke="#00f5ff"
+                  strokeWidth="1"
+                  opacity="0.9"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="5"
+                  fill="none"
+                  stroke="#38bdf8"
+                  strokeWidth="0.8"
+                  strokeDasharray="2 2"
+                />
               </g>
             )}
           </svg>
@@ -99,12 +143,24 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
         <div className="relative w-12 h-12 flex items-center justify-center">
           <svg viewBox="0 0 48 48" className="w-full h-full overflow-visible">
             <defs>
-              <linearGradient id="targetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient
+                id="targetGrad"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#00f5ff" />
                 <stop offset="50%" stopColor="#818cf8" />
                 <stop offset="100%" stopColor="#c084fc" />
               </linearGradient>
-              <filter id="targetGlowEnhanced" x="-50%" y="-50%" width="200%" height="200%">
+              <filter
+                id="targetGlowEnhanced"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
                 <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
@@ -124,10 +180,42 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
             />
             {active && (
               <g opacity="0.85">
-                <line x1="24" y1="3" x2="24" y2="9" stroke="#00f5ff" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="24" y1="39" x2="24" y2="45" stroke="#00f5ff" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="3" y1="24" x2="9" y2="24" stroke="#00f5ff" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="39" y1="24" x2="45" y2="24" stroke="#00f5ff" strokeWidth="1.5" strokeLinecap="round" />
+                <line
+                  x1="24"
+                  y1="3"
+                  x2="24"
+                  y2="9"
+                  stroke="#00f5ff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="24"
+                  y1="39"
+                  x2="24"
+                  y2="45"
+                  stroke="#00f5ff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="3"
+                  y1="24"
+                  x2="9"
+                  y2="24"
+                  stroke="#00f5ff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="39"
+                  y1="24"
+                  x2="45"
+                  y2="24"
+                  stroke="#00f5ff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               </g>
             )}
             <circle
@@ -145,7 +233,11 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               cy="24"
               r={active ? "6.5" : "5.5"}
               fill="url(#targetGrad)"
-              filter={active ? "drop-shadow(0 0 12px #00f0ff) drop-shadow(0 0 18px #8b5cf6)" : undefined}
+              filter={
+                active
+                  ? "drop-shadow(0 0 12px #00f0ff) drop-shadow(0 0 18px #8b5cf6)"
+                  : undefined
+              }
               className="transition-all duration-300"
             />
             <circle cx="24" cy="24" r="2.2" fill="#ffffff" />
@@ -156,7 +248,11 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               strokeWidth={active ? "2.8" : "2.4"}
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter={active ? "drop-shadow(0 0 8px #00f0ff)" : "drop-shadow(0 0 4px #00f0ff)"}
+              filter={
+                active
+                  ? "drop-shadow(0 0 8px #00f0ff)"
+                  : "drop-shadow(0 0 4px #00f0ff)"
+              }
               className={active ? "animate-pulse" : ""}
             />
           </svg>
@@ -182,7 +278,11 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               fill="rgba(15, 23, 42, 0.6)"
               stroke="url(#planGrad)"
               strokeWidth={active ? "2.6" : "2.2"}
-              filter={active ? "drop-shadow(0 0 8px rgba(0, 245, 255, 0.4))" : undefined}
+              filter={
+                active
+                  ? "drop-shadow(0 0 8px rgba(0, 245, 255, 0.4))"
+                  : undefined
+              }
             />
             <rect
               x="18"
@@ -293,7 +393,11 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               fill="rgba(15, 23, 42, 0.6)"
               stroke="url(#mailGrad)"
               strokeWidth="2.2"
-              filter={active ? "drop-shadow(0 0 6px rgba(0, 245, 255, 0.35))" : undefined}
+              filter={
+                active
+                  ? "drop-shadow(0 0 6px rgba(0, 245, 255, 0.35))"
+                  : undefined
+              }
             />
             <path
               d="M 8 15 L 24 27 L 40 15"
@@ -344,7 +448,13 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
                   className="animate-pulse"
                   style={{ animationDelay: "0.4s" }}
                 />
-                <circle cx="44" cy="13" r="1.5" fill="#ffffff" filter="drop-shadow(0 0 4px #00f5ff)" />
+                <circle
+                  cx="44"
+                  cy="13"
+                  r="1.5"
+                  fill="#ffffff"
+                  filter="drop-shadow(0 0 4px #00f5ff)"
+                />
               </g>
             )}
           </svg>
@@ -363,7 +473,10 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
             </defs>
             <g
               className={active ? "animate-spin" : ""}
-              style={{ transformOrigin: "24px 24px", animationDuration: active ? "2.8s" : "0s" }}
+              style={{
+                transformOrigin: "24px 24px",
+                animationDuration: active ? "2.8s" : "0s",
+              }}
             >
               <path
                 d="M 22 7 L 26 7 L 27 11 L 31 12.5 L 34 9.5 L 37.5 13 L 34.5 16 L 36 20 L 40 21 L 40 25 L 36 26 L 34.5 30 L 37.5 33 L 34 36.5 L 31 33.5 L 27 35 L 26 39 L 22 39 L 21 35 L 17 33.5 L 14 36.5 L 10.5 33 L 13.5 30 L 12 26 L 8 25 L 8 21 L 12 20 L 13.5 16 L 10.5 13 L 14 9.5 L 17 12.5 L 21 11 Z"
@@ -373,7 +486,14 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
                 strokeLinejoin="round"
                 filter={active ? "drop-shadow(0 0 10px #00f0ff)" : undefined}
               />
-              <circle cx="24" cy="24" r="6" fill="#0b1120" stroke="#00f5ff" strokeWidth="2.2" />
+              <circle
+                cx="24"
+                cy="24"
+                r="6"
+                fill="#0b1120"
+                stroke="#00f5ff"
+                strokeWidth="2.2"
+              />
               <circle
                 cx="24"
                 cy="24"
@@ -385,9 +505,20 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
             {active && (
               <g
                 className="animate-spin-reverse-slow"
-                style={{ transformOrigin: "24px 24px", animationDuration: "8s" }}
+                style={{
+                  transformOrigin: "24px 24px",
+                  animationDuration: "8s",
+                }}
               >
-                <circle cx="24" cy="24" r="19" fill="none" stroke="rgba(0, 245, 255, 0.4)" strokeWidth="1" strokeDasharray="3 7" />
+                <circle
+                  cx="24"
+                  cy="24"
+                  r="19"
+                  fill="none"
+                  stroke="rgba(0, 245, 255, 0.4)"
+                  strokeWidth="1"
+                  strokeDasharray="3 7"
+                />
               </g>
             )}
           </svg>
@@ -412,7 +543,15 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
                 <stop offset="100%" stopColor="#a855f7" />
               </linearGradient>
             </defs>
-            <line x1="8" y1="39" x2="40" y2="39" stroke="#334155" strokeWidth="2" strokeLinecap="round" />
+            <line
+              x1="8"
+              y1="39"
+              x2="40"
+              y2="39"
+              stroke="#334155"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
             <rect
               x="11"
               y={active ? undefined : 26}
@@ -420,7 +559,9 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               height={active ? undefined : 13}
               rx="2"
               fill="url(#barGrad1)"
-              className={active ? "animate-bar-1" : "transition-all duration-300"}
+              className={
+                active ? "animate-bar-1" : "transition-all duration-300"
+              }
               filter={active ? "drop-shadow(0 0 6px #00f5ff)" : undefined}
             />
             <rect
@@ -430,7 +571,9 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               height={active ? undefined : 21}
               rx="2"
               fill="url(#barGrad2)"
-              className={active ? "animate-bar-2" : "transition-all duration-300"}
+              className={
+                active ? "animate-bar-2" : "transition-all duration-300"
+              }
               filter={active ? "drop-shadow(0 0 6px #38bdf8)" : undefined}
             />
             <rect
@@ -440,7 +583,9 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
               height={active ? undefined : 29}
               rx="2"
               fill="url(#barGrad3)"
-              className={active ? "animate-bar-3" : "transition-all duration-300"}
+              className={
+                active ? "animate-bar-3" : "transition-all duration-300"
+              }
               filter={active ? "drop-shadow(0 0 10px #a855f7)" : undefined}
             />
           </svg>
@@ -452,7 +597,13 @@ function renderIcon(id: SavyronModuleId, active: boolean) {
         <div className="relative w-12 h-12 flex items-center justify-center">
           <svg viewBox="0 0 48 48" className="w-full h-full overflow-visible">
             <defs>
-              <linearGradient id="learnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient
+                id="learnGrad"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#00f5ff" />
                 <stop offset="60%" stopColor="#818cf8" />
                 <stop offset="100%" stopColor="#a855f7" />
@@ -548,22 +699,22 @@ export function SavyronModule({
       <div
         className={`relative flex flex-col items-center justify-center rounded-xl transition-all duration-300 transform group ${
           compact
-            ? "w-[88px] sm:w-[98px] h-[74px] sm:h-[82px] px-1"
-            : "w-[124px] sm:w-[136px] md:w-[146px] h-[108px] sm:h-[116px] md:h-[124px]"
+            ? "w-[76px] sm:w-[84px] h-[64px] sm:h-[70px] px-1"
+            : "w-[96px] sm:w-[108px] md:w-[114px] h-[78px] sm:h-[84px] md:h-[88px]"
         } ${
           id === "pesquisa" && active
-            ? "-translate-y-2 scale-[1.07] border-cyan-300 shadow-[0_0_32px_rgba(0,245,255,0.6),inset_0_0_16px_rgba(0,245,255,0.25)] ring-1 ring-cyan-400/50"
+            ? "-translate-y-1.5 scale-[1.05] border-cyan-300 shadow-[0_0_24px_rgba(0,245,255,0.5),inset_0_0_12px_rgba(0,245,255,0.2)] ring-1 ring-cyan-400/50"
             : active
-              ? "-translate-y-1.5 scale-[1.05] border-blue-500/60 shadow-[0_0_22px_rgba(59,130,246,0.3)]"
-              : "border-white/10 shadow-[0_6px_20px_rgba(0,0,0,0.5)] hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+              ? "-translate-y-1 scale-[1.03] border-blue-400/60 shadow-[0_0_18px_rgba(59,130,246,0.3)]"
+              : "border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:border-blue-500/40 hover:shadow-[0_0_16px_rgba(59,130,246,0.2)]"
         }`}
         style={{
           background:
             id === "pesquisa" && active
-              ? "rgba(0, 245, 255, 0.12)"
+              ? "rgba(0, 245, 255, 0.10)"
               : active
-                ? "rgba(59, 130, 246, 0.08)"
-                : "rgba(255, 255, 255, 0.03)",
+                ? "rgba(59, 130, 246, 0.07)"
+                : "rgba(255, 255, 255, 0.025)",
           backdropFilter: "blur(10px)",
           WebkitBackdropFilter: "blur(10px)",
           borderWidth: "1px",
@@ -583,30 +734,38 @@ export function SavyronModule({
 
         <div
           className={`transition-transform duration-300 origin-center ${
-            compact ? "scale-[0.82]" : ""
+            compact ? "scale-[0.70]" : "scale-[0.82] sm:scale-[0.88]"
           } ${
-            active ? "scale-110 drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]" : "scale-100 opacity-85 group-hover:opacity-100"
+            active
+              ? "scale-95 sm:scale-100 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+              : "opacity-85 group-hover:opacity-100"
           }`}
         >
           {renderIcon(id, active)}
         </div>
 
         <span
-          className={`font-bold uppercase transition-all duration-200 truncate max-w-[90%] text-center ${
-            compact ? "mt-1 text-[8.5px] sm:text-[9px] tracking-[0.14em]" : "mt-2 text-[10px] sm:text-[11px] tracking-[0.2em]"
+          className={`uppercase transition-all duration-200 truncate max-w-[92%] text-center select-none ${
+            compact
+              ? "mt-0.5 text-[7px] sm:text-[7.5px] tracking-[0.14em]"
+              : "mt-1 text-[8px] sm:text-[9px] tracking-[0.18em]"
           } ${
             active
-              ? "text-white opacity-100 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-              : "text-slate-300 opacity-70 group-hover:opacity-100"
+              ? "text-cyan-300 font-bold drop-shadow-[0_0_6px_rgba(0,245,255,0.7)]"
+              : "text-slate-400 font-medium opacity-75 group-hover:opacity-100 group-hover:text-slate-200"
           }`}
         >
           {label}
         </span>
 
-        <div className={`absolute flex items-center justify-center ${compact ? "top-1.5 right-1.5" : "top-2.5 right-2.5"}`}>
+        <div
+          className={`absolute flex items-center justify-center ${compact ? "top-1 right-1" : "top-2 right-2"}`}
+        >
           <div
             className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-              active ? "bg-cyan-400 shadow-[0_0_8px_#00f0ff] animate-pulse" : "bg-slate-600"
+              active
+                ? "bg-cyan-400 shadow-[0_0_8px_#00f0ff] animate-pulse"
+                : "bg-slate-600"
             }`}
           />
         </div>

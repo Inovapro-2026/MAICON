@@ -41,13 +41,13 @@ export function AgentTabV2() {
 
   const savyronState = mapVoiceStateToSavyron(status);
 
-  // Amplitude real (microfone ou TTS) alimenta boca/olhos/anéis do núcleo.
+  // Amplitude real (microfone ou TTS) alimenta boca/olhos/anéis do núcleo sem valores artificiais em repouso
   const amplitude =
     status === "agent-speaking"
-      ? Math.max(0.15, audioLevel)
+      ? audioLevel
       : status === "user-speaking" || status === "listening"
-        ? Math.max(0.08, Math.min(0.6, audioLevel))
-        : 0.5;
+        ? Math.min(0.85, audioLevel)
+        : 0;
 
   return (
     <SavyronAIBackground

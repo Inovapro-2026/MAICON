@@ -8,6 +8,8 @@ import type { MicDiagnostic } from "@/hooks/use-microphone";
 import { VoiceState } from "./agent-visual-state";
 import type { ChatMessage } from "./conversation-bubble";
 import {
+  VAD_CONFIG,
+  isValidUserUtterance,
   VOICE_THRESHOLD,
   SILENCE_MS,
   VAD_INTERVAL_MS,
@@ -57,9 +59,13 @@ export function useAgentConversation(): AgentConversationResult {
   const [sessionActive, setSessionActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [frequencyData, setFrequencyData] = useState<number[]>([0.2, 0.3, 0.5, 0.7, 0.5, 0.3, 0.2]);
+  const [frequencyData, setFrequencyData] = useState<number[]>([
+    0.2, 0.3, 0.5, 0.7, 0.5, 0.3, 0.2,
+  ]);
 
-  const [micDiagnostic, setMicDiagnostic] = useState<MicDiagnostic | null>(null);
+  const [micDiagnostic, setMicDiagnostic] = useState<MicDiagnostic | null>(
+    null,
+  );
   const [transcript, setTranscript] = useState("");
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [lastAssistant, setLastAssistant] = useState("");
@@ -94,6 +100,20 @@ export function useAgentConversation(): AgentConversationResult {
     totalFrames: number;
     peakRms: number;
   }>({ voicedFrames: 0, totalFrames: 0, peakRms: 0 });
+
+  // Calibração de ruído ambiente adaptativo
+  const calibrationSamplesRef = useRef<number[]>([]);
+  const noiseFloorRef = useRef<number>(0.008);
+  const isCalibratingRef = useRef<boolean>(true);
+  const calibrationEndTimeRef = useRef<number>(0);
+  const speechCandidateStartRef = useRef<number | null>(null);
+
+  // Proteção anti-eco do TTS (impede capturar a própria fala)
+  const lastTtsEndTimeRef = useRef<number>(0);
+
+  // Performance: suavização de amplitude e controle de taxa de renderização React
+  const smoothedAudioLevelRef = useRef<number>(0);
+  const lastAudioMeterUiUpdateRef = useRef<number>(0);
 
   useEffect(() => {
     historyRef.current = history;
@@ -168,7 +188,7 @@ export function useAgentConversation(): AgentConversationResult {
     speakingRef.current = false;
   }, []);
 
-  /** Loop de animação contínua de áudio (60fps) */
+  /** Loop de animação contínua de áudio otimizado (60fps visual sem 60 setState/s) */
   const startAudioMeter = useCallback(() => {
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
@@ -189,21 +209,56 @@ export function useAgentConversation(): AgentConversationResult {
           sum += floatData[i] * floatData[i];
         }
         const rms = Math.sqrt(sum / floatData.length);
-        const normalizedLevel = Math.min(1, rms * 8);
-        setAudioLevel(normalizedLevel);
+        const rawLevel = Math.min(1, rms * (isSpeakingTTS ? 7.5 : 8.0));
 
-        // Frequências para barras centrais
-        const freqData = new Uint8Array(targetAnalyser.frequencyBinCount);
-        targetAnalyser.getByteFrequencyData(freqData);
-        const step = Math.floor(freqData.length / 8);
-        const bars: number[] = [];
-        for (let i = 1; i <= 7; i++) {
-          const val = freqData[i * step] / 255;
-          bars.push(val);
+        // Suavização exponencial (Exponential Moving Average) — orgânica e estável
+        const alpha = isSpeakingTTS ? 0.35 : 0.28;
+        const currentSmoothed =
+          smoothedAudioLevelRef.current * (1 - alpha) + rawLevel * alpha;
+        smoothedAudioLevelRef.current =
+          currentSmoothed < 0.003 ? 0 : currentSmoothed;
+
+        // Atualização direta de variável CSS a 60fps (zero custo de renderização React)
+        if (typeof document !== "undefined") {
+          document.documentElement.style.setProperty(
+            "--savyron-audio-level",
+            smoothedAudioLevelRef.current.toFixed(3),
+          );
         }
-        setFrequencyData(bars);
+
+        // Throttle inteligente do estado React (~20fps) para evitar degradação de performance
+        const now = performance.now();
+        if (now - lastAudioMeterUiUpdateRef.current >= 48) {
+          lastAudioMeterUiUpdateRef.current = now;
+          setAudioLevel(smoothedAudioLevelRef.current);
+
+          // Frequências para barras centrais
+          const freqData = new Uint8Array(targetAnalyser.frequencyBinCount);
+          targetAnalyser.getByteFrequencyData(freqData);
+          const step = Math.floor(freqData.length / 8);
+          const bars: number[] = [];
+          for (let i = 1; i <= 7; i++) {
+            const val = freqData[i * step] / 255;
+            bars.push(val);
+          }
+          setFrequencyData(bars);
+        }
       } else {
-        setAudioLevel((prev) => Math.max(0, prev * 0.85));
+        smoothedAudioLevelRef.current = Math.max(
+          0,
+          smoothedAudioLevelRef.current * 0.82,
+        );
+        if (typeof document !== "undefined") {
+          document.documentElement.style.setProperty(
+            "--savyron-audio-level",
+            smoothedAudioLevelRef.current.toFixed(3),
+          );
+        }
+        const now = performance.now();
+        if (now - lastAudioMeterUiUpdateRef.current >= 60) {
+          lastAudioMeterUiUpdateRef.current = now;
+          setAudioLevel((prev) => Math.max(0, prev * 0.82));
+        }
       }
 
       animFrameRef.current = requestAnimationFrame(updateMeter);
@@ -233,17 +288,20 @@ export function useAgentConversation(): AgentConversationResult {
         setUsingBrowserVoice(true);
         setStatus("agent-speaking");
 
-        utterance.onend = () => {
+        const cleanupTTS = () => {
           speakingRef.current = false;
+          lastTtsEndTimeRef.current = Date.now();
+          audioChunksRef.current = [];
           resolve();
         };
-        utterance.onerror = () => {
-          speakingRef.current = false;
-          resolve();
-        };
+
+        utterance.onend = cleanupTTS;
+        utterance.onerror = cleanupTTS;
         window.speechSynthesis.speak(utterance);
       } catch {
         speakingRef.current = false;
+        lastTtsEndTimeRef.current = Date.now();
+        audioChunksRef.current = [];
         resolve();
       }
     });
@@ -280,10 +338,14 @@ export function useAgentConversation(): AgentConversationResult {
           setUsingBrowserVoice(false);
           setStatus("agent-speaking");
 
-          // Conecta o áudio do TTS ao analisador para fazer o VoiceOrb reagir ao som da IA
-          if (audioContextRef.current && audioContextRef.current.state === "running") {
+          // Conecta o áudio do TTS ao analisador para fazer o robô/boca reagir ao som real da IA
+          if (audioContextRef.current) {
+            if (audioContextRef.current.state === "suspended") {
+              void audioContextRef.current.resume();
+            }
             try {
-              const ttsSource = audioContextRef.current.createMediaElementSource(audio);
+              const ttsSource =
+                audioContextRef.current.createMediaElementSource(audio);
               const ttsAnalyser = audioContextRef.current.createAnalyser();
               ttsAnalyser.fftSize = 256;
               ttsSource.connect(ttsAnalyser);
@@ -294,16 +356,18 @@ export function useAgentConversation(): AgentConversationResult {
             }
           }
 
-          audio.onended = () => {
+          const cleanupAudio = () => {
             speakingRef.current = false;
+            lastTtsEndTimeRef.current = Date.now();
+            audioChunksRef.current = [];
             URL.revokeObjectURL(url);
             resolve();
           };
+
+          audio.onended = cleanupAudio;
           audio.onerror = () => {
-            speakingRef.current = false;
-            URL.revokeObjectURL(url);
+            cleanupAudio();
             void speakWithBrowser(text);
-            resolve();
           };
           void audio.play();
         });
@@ -323,7 +387,7 @@ export function useAgentConversation(): AgentConversationResult {
     }
   }, [stopVad]);
 
-  /** Loop VAD calibrado com Float32Array */
+  /** Loop VAD robusto com detecção de voz humana real, noise gate adaptativo e proteção anti-eco */
   const startVad = useCallback(() => {
     const analyser = analyserRef.current;
     if (!analyser) return;
@@ -331,12 +395,30 @@ export function useAgentConversation(): AgentConversationResult {
 
     vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
     recordingStartTimeRef.current = Date.now();
+    speechCandidateStartRef.current = null;
     const floatData = new Float32Array(analyser.fftSize);
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
     let silenceStart: number | null = null;
 
     const interval = window.setInterval(() => {
-      if (isMutedRef.current) return;
+      const now = Date.now();
 
+      // OBJETIVO 9 — PROTEÇÃO ANTI-ECO: Não escutar a própria voz do SAVYRON
+      // Durante TTS ativo ou margem de segurança (400ms), o microfone descarta qualquer som
+      if (speakingRef.current || now - lastTtsEndTimeRef.current < 400) {
+        speechCandidateStartRef.current = null;
+        silenceStart = null;
+        audioChunksRef.current = [];
+        return;
+      }
+
+      if (isMutedRef.current) {
+        speechCandidateStartRef.current = null;
+        silenceStart = null;
+        return;
+      }
+
+      // 1. RMS no domínio do tempo
       analyser.getFloatTimeDomainData(floatData);
       let sum = 0;
       for (let i = 0; i < floatData.length; i++) {
@@ -346,34 +428,126 @@ export function useAgentConversation(): AgentConversationResult {
       const stats = vadStatsRef.current;
       stats.totalFrames += 1;
 
-      // Telemetria detalhada no console para diagnóstico de voz
-      if (stats.totalFrames % 5 === 0 && rms > 0.003) {
-        console.log("[SAVYRON VAD]", {
-          rms: rms.toFixed(4),
-          peakRms: stats.peakRms.toFixed(4),
-          voicedFrames: stats.voicedFrames,
-          status: statusRef.current,
-        });
+      // 2. Análise espectral de frequência (faixa de voz humana 150Hz - 3400Hz vs ruído)
+      analyser.getByteFrequencyData(freqData);
+      const sampleRate = audioContextRef.current?.sampleRate || 48000;
+      const binWidth = sampleRate / analyser.fftSize;
+      const minVoiceBin = Math.max(
+        1,
+        Math.floor(VAD_CONFIG.voiceBandLowHz / binWidth),
+      );
+      const maxVoiceBin = Math.min(
+        freqData.length - 1,
+        Math.ceil(VAD_CONFIG.voiceBandHighHz / binWidth),
+      );
+
+      let totalEnergy = 0;
+      let voiceBandEnergy = 0;
+      for (let i = 0; i < freqData.length; i++) {
+        const val = freqData[i];
+        totalEnergy += val;
+        if (i >= minVoiceBin && i <= maxVoiceBin) {
+          voiceBandEnergy += val;
+        }
+      }
+      const voiceRatio = totalEnergy > 15 ? voiceBandEnergy / totalEnergy : 0;
+
+      // OBJETIVO 6 — NOISE GATE ADAPTATIVO
+      // Calibração do ruído ambiente nos primeiros 1.2 segundos após ativar o microfone
+      if (isCalibratingRef.current) {
+        if (now < calibrationEndTimeRef.current) {
+          calibrationSamplesRef.current.push(rms);
+          return;
+        } else {
+          isCalibratingRef.current = false;
+          if (calibrationSamplesRef.current.length > 0) {
+            const avg =
+              calibrationSamplesRef.current.reduce((a, b) => a + b, 0) /
+              calibrationSamplesRef.current.length;
+            noiseFloorRef.current = Math.max(
+              VAD_CONFIG.minThreshold,
+              Math.min(VAD_CONFIG.maxThreshold, avg * 1.15),
+            );
+            console.log(
+              "[SAVYRON VAD] Calibração de ruído ambiente concluída:",
+              {
+                noiseFloor: noiseFloorRef.current.toFixed(4),
+                amostras: calibrationSamplesRef.current.length,
+              },
+            );
+          }
+        }
       }
 
-      if (rms > VOICE_THRESHOLD) {
-        stats.voicedFrames += 1;
-        if (rms > stats.peakRms) stats.peakRms = rms;
-        silenceStart = null;
+      // OBJETIVO 8 — HISTERESE (threshold para iniciar > threshold para sustentar)
+      const currentNoiseFloor = noiseFloorRef.current;
+      const speechStartThreshold =
+        currentNoiseFloor + VAD_CONFIG.speechStartMargin;
+      const speechStopThreshold =
+        currentNoiseFloor + VAD_CONFIG.speechStopMargin;
 
-        // Atualiza estado visual para fala do usuário
-        if (statusRef.current === "listening") {
-          setStatus("user-speaking");
+      const isUserAlreadySpeaking = statusRef.current === "user-speaking";
+
+      // Rejeita ruídos contínuos graves (ventilador) ou picos agudos que não têm densidade de voz
+      const isVoiceCandidate =
+        rms > speechStartThreshold &&
+        voiceRatio >= VAD_CONFIG.voiceBandRatioMin;
+      const isVoiceSustained =
+        rms > speechStopThreshold &&
+        voiceRatio >= VAD_CONFIG.voiceBandRatioMin * 0.65;
+
+      const qualifiesAsSpeech = isUserAlreadySpeaking
+        ? isVoiceSustained
+        : isVoiceCandidate;
+
+      if (qualifiesAsSpeech) {
+        if (speechCandidateStartRef.current === null) {
+          speechCandidateStartRef.current = now;
+        }
+
+        const candidateDuration = now - speechCandidateStartRef.current;
+
+        // OBJETIVO 7 — TEMPO MÍNIMO PARA CONSIDERAR FALA (320ms contínuos)
+        // Ignora picos repentinos de 50-150ms (palmas, teclado, cliques, batidas)
+        if (candidateDuration >= VAD_CONFIG.minSpeechDurationMs) {
+          stats.voicedFrames += 1;
+          if (rms > stats.peakRms) stats.peakRms = rms;
+          silenceStart = null;
+
+          if (statusRef.current === "listening") {
+            console.log("[SAVYRON VAD] Fala humana confirmada:", {
+              candidateDuration,
+              rms: rms.toFixed(4),
+              threshold: speechStartThreshold.toFixed(4),
+              voiceRatio: voiceRatio.toFixed(2),
+            });
+            setStatus("user-speaking");
+          }
         }
       } else {
-        if (silenceStart === null) silenceStart = Date.now();
+        // Sinal abaixo do limiar de voz
+        if (statusRef.current !== "user-speaking") {
+          speechCandidateStartRef.current = null;
+          // Adaptação lenta do piso de ruído durante silêncio verificado
+          if (rms < speechStartThreshold) {
+            noiseFloorRef.current = Math.max(
+              VAD_CONFIG.minThreshold,
+              Math.min(
+                VAD_CONFIG.maxThreshold,
+                noiseFloorRef.current * 0.97 + rms * 0.03,
+              ),
+            );
+          }
+        }
+
+        if (silenceStart === null) silenceStart = now;
 
         // Se o usuário falou o suficiente e fez pausa, encerra e processa
         if (
-          stats.voicedFrames >= MIN_VOICED_FRAMES &&
-          Date.now() - silenceStart >= SILENCE_MS
+          stats.voicedFrames >= 3 &&
+          now - silenceStart >= VAD_CONFIG.minSilenceDurationMs
         ) {
-          console.log("[SAVYRON VAD] Fim de fala detectado por silêncio:", {
+          console.log("[SAVYRON VAD] Fim de fala confirmado por silêncio:", {
             voicedFrames: stats.voicedFrames,
             peakRms: stats.peakRms,
           });
@@ -388,16 +562,16 @@ export function useAgentConversation(): AgentConversationResult {
       }
 
       // Watchdog de segurança: encerra gravação se ultrapassar o tempo máximo
-      if (Date.now() - recordingStartTimeRef.current >= MAX_RECORDING_MS) {
-        if (stats.voicedFrames >= MIN_VOICED_FRAMES) {
+      if (now - recordingStartTimeRef.current >= VAD_CONFIG.maxRecordingMs) {
+        if (stats.voicedFrames >= 3) {
           finishUtterance();
         } else {
-          // Apenas silêncio por 20s — reinicia a janela de gravação sem travar
+          // Apenas silêncio — reinicia a janela de gravação sem travar
           vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
-          recordingStartTimeRef.current = Date.now();
+          recordingStartTimeRef.current = now;
         }
       }
-    }, VAD_INTERVAL_MS);
+    }, VAD_CONFIG.vadIntervalMs);
 
     vadTimerRef.current = interval;
   }, [finishUtterance, stopVad]);
@@ -419,8 +593,12 @@ export function useAgentConversation(): AgentConversationResult {
       peakRms: stats.peakRms,
     });
 
-    // Se não houve quase nenhuma fala detectada (ruído ambiente puro), não envia
-    if (stats.voicedFrames < 1) {
+    // OBJETIVO 4 & 5: Descarte seguro de ruídos pontuais que não atingiram fala real
+    if (stats.voicedFrames < 3) {
+      console.log(
+        "[SAVYRON VAD] Áudio descartado: voicedFrames insuficientes (ruído pontual):",
+        stats.voicedFrames,
+      );
       audioChunksRef.current = [];
       if (sessionActiveRef.current) resumeListeningRef.current?.();
       return;
@@ -442,16 +620,22 @@ export function useAgentConversation(): AgentConversationResult {
       if (token !== sessionTokenRef.current) return;
 
       if (!res.ok || !data.success) {
-        await speak("Desculpa, não consegui entender. Pode repetir?");
+        // Falha no STT — retorna silenciosamente a ouvir sem gerar resposta artificial
+        audioChunksRef.current = [];
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
 
-      const userText = String((data.data?.text ?? "")).trim();
+      const userText = String(data.data?.text ?? "").trim();
       console.log("[SAVYRON STT] Transcrição recebida:", userText);
 
-      if (!userText || NOISE_ONLY_PATTERN.test(userText)) {
-        // Silêncio ou ruído sem palavras — volta a ouvir suavemente
+      // OBJETIVO 10 & 11 — FILTRO DE TRANSCRIÇÃO: Rejeita ruídos, pontuação isolada e alucinações
+      if (!isValidUserUtterance(userText)) {
+        console.log(
+          "[SAVYRON VAD/STT] Transcrição descartada (ruído/alucinação/interjeição):",
+          userText,
+        );
+        audioChunksRef.current = [];
         if (sessionActiveRef.current) resumeListeningRef.current?.();
         return;
       }
@@ -510,9 +694,6 @@ export function useAgentConversation(): AgentConversationResult {
       if (sessionActiveRef.current) resumeListeningRef.current?.();
     } catch (err) {
       console.error("[SAVYRON AGENTE Erro no processamento]", err);
-      await speak(
-        "Tive um problema ao processar sua solicitação. Tenta de novo em instantes.",
-      );
       if (sessionActiveRef.current) resumeListeningRef.current?.();
     }
   }, [speak]);
@@ -551,6 +732,11 @@ export function useAgentConversation(): AgentConversationResult {
     setTranscript("");
     audioChunksRef.current = [];
     vadStatsRef.current = { voicedFrames: 0, totalFrames: 0, peakRms: 0 };
+    isCalibratingRef.current = true;
+    calibrationEndTimeRef.current =
+      Date.now() + VAD_CONFIG.calibrationDurationMs;
+    calibrationSamplesRef.current = [];
+    speechCandidateStartRef.current = null;
 
     try {
       if (!streamRef.current) {

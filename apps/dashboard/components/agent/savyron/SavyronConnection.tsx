@@ -21,13 +21,55 @@ export function SavyronConnection({
   state = "idle",
 }: SavyronConnectionProps) {
   const paths: PathDefinition[] = [
-    { id: "objetivo", d: "M 500 215 L 500 160", startNode: [500, 215], endNode: [500, 160], baseDuration: 2.5 },
-    { id: "pesquisa", d: "M 412 252 C 345 225, 290 185, 241 175", startNode: [412, 252], endNode: [241, 175], baseDuration: 2.8 },
-    { id: "planeja", d: "M 375 340 L 232 340", startNode: [375, 340], endNode: [232, 340], baseDuration: 2.2 },
-    { id: "executa", d: "M 415 428 C 345 455, 290 495, 246 505", startNode: [415, 428], endNode: [246, 505], baseDuration: 3.1 },
-    { id: "comunica", d: "M 588 252 C 655 225, 710 185, 760 175", startNode: [588, 252], endNode: [760, 175], baseDuration: 2.9 },
-    { id: "analisa", d: "M 625 340 L 770 340", startNode: [625, 340], endNode: [770, 340], baseDuration: 2.4 },
-    { id: "aprende", d: "M 585 428 C 655 455, 710 495, 755 505", startNode: [585, 428], endNode: [755, 505], baseDuration: 3.2 },
+    {
+      id: "objetivo",
+      d: "M 500 215 L 500 125",
+      startNode: [500, 215],
+      endNode: [500, 125],
+      baseDuration: 2.5,
+    },
+    {
+      id: "pesquisa",
+      d: "M 412 260 C 340 230, 285 190, 240 174",
+      startNode: [412, 260],
+      endNode: [240, 174],
+      baseDuration: 2.8,
+    },
+    {
+      id: "comunica",
+      d: "M 588 260 C 660 230, 715 190, 760 174",
+      startNode: [588, 260],
+      endNode: [760, 174],
+      baseDuration: 2.9,
+    },
+    {
+      id: "planeja",
+      d: "M 412 440 C 340 470, 285 490, 240 499",
+      startNode: [412, 440],
+      endNode: [240, 499],
+      baseDuration: 2.7,
+    },
+    {
+      id: "executa",
+      d: "M 588 440 C 660 470, 715 490, 760 499",
+      startNode: [588, 440],
+      endNode: [760, 499],
+      baseDuration: 2.7,
+    },
+    {
+      id: "analisa",
+      d: "M 450 505 C 425 545, 395 580, 370 610",
+      startNode: [450, 505],
+      endNode: [370, 610],
+      baseDuration: 3.0,
+    },
+    {
+      id: "aprende",
+      d: "M 550 505 C 575 545, 605 580, 630 610",
+      startNode: [550, 505],
+      endNode: [630, 610],
+      baseDuration: 3.0,
+    },
   ];
 
   const isThinking = state === "thinking";
@@ -58,7 +100,13 @@ export function SavyronConnection({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <linearGradient id="connGradDefault" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient
+          id="connGradDefault"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.7" />
           <stop offset="100%" stopColor="#818cf8" stopOpacity="0.4" />
         </linearGradient>
@@ -67,7 +115,13 @@ export function SavyronConnection({
           <stop offset="50%" stopColor="#38bdf8" stopOpacity="0.9" />
           <stop offset="100%" stopColor="#c084fc" stopOpacity="1" />
         </linearGradient>
-        <linearGradient id="connGradThinking" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient
+          id="connGradThinking"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#00f5ff" stopOpacity="0.9" />
           <stop offset="100%" stopColor="#818cf8" stopOpacity="0.8" />
         </linearGradient>
@@ -79,10 +133,18 @@ export function SavyronConnection({
 
         const dur = isPesquisaSupercharged
           ? "0.75"
-          : (p.baseDuration * speedMultiplier * (isCurrentActive ? 0.55 : 1)).toFixed(2);
+          : (
+              p.baseDuration *
+              speedMultiplier *
+              (isCurrentActive ? 0.55 : 1)
+            ).toFixed(2);
 
         return (
-          <g key={p.id} id={`connection-${p.id}`} className="transition-opacity duration-300">
+          <g
+            key={p.id}
+            id={`connection-${p.id}`}
+            className="transition-opacity duration-300"
+          >
             <path
               d={p.d}
               fill="none"
@@ -95,10 +157,22 @@ export function SavyronConnection({
                       ? "rgba(0, 229, 255, 0.45)"
                       : "rgba(59, 130, 246, 0.2)"
               }
-              strokeWidth={isPesquisaSupercharged ? "3.5" : isCurrentActive ? "2.8" : isThinking ? "2.2" : "1.5"}
+              strokeWidth={
+                isPesquisaSupercharged
+                  ? "3.5"
+                  : isCurrentActive
+                    ? "2.8"
+                    : isThinking
+                      ? "2.2"
+                      : "1.5"
+              }
               strokeDasharray={isPesquisaSupercharged ? "6 3" : "4 4"}
               strokeLinecap="round"
-              filter={isPesquisaSupercharged || isCurrentActive || isThinking ? "url(#connGlow)" : undefined}
+              filter={
+                isPesquisaSupercharged || isCurrentActive || isThinking
+                  ? "url(#connGlow)"
+                  : undefined
+              }
               className="transition-all duration-300"
             />
 
@@ -114,7 +188,15 @@ export function SavyronConnection({
                       ? "url(#connGradThinking)"
                       : "rgba(59, 130, 246, 0.35)"
               }
-              strokeWidth={isPesquisaSupercharged ? "2.6" : isCurrentActive ? "2.2" : isThinking ? "1.8" : "1"}
+              strokeWidth={
+                isPesquisaSupercharged
+                  ? "2.6"
+                  : isCurrentActive
+                    ? "2.2"
+                    : isThinking
+                      ? "1.8"
+                      : "1"
+              }
               strokeLinecap="round"
               className="transition-all duration-300"
             />
@@ -122,7 +204,15 @@ export function SavyronConnection({
             <circle
               cx={p.startNode[0]}
               cy={p.startNode[1]}
-              r={isPesquisaSupercharged ? 6 : isCurrentActive ? 5 : isThinking ? 4.5 : 3.5}
+              r={
+                isPesquisaSupercharged
+                  ? 6
+                  : isCurrentActive
+                    ? 5
+                    : isThinking
+                      ? 4.5
+                      : 3.5
+              }
               fill={isPesquisaSupercharged ? "#ffffff" : "#00f5ff"}
               filter="url(#connGlow)"
               className="transition-all duration-300"
@@ -131,14 +221,38 @@ export function SavyronConnection({
             <circle
               cx={p.endNode[0]}
               cy={p.endNode[1]}
-              r={isPesquisaSupercharged ? 6.5 : isCurrentActive ? 5.5 : isThinking ? 5 : 4}
-              fill={isPesquisaSupercharged ? "#00f5ff" : isCurrentActive ? "#ffffff" : isThinking ? "#38bdf8" : "#38bdf8"}
+              r={
+                isPesquisaSupercharged
+                  ? 6.5
+                  : isCurrentActive
+                    ? 5.5
+                    : isThinking
+                      ? 5
+                      : 4
+              }
+              fill={
+                isPesquisaSupercharged
+                  ? "#00f5ff"
+                  : isCurrentActive
+                    ? "#ffffff"
+                    : isThinking
+                      ? "#38bdf8"
+                      : "#38bdf8"
+              }
               filter="url(#connGlow)"
               className="transition-all duration-300"
             />
 
             <circle
-              r={isPesquisaSupercharged ? 5.5 : isCurrentActive ? 4.5 : isThinking ? 4 : 3.2}
+              r={
+                isPesquisaSupercharged
+                  ? 5.5
+                  : isCurrentActive
+                    ? 4.5
+                    : isThinking
+                      ? 4
+                      : 3.2
+              }
               fill="#ffffff"
               filter="url(#packetGlow)"
             >
@@ -155,7 +269,15 @@ export function SavyronConnection({
             <circle
               r={isPesquisaSupercharged ? 3.5 : isThinking ? 2.5 : 2}
               fill={isPesquisaSupercharged ? "#00f5ff" : "#38bdf8"}
-              opacity={isPesquisaSupercharged ? 1 : isCurrentActive ? 0.9 : isThinking ? 0.8 : 0.6}
+              opacity={
+                isPesquisaSupercharged
+                  ? 1
+                  : isCurrentActive
+                    ? 0.9
+                    : isThinking
+                      ? 0.8
+                      : 0.6
+              }
             >
               <animateMotion
                 path={p.d}

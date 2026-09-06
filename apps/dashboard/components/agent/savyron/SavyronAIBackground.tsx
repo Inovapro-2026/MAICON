@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { SavyronAIBackgroundProps, SavyronModuleData, SavyronModuleId } from "./types";
+import type {
+  SavyronAIBackgroundProps,
+  SavyronModuleData,
+  SavyronModuleId,
+} from "./types";
 import { SavyronCore } from "./SavyronCore";
 import { SavyronModule } from "./SavyronModule";
 import { SavyronConnection } from "./SavyronConnection";
@@ -8,13 +12,55 @@ import { SavyronParticles } from "./SavyronParticles";
 import { SavyronStatus } from "./SavyronStatus";
 
 const MODULES: SavyronModuleData[] = [
-  { id: "pesquisa", label: "PESQUISA", order: 1, position: "top-left", floatDuration: 4.8 },
-  { id: "objetivo", label: "OBJETIVO", order: 2, position: "top", floatDuration: 5.2 },
-  { id: "planeja", label: "PLANEJA", order: 3, position: "mid-left", floatDuration: 4.5 },
-  { id: "comunica", label: "COMUNICA", order: 4, position: "top-right", floatDuration: 5.5 },
-  { id: "executa", label: "EXECUTA", order: 5, position: "bottom-left", floatDuration: 4.9 },
-  { id: "analisa", label: "ANALISA", order: 6, position: "mid-right", floatDuration: 5.3 },
-  { id: "aprende", label: "APRENDE", order: 7, position: "bottom-right", floatDuration: 4.7 },
+  {
+    id: "objetivo",
+    label: "OBJETIVO",
+    order: 1,
+    position: "top",
+    floatDuration: 5.2,
+  },
+  {
+    id: "pesquisa",
+    label: "PESQUISA",
+    order: 2,
+    position: "top-left",
+    floatDuration: 4.8,
+  },
+  {
+    id: "comunica",
+    label: "COMUNICA",
+    order: 3,
+    position: "top-right",
+    floatDuration: 5.5,
+  },
+  {
+    id: "planeja",
+    label: "PLANEJA",
+    order: 4,
+    position: "mid-left",
+    floatDuration: 4.5,
+  },
+  {
+    id: "executa",
+    label: "EXECUTA",
+    order: 5,
+    position: "mid-right",
+    floatDuration: 4.9,
+  },
+  {
+    id: "analisa",
+    label: "ANALISA",
+    order: 6,
+    position: "bottom-left",
+    floatDuration: 5.3,
+  },
+  {
+    id: "aprende",
+    label: "APRENDE",
+    order: 7,
+    position: "bottom-right",
+    floatDuration: 4.7,
+  },
 ];
 
 interface SavyronAIProps extends SavyronAIBackgroundProps {
@@ -32,15 +78,20 @@ export function SavyronAIBackground({
   showStatusPill = true,
   children,
 }: SavyronAIProps) {
-  const [hoveredModule, setHoveredModule] = useState<SavyronModuleId | null>(null);
-  const [internalActiveModule, setInternalActiveModule] = useState<SavyronModuleId | null>(null);
+  const [hoveredModule, setHoveredModule] = useState<SavyronModuleId | null>(
+    null,
+  );
+  const [internalActiveModule, setInternalActiveModule] =
+    useState<SavyronModuleId | null>(null);
   const [scale, setScale] = useState<number>(1);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [mobileCoreScale, setMobileCoreScale] = useState<number>(0.68);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const activeModule =
-    controlledActiveModule !== undefined ? controlledActiveModule : internalActiveModule;
+    controlledActiveModule !== undefined
+      ? controlledActiveModule
+      : internalActiveModule;
 
   const handleModuleClick = (id: SavyronModuleId) => {
     const next = activeModule === id ? null : id;
@@ -50,7 +101,9 @@ export function SavyronAIBackground({
     onModuleSelect?.(next);
   };
 
-  const activeModuleData = MODULES.find((m) => m.id === (hoveredModule || activeModule));
+  const activeModuleData = MODULES.find(
+    (m) => m.id === (hoveredModule || activeModule),
+  );
 
   useEffect(() => {
     const computeViewport = () => {
@@ -62,7 +115,9 @@ export function SavyronAIBackground({
       if (mobile) {
         const scaleW = (vw - 32) / 440;
         const scaleH = (vh * 0.45) / 420;
-        setMobileCoreScale(Math.min(Math.max(0.58, Math.min(scaleW, scaleH)), 0.78));
+        setMobileCoreScale(
+          Math.min(Math.max(0.58, Math.min(scaleW, scaleH)), 0.78),
+        );
       } else {
         const targetW = 1000;
         const targetH = 700;
@@ -191,7 +246,7 @@ export function SavyronAIBackground({
       ) : (
         <div
           className="relative transition-transform duration-200 ease-out origin-center z-10"
-          style={{ width: 1000, height: 720, transform: `scale(${scale})` }}
+          style={{ width: 1000, height: 740, transform: `scale(${scale})` }}
         >
           <SavyronConnection
             activeModule={activeModule}
@@ -199,7 +254,12 @@ export function SavyronAIBackground({
             state={state}
           />
 
-          <div className="absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{ left: 500, top: 340 }}>
+          {/* SAFE ZONE PROTEGIDA DO ROBÔ: Zona central onde os módulos nunca entram */}
+          <div
+            id="savyron-core-safe-zone"
+            className="absolute z-10 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ left: 500, top: 350, width: 440, height: 480 }}
+          >
             <SavyronCore
               state={state}
               audioAmplitude={audioAmplitude}
@@ -207,7 +267,13 @@ export function SavyronAIBackground({
             />
           </div>
 
-          <div className="absolute z-20" style={{ left: 500 - 73, top: 38 }}>
+          {/* TOPOLOGIA ORBITAL: Módulos periféricos ao redor da safe zone do núcleo */}
+
+          {/* 1. OBJETIVO (TOPO CENTRAL) */}
+          <div
+            className="absolute z-20 -translate-x-1/2"
+            style={{ left: 500, top: 30 }}
+          >
             <SavyronModule
               id="objetivo"
               label="OBJETIVO"
@@ -219,7 +285,9 @@ export function SavyronAIBackground({
               onClick={() => handleModuleClick("objetivo")}
             />
           </div>
-          <div className="absolute z-20" style={{ left: 95, top: 115 }}>
+
+          {/* 2. PESQUISA (SUPERIOR ESQUERDO) */}
+          <div className="absolute z-20" style={{ left: 125, top: 125 }}>
             <SavyronModule
               id="pesquisa"
               label="PESQUISA"
@@ -231,31 +299,9 @@ export function SavyronAIBackground({
               onClick={() => handleModuleClick("pesquisa")}
             />
           </div>
-          <div className="absolute z-20" style={{ left: 86, top: 280 }}>
-            <SavyronModule
-              id="planeja"
-              label="PLANEJA"
-              floatDuration={4.5}
-              isActive={activeModule === "planeja"}
-              isHovered={hoveredModule === "planeja"}
-              systemState={state}
-              onHover={(h) => setHoveredModule(h ? "planeja" : null)}
-              onClick={() => handleModuleClick("planeja")}
-            />
-          </div>
-          <div className="absolute z-20" style={{ left: 100, top: 445 }}>
-            <SavyronModule
-              id="executa"
-              label="EXECUTA"
-              floatDuration={4.9}
-              isActive={activeModule === "executa"}
-              isHovered={hoveredModule === "executa"}
-              systemState={state}
-              onHover={(h) => setHoveredModule(h ? "executa" : null)}
-              onClick={() => handleModuleClick("executa")}
-            />
-          </div>
-          <div className="absolute z-20" style={{ left: 760, top: 115 }}>
+
+          {/* 3. COMUNICA (SUPERIOR DIREITO) */}
+          <div className="absolute z-20" style={{ left: 765, top: 125 }}>
             <SavyronModule
               id="comunica"
               label="COMUNICA"
@@ -267,7 +313,37 @@ export function SavyronAIBackground({
               onClick={() => handleModuleClick("comunica")}
             />
           </div>
-          <div className="absolute z-20" style={{ left: 770, top: 280 }}>
+
+          {/* 4. PLANEJA (INFERIOR ESQUERDO) */}
+          <div className="absolute z-20" style={{ left: 125, top: 450 }}>
+            <SavyronModule
+              id="planeja"
+              label="PLANEJA"
+              floatDuration={4.5}
+              isActive={activeModule === "planeja"}
+              isHovered={hoveredModule === "planeja"}
+              systemState={state}
+              onHover={(h) => setHoveredModule(h ? "planeja" : null)}
+              onClick={() => handleModuleClick("planeja")}
+            />
+          </div>
+
+          {/* 5. EXECUTA (INFERIOR DIREITO) */}
+          <div className="absolute z-20" style={{ left: 765, top: 450 }}>
+            <SavyronModule
+              id="executa"
+              label="EXECUTA"
+              floatDuration={4.9}
+              isActive={activeModule === "executa"}
+              isHovered={hoveredModule === "executa"}
+              systemState={state}
+              onHover={(h) => setHoveredModule(h ? "executa" : null)}
+              onClick={() => handleModuleClick("executa")}
+            />
+          </div>
+
+          {/* 6. ANALISA (BASE ESQUERDA-CENTRO) */}
+          <div className="absolute z-20" style={{ left: 310, top: 610 }}>
             <SavyronModule
               id="analisa"
               label="ANALISA"
@@ -279,7 +355,9 @@ export function SavyronAIBackground({
               onClick={() => handleModuleClick("analisa")}
             />
           </div>
-          <div className="absolute z-20" style={{ left: 755, top: 445 }}>
+
+          {/* 7. APRENDE (BASE DIREITA-CENTRO) */}
+          <div className="absolute z-20" style={{ left: 575, top: 610 }}>
             <SavyronModule
               id="aprende"
               label="APRENDE"
@@ -293,7 +371,10 @@ export function SavyronAIBackground({
           </div>
 
           {showStatusPill && (
-            <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ left: 500, top: 652 }}>
+            <div
+              className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: 500, top: 698 }}
+            >
               <SavyronStatus state={state} />
             </div>
           )}
