@@ -27,6 +27,7 @@ const FEATURE_LABELS: Record<string, string> = {
   max_storage: "Armazenamento (GB)",
   max_ai_usage: "Uso de IA",
   prospeccao_web: "Prospecção web",
+  whatsapp_group_extraction: "Extração de grupos do WhatsApp",
 };
 
 const featureLabel = (key: string) => FEATURE_LABELS[key] ?? key;

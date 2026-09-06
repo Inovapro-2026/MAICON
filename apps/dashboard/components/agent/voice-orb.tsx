@@ -3,14 +3,8 @@
 import { useMemo } from "react";
 import { Mic, Loader2, AlertCircle } from "lucide-react";
 
-export type VoiceState =
-  | "idle"
-  | "connecting"
-  | "listening"
-  | "user-speaking"
-  | "processing"
-  | "agent-speaking"
-  | "error";
+export type { VoiceState } from "./agent-visual-state";
+import type { VoiceState } from "./agent-visual-state";
 
 interface VoiceOrbProps {
   state: VoiceState;
@@ -33,7 +27,7 @@ export function VoiceOrb({
     if (state === "agent-speaking") {
       return 1 + Math.min(audioLevel * 0.32, 0.32);
     }
-    if (state === "processing") {
+    if (state === "processing" || state === "agent-thinking") {
       return 1.04;
     }
     if (state === "listening") {
@@ -61,6 +55,7 @@ export function VoiceOrb({
           inset 0 0 35px rgba(15, 23, 42, 0.9)
         `;
       case "processing":
+      case "agent-thinking":
         return `
           0 0 45px rgba(99, 102, 241, 0.7),
           0 0 85px rgba(139, 92, 246, 0.45),
@@ -104,6 +99,7 @@ export function VoiceOrb({
       case "agent-speaking":
         return "from-[#8B5CF6] via-[#EC4899] to-[#38BDF8]";
       case "processing":
+      case "agent-thinking":
         return "from-[#6366F1] via-[#A855F7] to-[#38BDF8]";
       case "listening":
         return "from-[#38BDF8] via-[#818CF8] to-[#C084FC]";
@@ -198,6 +194,10 @@ export function VoiceOrb({
           ) : state === "processing" ? (
             <div className="flex flex-col items-center justify-center gap-2 z-10">
               <Loader2 className="h-12 w-12 text-[#38BDF8] animate-spin" />
+            </div>
+          ) : state === "agent-thinking" ? (
+            <div className="flex flex-col items-center justify-center gap-2 z-10">
+              <Loader2 className="h-12 w-12 text-[#A855F7] animate-spin" />
             </div>
           ) : state === "connecting" ? (
             <Loader2 className="h-12 w-12 text-[#F59E0B] animate-spin" />

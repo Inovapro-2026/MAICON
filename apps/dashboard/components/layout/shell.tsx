@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Crown, CreditCard } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -36,6 +36,7 @@ export function DashboardShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
   const billing = useApi<BillingStatus>(["billing-status"], "billing/status", {
     refetchInterval: 60000,
   });
@@ -68,8 +69,8 @@ export function DashboardShell({
 
   return (
     <div className={`dashboard-wrapper ${fullBleed ? "!bg-[#02051C]" : ""}`}>
-      <Sidebar />
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <Sidebar collapsed={collapsed} onToggleCollapsed={() => setCollapsed((v) => !v)} />
+      <div className={`flex min-h-screen flex-col ${collapsed ? "lg:pl-20" : "lg:pl-64"} transition-[padding] duration-200`}>
         {!hideHeader && <Topbar title={title} />}
         <OfflineBanner />
         {fullBleed ? (

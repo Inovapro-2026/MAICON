@@ -254,23 +254,47 @@ export class WhatsAppConnection extends EventEmitter {
    * Números não registrados (fixos/inexistentes) aceitam a mensagem no servidor
    * do remetente (echo fromMe=true) mas nunca chegam a nenhum aparelho — é o
    * caso de "marca como Enviado mas não entrega". Este check evita esse falso
-   * positivo. Falha aberta: se o diretório responder erro, assume existente.
+   * positivo.
+   *
+   * Retorna um tri-estado:
+   *   true  = confirmado usuário do WhatsApp (seguro enviar);
+   *   false = confirmado NÃO usuário (fixo/inexistente → nunca envia);
+   *   null  = não foi possível confirmar (falha de rede/diretório) — o chamador
+   *           deve tratar como indeterminado e NÃO marcar como enviado.
+   * Com retry interno (2 tentativas) para reduzir falsos por falha transitória.
+   */
+  async checkWhatsAppRegistration(phoneE164: string): Promise<boolean | null> {
+    const digits = String(phoneE164 ?? '').replace(/\D/g, '');
+    if (!digits || digits.length < 8) return null;
+    if (!this.socket || this.state !== 'connected') return null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const results = await this.socket.onWhatsApp(digits);
+        if (!Array.isArray(results)) return null;
+        const entry = results[0];
+        return Boolean(entry?.exists);
+      } catch (error) {
+        logger.warn('Falha ao consultar diretório WhatsApp', {
+          phone: digits,
+          attempt,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        if (attempt === 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Compat: versão booleana do check (true se definitivamente existe; null é
+   * tratado como existente para não bloquear fluxos legados). Prefira
+   * `checkWhatsAppRegistration` em envios de campanha.
    */
   async isOnWhatsApp(phoneE164: string): Promise<boolean> {
-    const digits = String(phoneE164 ?? '').replace(/\D/g, '');
-    if (!digits || digits.length < 8) return true;
-    if (!this.socket || this.state !== 'connected') return false;
-    try {
-      const results = await this.socket.onWhatsApp(digits);
-      const entry = Array.isArray(results) ? results[0] : undefined;
-      return Boolean(entry?.exists);
-    } catch (error) {
-      logger.warn('Falha ao consultar diretório WhatsApp; assumindo existente', {
-        phone: digits,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return true;
-    }
+    const result = await this.checkWhatsAppRegistration(phoneE164);
+    return result !== false;
   }
 
   /**
@@ -523,10 +547,14 @@ export class WhatsAppConnection extends EventEmitter {
     });
 
     // ACKs de envio: status 1=PENDING 2=SERVER_ACK 3=DELIVERY_ACK 4=READ
+    // O Baileys emite `{ key: { id }, update: { status } }` — ler `update.id`
+    // direto fazia o ACK nunca ser emitido (mensagens nunca confirmavam entrega).
     this.socket.ev.on('messages.update', (updates: any[]) => {
-      for (const update of updates ?? []) {
-        if (update && typeof update.id === 'string' && update.status !== undefined) {
-          this.emit('ack', { id: update.id, status: update.status });
+      for (const entry of updates ?? []) {
+        const waId = entry?.key?.id;
+        const waStatus = entry?.update?.status;
+        if (typeof waId === 'string' && typeof waStatus === 'number') {
+          this.emit('ack', { id: waId, status: waStatus });
         }
       }
     });

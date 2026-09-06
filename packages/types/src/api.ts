@@ -30,7 +30,11 @@ export interface DashboardMetrics {
   messages_sent_today: number;
   emails_sent_today: number;
   whatsapp_sent_today: number;
+  messages_sent_month: number;
+  emails_sent_month: number;
+  whatsapp_sent_month: number;
   responses_received: number;
+  responses_received_month: number;
   interested: number;
   not_interested: number;
   opt_outs: number;

@@ -62,7 +62,7 @@ export const config = {
     messageSplitDelayMaxMs: int("AI_MESSAGE_SPLIT_DELAY_MAX_MS", 1800),
     // Agente de voz (ABA "Agente")
     elevenlabsApiKey: optional("ELEVENLABS_API_KEY"),
-    agentVoiceId: optional("AGENT_VOICE_ID", "EXAVITQu4vr4xnSDxMaL"),
+    agentVoiceId: optional("AGENT_VOICE_ID", "pNInz6obpgDQGcFmaJgB"),
     agentModel: optional("AGENT_MODEL", "openai/gpt-oss-120b"),
   },
 

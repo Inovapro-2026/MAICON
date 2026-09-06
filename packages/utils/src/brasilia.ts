@@ -58,6 +58,12 @@ export function startOfBrasiliaDay(date: Date): Date {
   return new Date(Date.UTC(p.year, p.month - 1, p.day, -3, 0, 0));
 }
 
+/** Data de início do mês em UTC no fuso de Brasília (dia 1 às 00:00 local). */
+export function startOfBrasiliaMonth(date: Date): Date {
+  const p = brasiliaParts(date);
+  return new Date(Date.UTC(p.year, p.month - 1, 1, -3, 0, 0));
+}
+
 /** Verifica se `date` está dentro da janela [open, close). */
 export function isInsideWindow(date: Date, open: Date, close: Date): boolean {
   const t = date.getTime();

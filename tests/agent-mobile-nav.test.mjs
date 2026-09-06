@@ -19,6 +19,7 @@ function read(rel) {
 const bottomNav = read("apps/dashboard/components/layout/bottom-nav.tsx");
 const navigation = read("apps/dashboard/lib/navigation.ts");
 const agentTab = read("apps/dashboard/components/agent/agent-tab.tsx");
+const agentHook = read("apps/dashboard/components/agent/use-agent-conversation.ts");
 const micHook = read("apps/dashboard/hooks/use-microphone.ts");
 const sidebar = read("apps/dashboard/components/layout/sidebar.tsx");
 
@@ -90,9 +91,9 @@ test("sidebar: desktop continua com navegação completa (hidden lg:flex)", () =
 
 test("microfone: getUserMedia é chamado apenas após toque no botão", () => {
   assert.ok(agentTab.includes("handlePress"), "ativação via handlePress");
-  assert.ok(!agentTab.includes("getUserMedia()"), "não chama getUserMedia diretamente no corpo do componente");
+  assert.ok(!agentHook.includes("getUserMedia()"), "não chama getUserMedia diretamente no corpo do componente");
   // Verifica que a permissão é solicitada via requestPermission (após interação)
-  assert.ok(agentTab.includes("requestPermission"), "usa requestPermission (após interação)");
+  assert.ok(agentHook.includes("requestPermission"), "usa requestPermission (após interação)");
 });
 
 // ---------------------------------------------------------------------------
@@ -101,7 +102,7 @@ test("microfone: getUserMedia é chamado apenas após toque no botão", () => {
 
 test("microfone: permissão concedida inicia estado LISTENING", () => {
   assert.ok(micHook.includes('permission: "granted"'), "hook retorna granted");
-  assert.ok(agentTab.includes('"listening"'), "agente tem estado listening");
+  assert.ok(agentHook.includes('"listening"'), "agente tem estado listening");
 });
 
 // ---------------------------------------------------------------------------
@@ -137,8 +138,8 @@ test("microfone: NotReadableError mostra mensagem de microfone ocupado", () => {
 // ---------------------------------------------------------------------------
 
 test("microfone: erro genérico não deixa agente silencioso (fallback speak)", () => {
-  assert.ok(agentTab.includes("speakWithBrowser"), "fallback de voz do navegador disponível");
-  assert.ok(agentTab.includes("Desculpa, não consegui entender"), "mensagem de erro falada");
+  assert.ok(agentHook.includes("speakWithBrowser"), "fallback de voz do navegador disponível");
+  assert.ok(agentHook.includes("Desculpa, não consegui entender"), "mensagem de erro falada");
 });
 
 // ---------------------------------------------------------------------------
@@ -146,8 +147,8 @@ test("microfone: erro genérico não deixa agente silencioso (fallback speak)", 
 // ---------------------------------------------------------------------------
 
 test("agente: fallback speechSynthesis existe e usa pt-BR", () => {
-  assert.ok(agentTab.includes("speechSynthesis"), "usa SpeechSynthesis API");
-  assert.ok(agentTab.includes('lang: "pt-BR"') || agentTab.includes("lang = \"pt-BR\""), "idioma português");
+  assert.ok(agentHook.includes("speechSynthesis"), "usa SpeechSynthesis API");
+  assert.ok(agentHook.includes('lang: "pt-BR"') || agentHook.includes('lang = "pt-BR"'), "idioma português");
 });
 
 // ---------------------------------------------------------------------------
@@ -155,8 +156,8 @@ test("agente: fallback speechSynthesis existe e usa pt-BR", () => {
 // ---------------------------------------------------------------------------
 
 test("agente: ElevenLabs quota aciona fallback de voz", () => {
-  assert.ok(agentTab.includes("application/json"), "fallback detecta JSON (quota) do backend");
-  assert.ok(agentTab.includes("speakWithBrowser"), "cai no fallback do navegador");
+  assert.ok(agentHook.includes("application/json"), "fallback detecta JSON (quota) do backend");
+  assert.ok(agentHook.includes("speakWithBrowser"), "cai no fallback do navegador");
 });
 
 // ---------------------------------------------------------------------------
@@ -175,7 +176,7 @@ test("frontend: nenhuma API key aparece no código", () => {
 // ---------------------------------------------------------------------------
 
 test("agente: chama backend com businessId do token (nunca da fala)", () => {
-  assert.ok(agentTab.includes("/api/proxy/agent"), "chama o proxy da API, nunca diretamente");
+  assert.ok(agentHook.includes("/api/proxy/agent"), "chama o proxy da API, nunca diretamente");
   assert.ok(bottomNav.includes("useSession"), "navegação usa sessão para permissões");
 });
 

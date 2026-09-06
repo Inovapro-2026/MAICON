@@ -1,6 +1,6 @@
 "use client";
 
-import { VoiceState } from "./voice-orb";
+import { VoiceState } from "./agent-visual-state";
 
 interface AgentStatusProps {
   state: VoiceState;
@@ -12,6 +12,7 @@ const STATUS_TITLES: Record<VoiceState, string> = {
   connecting: "Conectando...",
   listening: "Ouvindo...",
   "user-speaking": "Ouvindo...",
+  "agent-thinking": "Pensando...",
   processing: "Processando...",
   "agent-speaking": "Falando...",
   error: "Microfone indisponível",
@@ -25,13 +26,15 @@ export function AgentStatus({ state, sessionActive }: AgentStatusProps) {
       ? "neon-text-purple text-[#C084FC]"
       : state === "user-speaking"
         ? "neon-text-cyan text-[#38BDF8]"
-        : state === "listening"
-          ? "neon-text-blue text-[#818CF8]"
-          : state === "processing"
-            ? "neon-text-cyan text-[#38BDF8]"
-            : state === "error"
-              ? "text-[#EF4444]"
-              : "text-white/90";
+        : state === "agent-thinking"
+          ? "neon-text-cyan text-[#A855F7]"
+          : state === "listening"
+            ? "neon-text-blue text-[#818CF8]"
+            : state === "processing"
+              ? "neon-text-cyan text-[#38BDF8]"
+              : state === "error"
+                ? "text-[#EF4444]"
+                : "text-white/90";
 
   return (
     <div className="mt-8 text-center px-4">
@@ -40,13 +43,7 @@ export function AgentStatus({ state, sessionActive }: AgentStatusProps) {
       >
         {title}
       </h2>
-      <p className="mt-2 max-w-md mx-auto text-xs sm:text-sm text-[#94A3B8] font-normal leading-relaxed">
-        {sessionActive ? (
-          <>Converse à vontade — toque no microfone de novo para desligar.</>
-        ) : (
-          <>Toque no microfone para conversar à vontade com o seu agente de IA.</>
-        )}
-      </p>
+      
     </div>
   );
 }

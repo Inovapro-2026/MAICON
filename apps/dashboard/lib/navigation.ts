@@ -18,6 +18,8 @@ import {
   Sparkles,
   ShieldCheck,
   Settings,
+  Calendar,
+  Wallet,
 } from "lucide-react";
 
 export interface NavItem {
@@ -44,6 +46,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/clientes", label: "Clientes", icon: Users, group: "main" },
   { href: "/emails", label: "E-mails enviados", icon: Mail, group: "main" },
   { href: "/reports", label: "Relatórios", icon: BarChart3, group: "main" },
+  { href: "/agenda", label: "Agenda", icon: Calendar, group: "main" },
+  { href: "/financeiro", label: "Financeiro", icon: Wallet, group: "main" },
 ];
 
 /** Itens "Empresa" — visíveis no drawer Mais e na sidebar. */

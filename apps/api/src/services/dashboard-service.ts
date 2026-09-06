@@ -1,16 +1,19 @@
 import { prisma } from '@prospector/database';
 import { DashboardMetrics } from '@prospector/types';
-import { startOfBrasiliaDay } from '@prospector/utils';
+import { startOfBrasiliaDay, startOfBrasiliaMonth } from '@prospector/utils';
 import { getBusinessSettingInt } from '../services/settings';
 
 export async function getDashboardMetrics(businessId: string): Promise<DashboardMetrics> {
   const today = startOfBrasiliaDay(new Date());
+  const month = startOfBrasiliaMonth(new Date());
 
   const [
     leadsAvailable,
     leadsImported,
     messagesToday,
+    messagesMonth,
     responsesToday,
+    responsesMonth,
     interested,
     notInterested,
     optOuts,
@@ -23,7 +26,13 @@ export async function getDashboardMetrics(businessId: string): Promise<Dashboard
       where: { direction: 'OUT', business_id: businessId, created_at: { gte: today }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
     }),
     prisma.message.count({
+      where: { direction: 'OUT', business_id: businessId, created_at: { gte: month }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
+    }),
+    prisma.message.count({
       where: { direction: 'IN', business_id: businessId, created_at: { gte: today } },
+    }),
+    prisma.message.count({
+      where: { direction: 'IN', business_id: businessId, created_at: { gte: month } },
     }),
     prisma.lead.count({ where: { status: 'INTERESTED', business_id: businessId } }),
     prisma.lead.count({ where: { status: 'NOT_INTERESTED', business_id: businessId } }),
@@ -32,12 +41,18 @@ export async function getDashboardMetrics(businessId: string): Promise<Dashboard
     prisma.campaign.count({ where: { status: 'ACTIVE', business_id: businessId } }),
   ]);
 
-  const [whatsappToday, emailToday] = await Promise.all([
+  const [whatsappToday, emailToday, whatsappMonth, emailMonth] = await Promise.all([
     prisma.message.count({
       where: { channel: 'WHATSAPP', direction: 'OUT', business_id: businessId, created_at: { gte: today }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
     }),
     prisma.message.count({
       where: { channel: 'EMAIL', direction: 'OUT', business_id: businessId, created_at: { gte: today }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
+    }),
+    prisma.message.count({
+      where: { channel: 'WHATSAPP', direction: 'OUT', business_id: businessId, created_at: { gte: month }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
+    }),
+    prisma.message.count({
+      where: { channel: 'EMAIL', direction: 'OUT', business_id: businessId, created_at: { gte: month }, status: { in: ['SENT', 'DELIVERED', 'READ'] } },
     }),
   ]);
 
@@ -50,7 +65,11 @@ export async function getDashboardMetrics(businessId: string): Promise<Dashboard
     messages_sent_today: messagesToday,
     emails_sent_today: emailToday,
     whatsapp_sent_today: whatsappToday,
+    messages_sent_month: messagesMonth,
+    emails_sent_month: emailMonth,
+    whatsapp_sent_month: whatsappMonth,
     responses_received: responsesToday,
+    responses_received_month: responsesMonth,
     interested,
     not_interested: notInterested,
     opt_outs: optOuts,

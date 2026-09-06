@@ -33,13 +33,7 @@ export function ConversationBubble({ message }: ConversationBubbleProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1.5">
-            <span
-              className={`text-xs font-extrabold tracking-wider uppercase ${
-                isUser ? "text-[#38BDF8] neon-text-cyan" : "text-[#C084FC] neon-text-purple"
-              }`}
-            >
-              {isUser ? "Você" : "Agente"}
-            </span>
+            
           </div>
           <p className="text-sm sm:text-base text-[#F8FAFC] leading-relaxed font-normal">
             {message.content}
@@ -64,12 +58,9 @@ export function ConversationList({
   transcript,
   lastAssistant,
 }: ConversationListProps) {
-  // Se houver histórico, exibe os últimos turnos
-  // Se não houver histórico mas houver transcrição/resposta ativa recente, exibe-as
+  // Apenas a pergunta e resposta atual — quando uma nova chega, a anterior
+  // desaparece. Mantém altura fixa para não estender a página.
   const activeItems: ChatMessage[] = useMemo(() => {
-    if (history.length > 0) {
-      return history.slice(-4);
-    }
     const items: ChatMessage[] = [];
     if (transcript) {
       items.push({ role: "user", content: transcript });
@@ -78,12 +69,12 @@ export function ConversationList({
       items.push({ role: "assistant", content: lastAssistant });
     }
     return items;
-  }, [history, transcript, lastAssistant]);
+  }, [transcript, lastAssistant]);
 
   if (activeItems.length === 0) return null;
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-3 px-4 mt-6">
+    <div className="w-full max-w-xl mx-auto space-y-3 px-4 h-48 overflow-y-auto">
       {activeItems.map((item, idx) => (
         <ConversationBubble key={item.id ?? idx} message={item} />
       ))}

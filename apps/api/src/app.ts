@@ -21,6 +21,9 @@ import { emailsRouter } from "./routes/emails";
 import { clientsRouter } from "./routes/clients";
 import { notificationsRouter } from "./routes/notifications";
 import { agentRouter } from "./routes/agent";
+import { calendarRouter } from "./routes/calendar";
+import { financialRouter } from "./routes/financial";
+import { memoryRouter } from "./routes/memory";
 import { errorHandler } from "./middleware/error-handler";
 
 import { rateLimit } from "./middleware/rate-limit";
@@ -97,6 +100,9 @@ export function createApp(): Express {
   app.use("/clients", clientsRouter);
   app.use("/notifications", notificationsRouter);
   app.use("/agent", agentRouter);
+  app.use("/calendar", calendarRouter);
+  app.use("/financial", financialRouter);
+  app.use("/memory", memoryRouter);
 
   app.use((_req, res) => {
     res.status(404).json({

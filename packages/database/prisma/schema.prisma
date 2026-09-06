@@ -216,6 +216,11 @@ model Business {
   whatsapp_group_extractions WhatsAppGroupExtraction[]
   whatsapp_group_sources WhatsAppGroupSource[]
   whatsapp_group_leads WhatsAppGroupLead[]
+  memories Memory[]
+  calendar_events CalendarEvent[]
+  reminders Reminder[]
+  financial_categories FinancialCategory[]
+  financial_transactions FinancialTransaction[]
 
   @@index([status])
 }
@@ -1112,6 +1117,168 @@ model Notification {
 
   @@index([business_id, read])
   @@index([business_id, created_at])
+}
+
+// ============================= JARVIS — MEMÓRIA PERSISTENTE =============================
+
+enum MemoryCategory {
+  PREFERENCE
+  GOAL
+  METRIC
+  DECISION
+  CONTEXT
+  INSTRUCTION
+  NOTE
+}
+
+model Memory {
+  id          String         @id @default(cuid())
+  business_id String
+  user_id     String
+  content     String
+  category    MemoryCategory @default(NOTE)
+  importance  Int            @default(1)
+  source      String?
+  expires_at  DateTime
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, user_id])
+  @@index([business_id, user_id, category])
+  @@index([business_id, expires_at])
+  @@index([business_id, user_id, expires_at])
+}
+
+// ============================= JARVIS — AGENDA =============================
+
+enum CalendarEventStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum CalendarEventPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum RecurrenceType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model CalendarEvent {
+  id            String                @id @default(cuid())
+  business_id   String
+  user_id       String
+  title         String
+  description   String?
+  start_date    DateTime
+  end_date      DateTime?
+  all_day       Boolean               @default(false)
+  category      String?
+  priority      CalendarEventPriority @default(NORMAL)
+  status        CalendarEventStatus   @default(SCHEDULED)
+  recurrence    RecurrenceType        @default(NONE)
+  recurrence_end DateTime?
+  reminder_minutes_before Int?
+  created_at    DateTime              @default(now())
+  updated_at    DateTime              @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, user_id])
+  @@index([business_id, user_id, start_date])
+  @@index([business_id, user_id, status])
+  @@index([business_id, start_date])
+}
+
+model Reminder {
+  id            String    @id @default(cuid())
+  business_id   String
+  user_id       String
+  title         String
+  description   String?
+  remind_at     DateTime
+  recurring     Boolean   @default(false)
+  recurrence    RecurrenceType @default(NONE)
+  recurrence_end DateTime?
+  status        String    @default("PENDING")
+  completed_at  DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, user_id])
+  @@index([business_id, user_id, remind_at])
+  @@index([business_id, user_id, status])
+  @@index([business_id, remind_at])
+}
+
+// ============================= JARVIS — FINANCEIRO =============================
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  REAL
+  PLANNED
+  CANCELLED
+}
+
+model FinancialCategory {
+  id          String          @id @default(cuid())
+  business_id String
+  name        String
+  type        TransactionType
+  color       String?
+  icon        String?
+  created_at  DateTime        @default(now())
+  updated_at  DateTime        @updatedAt
+
+  business     Business             @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+
+  @@unique([business_id, name, type])
+  @@index([business_id])
+}
+
+model FinancialTransaction {
+  id            String            @id @default(cuid())
+  business_id   String
+  user_id       String
+  type          TransactionType
+  description   String
+  amount        Decimal           @db.Decimal(12, 2)
+  date          DateTime
+  category_id   String?
+  recurrence    RecurrenceType    @default(NONE)
+  recurrence_end DateTime?
+  status        TransactionStatus @default(REAL)
+  notes         String?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+
+  business Business          @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  category FinancialCategory? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+
+  @@index([business_id, user_id])
+  @@index([business_id, user_id, date])
+  @@index([business_id, user_id, type])
+  @@index([business_id, user_id, status])
+  @@index([business_id, date])
+  @@index([business_id, category_id])
 }
 
 // ============================= CHAVES DE API (PLATAFORMA) =============================

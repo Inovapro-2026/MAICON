@@ -78,7 +78,9 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
   // Valida se o número é usuário registrado do WhatsApp. Números não registrados
   // (fixos/inexistentes) até produzem echo fromMe=true, mas NADA chega ao
   // destinatário — por isso o painel mostrava "Enviado" sem entrega real.
-  if (!(await waManager.isOnWhatsApp(phone))) {
+  // Tri-estado: false = NÃO envia; true = envia; null = indeterminado → retry.
+  const registration = await waManager.checkWhatsAppRegistration(phone);
+  if (registration === false) {
     logger.warn('Número não é usuário do WhatsApp; envio marcado como erro', { lead_id: leadId, phone });
     await markMessageFailed(messageId, 'Número não registrado no WhatsApp');
     await prisma.campaignLead.updateMany({
@@ -88,10 +90,21 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
     await prisma.lead.update({ where: { id: leadId }, data: { status: 'ERROR' } });
     return;
   }
+  if (registration === null) {
+    // Diretório do WhatsApp indisponível (rede/servidor). NÃO marca como enviado:
+    // reenfileira para tentar de novo; se esgotar, vai para ERROR (dead letter).
+    logger.warn('Falha ao confirmar número no WhatsApp; retentando', { lead_id: leadId, phone });
+    await handleFailure(job.data, messageId, 'Falha ao confirmar número no diretório WhatsApp');
+    return;
+  }
 
   try {
     const externalId = await waManager.sendText(phone, message, remoteJid);
-    await updateMessageStatus(messageId, 'DELIVERED', externalId);
+    // SENT = aceita pelo SERVIDOR WhatsApp (SERVER_ACK). Entrega real ao aparelho
+    // (DELIVERY_ACK) chega assíncrona via messages.update (runtime.ts) — e só
+    // quando essa confirmação chega o CampaignLead é promovido para SENT. Isso
+    // evita o falso "Enviado" de números inválidos/bloqueados sem entrega.
+    await updateMessageStatus(messageId, 'SENT', externalId);
 
 
 
@@ -99,17 +112,15 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
     const conversationId = await ensureConversation(leadId, businessId ?? 'default');
     await touchConversation(conversationId, businessId);
 
-    // Só marca como SENT se ainda estiver no início do funil (primeiro contato).
-    // Respostas de IA/conversa ativa mantêm o status definido pelo agente.
-    await prisma.campaignLead.updateMany({
-      where: { lead_id: leadId, ...(businessId ? { business_id: businessId } : {}), status: { in: ['PENDING', 'PROCESSING'] } },
-      data: { status: 'SENT' },
+    // NÃO marca o CampaignLead/Lead como SENT aqui: o lead permanece em
+    // PROCESSING até o DELIVERY_ACK (runtime.ts) ou a reconciliação do watchdog
+    // resolver envios sem confirmação.
+    logger.info('Mensagem WhatsApp aceita pelo servidor; aguardando ACK de entrega', {
+      lead_id: leadId,
+      phone,
+      message_id: messageId,
+      external_id: externalId,
     });
-    await prisma.lead.updateMany({
-      where: { id: leadId, business_id: businessId, status: { in: ['PENDING', 'PROCESSING'] } },
-      data: { status: 'SENT' },
-    });
-    logger.info('Mensagem WhatsApp enviada', { lead_id: leadId, phone, message_id: messageId });
 
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
@@ -120,6 +131,14 @@ export async function processWhatsAppSend(job: { id?: string; data: WhatsAppSend
 
 async function handleFailure(data: WhatsAppSendData, messageId: string, reason: string): Promise<void> {
   const retryCount = data.retryCount ?? 0;
+
+  // Se a mensagem já foi aceita pelo servidor (SENT/DELIVERED/READ), não
+  // reenfileira: evita duplicar envio após confirmação perdida.
+  const current = await prisma.message.findUnique({ where: { id: messageId }, select: { status: true } });
+  if (current && ['SENT', 'DELIVERED', 'READ'].includes(current.status)) {
+    logger.info('Mensagem já aceita pelo servidor; retry ignorado', { message_id: messageId, status: current.status });
+    return;
+  }
 
   if (retryCount < MAX_RETRIES - 1) {
     // Devolve a mensagem para QUEUED para que o retry possa reivindicá-la de novo
